@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "moduleResolution": "bundler",
+    "target": "ES2023",
+    "checkJs": false,
+    "noEmit": true,
+    "allowJs": true
+  },
+  "include": ["src/**/*.js", "*.mjs"],
+  "exclude": ["node_modules", ".next"]
+}
