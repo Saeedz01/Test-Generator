@@ -1,6 +1,6 @@
 import { Chapter } from 'src/modules/chapter/entities/chapter.entity';
 import { Book } from 'src/modules/book/entities/book.entity';
-import { Question } from 'src/modules/questions/entities/question.longQestion';
+import { Question } from 'src/modules/questions/entities/question.longQuestion';
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 
 @Entity('classes')
@@ -11,7 +11,7 @@ export class schoolClass {
     @Column({ type: 'varchar', length: 255, unique: true })
     name: string;
 
-    @Column({ type: 'int', length: 255 })
+    @Column({ type: 'int' })
     sortOrder: number;
 
     @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })

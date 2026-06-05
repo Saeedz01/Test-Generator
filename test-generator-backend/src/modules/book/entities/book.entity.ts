@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { schoolClass } from 'src/modules/class/entities/class.entity';
 import { Chapter } from 'src/modules/chapter/entities/chapter.entity';
-import { Question } from 'src/modules/questions/entities/question.longQestion';
+import { Question } from 'src/modules/questions/entities/question.longQuestion';
 
 @Entity('books')
 export class Book {

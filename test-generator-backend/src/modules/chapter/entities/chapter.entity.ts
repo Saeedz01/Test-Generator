@@ -11,7 +11,7 @@ import {
   
   import { schoolClass } from '../../class/entities/class.entity';
   import { Book } from '../../book/entities/book.entity';
-  import { Question } from '../../questions/entities/question.longQestion';
+  import { Question } from '../../questions/entities/question.longQuestion';
   @Entity('chapters')
   export class Chapter {
     @PrimaryGeneratedColumn('uuid')
