@@ -14,6 +14,12 @@ export class Book {
     @Column({ name: 'classId', type: 'uuid' })
     classId: string;
 
+    @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+    created_At: Date;
+
+    @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+    updated_At: Date;
+
     @ManyToOne(() => schoolClass, (cls) => cls.books)
     @JoinColumn({ name: 'classId' })
     class: schoolClass;
@@ -23,10 +29,4 @@ export class Book {
 
     @OneToMany(() => Question, (question) => question.book)
     questions: Question[];
-
-    @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    created_At: Date;
-
-    @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
-    updated_At: Date;
 }

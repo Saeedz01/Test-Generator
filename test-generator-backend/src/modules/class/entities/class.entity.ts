@@ -21,11 +21,11 @@ export class schoolClass {
     @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
     updatedAt: Date;
 
-    @OneToMany(() => Chapter, (chapter) => chapter.class)
-    chapters: Chapter[];
-
     @OneToMany(() => Book, (book) => book.class)
     books: Book[];
+    
+    @OneToMany(() => Chapter, (chapter) => chapter.class)
+    chapters: Chapter[];
 
     @OneToMany(() => Question, (question) => question.class)
     questions: Question[];
