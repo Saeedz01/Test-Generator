@@ -19,7 +19,7 @@ export class ChapterController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.chapterService.findOne(+id);
+    return this.chapterService.findOne(id);
   }
 
   @Patch(':id')
@@ -29,6 +29,6 @@ export class ChapterController {
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.chapterService.remove(+id);
+    return this.chapterService.remove(id);
   }
 }
