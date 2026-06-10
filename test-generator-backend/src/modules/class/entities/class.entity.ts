@@ -1,6 +1,6 @@
 import { Chapter } from 'src/modules/chapter/entities/chapter.entity';
 import { Book } from 'src/modules/book/entities/book.entity';
-import { Question } from 'src/modules/questions/entities/question.longQuestion';
+import { LongQuestion } from 'src/modules/questions/entities/question.longQuestion';
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 
 @Entity('classes')
@@ -27,6 +27,6 @@ export class schoolClass {
     @OneToMany(() => Chapter, (chapter) => chapter.class)
     chapters: Chapter[];
 
-    @OneToMany(() => Question, (question) => question.class)
-    questions: Question[];
+    @OneToMany(() => LongQuestion, (question) => question.class)
+    questions: LongQuestion[];
 }

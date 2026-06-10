@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { QuestionsService } from './questions.service';
 import { CreatelngQuestionDto } from './dto/create-lng-question.dto';
 import { CreateShortQuestionDto } from './dto/create-short-question.dto';
+import { CreateMcqQuestionDto } from './dto/create-mcq-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 
 @Controller('questions')
@@ -19,8 +20,8 @@ export class QuestionsController {
   }
 
   @Post('mcq')
-  createMcq(@Body() createQuestionDto: CreatelngQuestionDto) {
-    return this.questionsService.createMcqQuestion(createQuestionDto);
+  createMcq(@Body() createMcqQuestion: CreateMcqQuestionDto) {
+    return this.questionsService.createMcqQuestion(createMcqQuestion);
   }
 
   @Get()

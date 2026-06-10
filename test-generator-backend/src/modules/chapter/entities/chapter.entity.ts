@@ -11,7 +11,7 @@ import {
   
   import { schoolClass } from '../../class/entities/class.entity';
   import { Book } from '../../book/entities/book.entity';
-  import { Question } from '../../questions/entities/question.longQuestion';
+  import { LongQuestion } from '../../questions/entities/question.longQuestion';
   @Entity('chapters')
   export class Chapter {
     @PrimaryGeneratedColumn('uuid')
@@ -29,8 +29,8 @@ import {
     @JoinColumn({ name: 'bookId' })
     book: Book;
 
-    @OneToMany(() => Question, (question) => question.chapter)
-    questions: Question[];
+    @OneToMany(() => LongQuestion, (question) => question.chapter)
+    questions: LongQuestion[];
   
     @Column({ type: 'varchar', length: 255 })
     chapter_name: string;

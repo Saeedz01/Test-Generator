@@ -100,9 +100,9 @@ export class QuestionsService {
     return this.shortQuestionRepository.save(shortQuestion);
   }
 
-  async createMcqQuestion(createMcqQuestionDto:CreateMcqQuestionDto ) {
+  async createMcqQuestion(createMcqQuestion:CreateMcqQuestionDto ) {
     // TODO: Implement MCQ question creation
-    const { statement,options, classId, bookId, chapterId } = createMcqQuestionDto;
+    const { statement,options, classId, bookId, chapterId } = createMcqQuestion;
 
     const existingMcqQuestion = await this.mcqQuestionRepository.findOne({
       where: { question_text: statement },

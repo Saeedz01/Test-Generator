@@ -1,7 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { schoolClass } from 'src/modules/class/entities/class.entity';
 import { Chapter } from 'src/modules/chapter/entities/chapter.entity';
-import { Question } from 'src/modules/questions/entities/question.longQuestion';
+import { LongQuestion } from 'src/modules/questions/entities/question.longQuestion';
+import { ShortQuestion } from 'src/modules/questions/entities/question.shortQuestion';
+import { McqQuestion } from 'src/modules/questions/entities/question.mcqs';
 
 @Entity('books')
 export class Book {
@@ -27,6 +29,12 @@ export class Book {
     @OneToMany(() => Chapter, (chapter) => chapter.book)
     chapters: Chapter[];
 
-    @OneToMany(() => Question, (question) => question.book)
-    questions: Question[];
+    @OneToMany(() => LongQuestion, (question) => question.book)
+    questions: LongQuestion[];
+    
+    @OneToMany(() => ShortQuestion, (question) => question.book)
+    shortQuestions: ShortQuestion[];
+    
+    @OneToMany(() => McqQuestion, (question) => question.book)
+    mcqQuestions: McqQuestion[];
 }
