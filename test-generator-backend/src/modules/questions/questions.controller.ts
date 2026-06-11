@@ -25,8 +25,18 @@ export class QuestionsController {
   }
 
   @Get()
-  findAll() {
-    return this.questionsService.findAll();
+  findAlllng() {
+    return this.questionsService.findAlllngQuestions();
+  }
+  
+  @Get('mcq')
+  findAllmcq() {
+    return this.questionsService.findAllmcqQuestions();
+  }
+  
+  @Get('short')
+  findAllshort() {
+    return this.questionsService.findAllshortQuestions();
   }
 
   @Get(':id')

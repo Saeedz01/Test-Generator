@@ -35,6 +35,7 @@ export class QuestionsService {
     private readonly classRepository: Repository<schoolClass>
   ) { }
 
+  // COMMON Functions
   private async resolveQuestionRelations(classId: string, bookId: string, chapterId: string) {
     const [schoolClass, book, chapter] = await Promise.all([
       this.classRepository.findOne({ where: { id: classId } }),
@@ -64,6 +65,7 @@ export class QuestionsService {
     return { schoolClass, book, chapter };
   }
 
+  //SERVICE Methods
   async createLongQuestion(createlngQuestionDto: CreatelngQuestionDto) {
     const { statement, classId, bookId, chapterId } = createlngQuestionDto;
 
@@ -134,8 +136,28 @@ export class QuestionsService {
     return this.mcqQuestionRepository.save(mcqQuestion);
   }
 
-  findAll() {
-    return `This action returns all questions`;
+  async findAlllngQuestions() {
+    const lngQuestions = await this.longQuestionRepository.find();
+    if (lngQuestions.length ==0){
+      throw new NotFoundException('No questions found');
+    }
+    return lngQuestions;
+  }
+
+  async findAllmcqQuestions() {
+    const mcqQuestions = await this.mcqQuestionRepository.find();
+    if (mcqQuestions.length ==0){
+      throw new NotFoundException('No questions found');
+    }
+    return mcqQuestions;
+  }
+
+  async findAllshortQuestions() {
+    const shortQuestions = await this.shortQuestionRepository.find();
+    if (shortQuestions.length ==0){
+      throw new NotFoundException('No questions found');
+    }
+    return shortQuestions;
   }
 
   findOne(id: number) {
