@@ -1,21 +1,10 @@
-import { IsString, IsUUID, IsArray, ArrayMinSize, ArrayMaxSize } from "class-validator";
+import { IsArray, ArrayMinSize, ArrayMaxSize, IsString } from 'class-validator';
+import { CreateQuestionBaseDto } from './create-question-base.dto';
 
-export class CreateMcqQuestionDto {
-    @IsString()
-    statement: string;
-
+export class CreateMcqQuestionDto extends CreateQuestionBaseDto {
     @IsArray()
     @ArrayMinSize(4)
     @ArrayMaxSize(4)
     @IsString({ each: true })
     options: string[];
-
-    @IsUUID()
-    classId: string;
-
-    @IsUUID()
-    bookId: string;
-
-    @IsUUID()
-    chapterId: string;
 }

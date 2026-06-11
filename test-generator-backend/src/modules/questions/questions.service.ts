@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeepPartial, FindOptionsWhere, Repository } from 'typeorm';
 import { CreatelngQuestionDto } from './dto/create-lng-question.dto';
 import { CreateShortQuestionDto } from './dto/create-short-question.dto';
 import { CreateMcqQuestionDto } from './dto/create-mcq-question.dto';
+import { CreateQuestionBaseDto } from './dto/create-question-base.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { LongQuestion } from './entities/question.longQuestion';
 import { ShortQuestion } from './entities/question.shortQuestion';
@@ -11,6 +12,14 @@ import { McqQuestion } from './entities/question.mcqs';
 import { schoolClass } from '../class/entities/class.entity';
 import { Book } from '../book/entities/book.entity';
 import { Chapter } from '../chapter/entities/chapter.entity';
+
+type QuestionEntity = LongQuestion | ShortQuestion | McqQuestion;
+
+interface QuestionRelations {
+  schoolClass: schoolClass;
+  book: Book;
+  chapter: Chapter;
+}
 
 @Injectable()
 export class QuestionsService {
@@ -35,15 +44,12 @@ export class QuestionsService {
     private readonly classRepository: Repository<schoolClass>
   ) { }
 
-  // COMMON Functions
-  private async resolveQuestionRelations(classId: string, bookId: string, chapterId: string) {
+  // common functions
+  private async resolveQuestionRelations(classId: string, bookId: string, chapterId: string): Promise<QuestionRelations> {
     const [schoolClass, book, chapter] = await Promise.all([
       this.classRepository.findOne({ where: { id: classId } }),
       this.bookRepository.findOne({ where: { id: bookId }, relations: { class: true } }),
-      this.chapterRepository.findOne({
-        where: { id: chapterId },
-        relations: { class: true, book: true },
-      }),
+      this.chapterRepository.findOne({where: { id: chapterId },relations: { class: true, book: true } }),
     ]);
 
     if (!schoolClass) throw new NotFoundException('Class not found');
@@ -65,99 +71,87 @@ export class QuestionsService {
     return { schoolClass, book, chapter };
   }
 
-  //SERVICE Methods
-  async createLongQuestion(createlngQuestionDto: CreatelngQuestionDto) {
-    const { statement, classId, bookId, chapterId } = createlngQuestionDto;
-
-    const existingLongQuestion = await this.longQuestionRepository.findOne({
-      where: { question_text: statement },
+  private async assertUniqueStatement<T extends QuestionEntity>(
+    repository: Repository<T>,
+    statement: string,
+  ): Promise<void> {
+    const existing = await repository.findOne({
+      where: { question_text: statement } as FindOptionsWhere<T>,
     });
 
-    if (existingLongQuestion) {
+    if (existing) {
       throw new ConflictException('Question already exists');
     }
+  }
+
+  private async createQuestion<T extends QuestionEntity>(
+    repository: Repository<T>,
+    { statement, classId, bookId, chapterId }: CreateQuestionBaseDto,
+    extra?: DeepPartial<T>,
+  ): Promise<T> {
+    await this.assertUniqueStatement(repository, statement);
 
     const { schoolClass, book, chapter } = await this.resolveQuestionRelations(classId, bookId, chapterId);
 
-    const longQuestion = this.longQuestionRepository.create({
+    const question = repository.create({
       question_text: statement,
       class: schoolClass,
-      book: book,
-      chapter: chapter,
-    });
+      book,
+      chapter,
+      ...extra,
+    } as DeepPartial<T>);
 
-    return this.longQuestionRepository.save(longQuestion);
+    return repository.save(question);
   }
 
-  async createShortQuestion(createShortQuestionDto: CreateShortQuestionDto) {
-    const { statement, classId, bookId, chapterId } = createShortQuestionDto;
+  private async findAllFromRepository<T extends QuestionEntity>(repository: Repository<T>): Promise<T[]> {
+    const questions = await repository.find();
 
-    const existingShortQuestion = await this.shortQuestionRepository.findOne({
-      where: { question_text: statement },
-    });
-
-    if (existingShortQuestion) {
-      throw new ConflictException('Question already exists');
-    }
-
-    const { schoolClass, book, chapter } = await this.resolveQuestionRelations(classId, bookId, chapterId);
-
-    const shortQuestion = this.shortQuestionRepository.create({
-      question_text: statement,
-      class: schoolClass,
-      book: book,
-      chapter: chapter,
-    });
-
-    return this.shortQuestionRepository.save(shortQuestion);
-  }
-
-  async createMcqQuestion(createMcqQuestion: CreateMcqQuestionDto) {
-    const { statement, options, classId, bookId, chapterId } = createMcqQuestion;
-
-    const existingMcqQuestion = await this.mcqQuestionRepository.findOne({
-      where: { question_text: statement },
-    });
-
-    if (existingMcqQuestion) {
-      throw new ConflictException('Question already exists');
-    }
-
-    const { schoolClass, book, chapter } = await this.resolveQuestionRelations(classId, bookId, chapterId);
-
-    const mcqQuestion = this.mcqQuestionRepository.create({
-      question_text: statement,
-      options: options,
-      class: schoolClass,
-      book: book,
-      chapter: chapter,
-    });
-
-    return this.mcqQuestionRepository.save(mcqQuestion);
-  }
-
-  async findAlllngQuestions() {
-    const lngQuestions = await this.longQuestionRepository.find();
-    if (lngQuestions.length ==0){
+    if (questions.length === 0) {
       throw new NotFoundException('No questions found');
     }
-    return lngQuestions;
+
+    return questions;
+  }
+
+  private async removeFromRepository<T extends QuestionEntity>(
+    repository: Repository<T>,
+    id: string,
+  ): Promise<string> {
+    const result = await repository.delete(id);
+
+    if (result.affected === 0) {
+      throw new NotFoundException('Question not found');
+    }
+
+    return `This action removes a #${id} question`;
+  }
+
+  // question creation functions
+  async createLongQuestion(dto: CreatelngQuestionDto) {
+    return this.createQuestion(this.longQuestionRepository, dto);
+  }
+
+  async createShortQuestion(dto: CreateShortQuestionDto) {
+    return this.createQuestion(this.shortQuestionRepository, dto);
+  }
+
+  async createMcqQuestion(dto: CreateMcqQuestionDto) {
+    const { options, ...baseDto } = dto;
+    return this.createQuestion(this.mcqQuestionRepository, baseDto, { options });
+  }
+
+  // question retrieval functions
+  async findAlllngQuestions() {
+    return this.findAllFromRepository(this.longQuestionRepository);
   }
 
   async findAllmcqQuestions() {
-    const mcqQuestions = await this.mcqQuestionRepository.find();
-    if (mcqQuestions.length ==0){
-      throw new NotFoundException('No questions found');
-    }
-    return mcqQuestions;
+    return this.findAllFromRepository(this.mcqQuestionRepository);
   }
 
   async findAllshortQuestions() {
-    const shortQuestions = await this.shortQuestionRepository.find();
-    if (shortQuestions.length ==0){
-      throw new NotFoundException('No questions found');
-    }
-    return shortQuestions;
+    return this.findAllFromRepository(this.shortQuestionRepository);
   }
 
   findOne(id: number) {
@@ -168,7 +162,16 @@ export class QuestionsService {
     return `This action updates a #${id} question`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} question`;
+  // question deletion functions
+  async removeLngQ(id: string) {
+    return this.removeFromRepository(this.longQuestionRepository, id);
+  }
+
+  async removeShortQ(id: string) {
+    return this.removeFromRepository(this.shortQuestionRepository, id);
+  }
+
+  async removeMcqQ(id: string) {
+    return this.removeFromRepository(this.mcqQuestionRepository, id);
   }
 }

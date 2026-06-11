@@ -9,32 +9,34 @@ import { UpdateQuestionDto } from './dto/update-question.dto';
 export class QuestionsController {
   constructor(private readonly questionsService: QuestionsService) {}
 
-  @Post('long')
+  // Create Endpoints
+  @Post('createlong')
   create(@Body() createQuestionDto: CreatelngQuestionDto) {
     return this.questionsService.createLongQuestion(createQuestionDto);
   }
 
-  @Post('short')
+  @Post('creatshort')
   createShort(@Body() createQuestionDto: CreateShortQuestionDto) {
     return this.questionsService.createShortQuestion(createQuestionDto);
   }
 
-  @Post('mcq')
+  @Post('createmcq')
   createMcq(@Body() createMcqQuestion: CreateMcqQuestionDto) {
     return this.questionsService.createMcqQuestion(createMcqQuestion);
   }
 
+  // Find All Endpoints
   @Get()
   findAlllng() {
     return this.questionsService.findAlllngQuestions();
   }
   
-  @Get('mcq')
+  @Get('getmcq')
   findAllmcq() {
     return this.questionsService.findAllmcqQuestions();
   }
   
-  @Get('short')
+  @Get('getshort')
   findAllshort() {
     return this.questionsService.findAllshortQuestions();
   }
@@ -49,8 +51,19 @@ export class QuestionsController {
     return this.questionsService.update(+id, updateQuestionDto);
   }
 
-  @Delete(':id')
+  // Delete Endpoints
+  @Delete('delLng/:id')
   remove(@Param('id') id: string) {
-    return this.questionsService.remove(+id);
+    return this.questionsService.removeLngQ(id);
+  }
+  
+  @Delete('delShort/:id')
+  removeShort(@Param('id') id: string) {
+    return this.questionsService.removeShortQ(id);
+  }
+  
+  @Delete('delMcq/:id')
+  removeMcq(@Param('id') id: string) {
+    return this.questionsService.removeMcqQ(id);
   }
 }

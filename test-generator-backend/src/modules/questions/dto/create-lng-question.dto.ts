@@ -1,15 +1,3 @@
-import { IsString, IsUUID } from "class-validator";
+import { CreateQuestionBaseDto } from './create-question-base.dto';
 
-export class CreatelngQuestionDto {
-    @IsString()
-    statement: string;
-    
-    @IsUUID()
-    classId: string;
-    
-    @IsUUID()
-    bookId: string;
-    
-    @IsUUID()
-    chapterId: string;
-}
+export class CreatelngQuestionDto extends CreateQuestionBaseDto {}
