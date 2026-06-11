@@ -13,16 +13,13 @@ export class Book {
     @Column({ type: 'varchar', length: 255 })
     book_name: string;
 
-    @Column({ name: 'classId', type: 'uuid' })
-    classId: string;
-
     @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     created_At: Date;
 
     @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
     updated_At: Date;
 
-    @ManyToOne(() => schoolClass, (cls) => cls.books)
+    @ManyToOne(() => schoolClass, (cls) => cls.books, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'classId' })
     class: schoolClass;
 
@@ -31,10 +28,10 @@ export class Book {
 
     @OneToMany(() => LongQuestion, (question) => question.book)
     questions: LongQuestion[];
-    
+
     @OneToMany(() => ShortQuestion, (question) => question.book)
     shortQuestions: ShortQuestion[];
-    
+
     @OneToMany(() => McqQuestion, (question) => question.book)
     mcqQuestions: McqQuestion[];
 }

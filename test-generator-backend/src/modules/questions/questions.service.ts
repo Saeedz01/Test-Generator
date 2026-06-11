@@ -1,11 +1,10 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreatelngQuestionDto } from './dto/create-lng-question.dto';
 import { CreateShortQuestionDto } from './dto/create-short-question.dto';
 import { CreateMcqQuestionDto } from './dto/create-mcq-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
-//Entities import
 import { LongQuestion } from './entities/question.longQuestion';
 import { ShortQuestion } from './entities/question.shortQuestion';
 import { McqQuestion } from './entities/question.mcqs';
@@ -36,6 +35,34 @@ export class QuestionsService {
     private readonly classRepository: Repository<schoolClass>
   ) { }
 
+  private async resolveQuestionRelations(classId: string, bookId: string, chapterId: string) {
+    const [schoolClass, book, chapter] = await Promise.all([
+      this.classRepository.findOne({ where: { id: classId } }),
+      this.bookRepository.findOne({ where: { id: bookId }, relations: { class: true } }),
+      this.chapterRepository.findOne({
+        where: { id: chapterId },
+        relations: { class: true, book: true },
+      }),
+    ]);
+
+    if (!schoolClass) throw new NotFoundException('Class not found');
+    if (!book) throw new NotFoundException('Book not found');
+    if (!chapter) throw new NotFoundException('Chapter not found');
+
+    if (book.class.id !== classId) {
+      throw new BadRequestException('Book does not belong to the specified class');
+    }
+
+    if (chapter.class.id !== classId) {
+      throw new BadRequestException('Chapter does not belong to the specified class');
+    }
+
+    if (chapter.book.id !== bookId) {
+      throw new BadRequestException('Chapter does not belong to the specified book');
+    }
+
+    return { schoolClass, book, chapter };
+  }
 
   async createLongQuestion(createlngQuestionDto: CreatelngQuestionDto) {
     const { statement, classId, bookId, chapterId } = createlngQuestionDto;
@@ -48,15 +75,7 @@ export class QuestionsService {
       throw new ConflictException('Question already exists');
     }
 
-    const [schoolClass, book, chapter] = await Promise.all([
-      this.classRepository.findOne({ where: { id: classId } }),
-      this.bookRepository.findOne({ where: { id: bookId } }),
-      this.chapterRepository.findOne({ where: { id: chapterId } }),
-    ]);
-
-    if (!schoolClass) throw new NotFoundException('Class not found');
-    if (!book) throw new NotFoundException('Book not found');
-    if (!chapter) throw new NotFoundException('Chapter not found');
+    const { schoolClass, book, chapter } = await this.resolveQuestionRelations(classId, bookId, chapterId);
 
     const longQuestion = this.longQuestionRepository.create({
       question_text: statement,
@@ -69,7 +88,6 @@ export class QuestionsService {
   }
 
   async createShortQuestion(createShortQuestionDto: CreateShortQuestionDto) {
-    // TODO: Implement short question creation
     const { statement, classId, bookId, chapterId } = createShortQuestionDto;
 
     const existingShortQuestion = await this.shortQuestionRepository.findOne({
@@ -80,15 +98,7 @@ export class QuestionsService {
       throw new ConflictException('Question already exists');
     }
 
-    const [schoolClass, book, chapter] = await Promise.all([
-      this.classRepository.findOne({ where: { id: classId } }),
-      this.bookRepository.findOne({ where: { id: bookId } }),
-      this.chapterRepository.findOne({ where: { id: chapterId } }),
-    ]);
-
-    if (!schoolClass) throw new NotFoundException('Class not found');
-    if (!book) throw new NotFoundException('Book not found');
-    if (!chapter) throw new NotFoundException('Chapter not found');
+    const { schoolClass, book, chapter } = await this.resolveQuestionRelations(classId, bookId, chapterId);
 
     const shortQuestion = this.shortQuestionRepository.create({
       question_text: statement,
@@ -100,9 +110,8 @@ export class QuestionsService {
     return this.shortQuestionRepository.save(shortQuestion);
   }
 
-  async createMcqQuestion(createMcqQuestion:CreateMcqQuestionDto ) {
-    // TODO: Implement MCQ question creation
-    const { statement,options, classId, bookId, chapterId } = createMcqQuestion;
+  async createMcqQuestion(createMcqQuestion: CreateMcqQuestionDto) {
+    const { statement, options, classId, bookId, chapterId } = createMcqQuestion;
 
     const existingMcqQuestion = await this.mcqQuestionRepository.findOne({
       where: { question_text: statement },
@@ -112,15 +121,7 @@ export class QuestionsService {
       throw new ConflictException('Question already exists');
     }
 
-    const [schoolClass, book, chapter] = await Promise.all([
-      this.classRepository.findOne({ where: { id: classId } }),
-      this.bookRepository.findOne({ where: { id: bookId } }),
-      this.chapterRepository.findOne({ where: { id: chapterId } }),
-    ]);
-
-    if (!schoolClass) throw new NotFoundException('Class not found');
-    if (!book) throw new NotFoundException('Book not found');
-    if (!chapter) throw new NotFoundException('Chapter not found');
+    const { schoolClass, book, chapter } = await this.resolveQuestionRelations(classId, bookId, chapterId);
 
     const mcqQuestion = this.mcqQuestionRepository.create({
       question_text: statement,

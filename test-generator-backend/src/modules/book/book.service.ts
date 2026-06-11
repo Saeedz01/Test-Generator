@@ -39,7 +39,7 @@ export class BookService {
 
     const book = this.bookRepository.create({
       book_name: createBookDto.book_name,
-      classId: schoolClassRecord.id,
+      class: schoolClassRecord,
     });
 
     return await this.bookRepository.save(book);

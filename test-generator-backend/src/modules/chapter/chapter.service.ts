@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException,ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Chapter } from './entities/chapter.entity';
@@ -39,9 +39,14 @@ export class ChapterService {
 
     const book = await this.bookRepository.findOne({
       where: { id: bookId },
+      relations: { class: true },
     });
     if (!book) {
       throw new NotFoundException('Book not found');
+    }
+
+    if (book.class.id !== classId) {
+      throw new BadRequestException('Book does not belong to the specified class');
     }
 
     //create chapter

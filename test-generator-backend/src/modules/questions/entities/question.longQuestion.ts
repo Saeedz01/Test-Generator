@@ -3,7 +3,7 @@ import { schoolClass } from '../../class/entities/class.entity';
 import { Book } from '../../book/entities/book.entity';
 import { Chapter } from '../../chapter/entities/chapter.entity';
 
-@Entity('questions')
+@Entity('long_questions')
 export class LongQuestion {
     @PrimaryGeneratedColumn('uuid')
     id: string;
@@ -11,24 +11,15 @@ export class LongQuestion {
     @Column({ type: 'varchar', length: 255 })
     question_text: string;
 
-    // @Column({ name: 'classId', type: 'uuid', nullable: true })
-    // classId: string;
-
-    // @Column({ name: 'bookId', type: 'uuid', nullable: true })
-    // bookId: string;
-
-    // @Column({ name: 'chapterId', type: 'uuid', nullable: true })
-    // chapterId: string;
-
-    @ManyToOne(() => schoolClass, (cls) => cls.questions)
+    @ManyToOne(() => schoolClass, (cls) => cls.questions, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'classId' })
     class: schoolClass;
 
-    @ManyToOne(() => Book, (book) => book.questions)
+    @ManyToOne(() => Book, (book) => book.questions, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'bookId' })
     book: Book;
 
-    @ManyToOne(() => Chapter, (chapter) => chapter.questions)
+    @ManyToOne(() => Chapter, (chapter) => chapter.questions, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'chapterId' })
     chapter: Chapter;
 
