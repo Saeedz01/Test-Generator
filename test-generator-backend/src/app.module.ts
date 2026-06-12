@@ -27,7 +27,7 @@ import path from 'path';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: path.join(__dirname, '..', '.env'),
-      load: [appConfig, {/*databaseConfig, smtpConfig*/}],
+      load: [appConfig, /*databaseConfig, smtpConfig*/],
     }),
     BookModule, ClassModule, ChapterModule, UserModule, AdminModule, AuthModule, QuestionsModule],
   controllers: [AppController],

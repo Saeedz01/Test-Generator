@@ -1,59 +1,51 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { InjectModel } from '@nestjs/sequelize';
-import { User } from '../../../database/models/user.model';
-import { Role } from '../../../database/models/role.model';
-import { ERROR_CODES } from '../../../common/constants/error-codes';
-
-export interface JwtPayload {
-  sub: string;
-  role: string;
-  email: string;
-  iat?: number;
-  exp?: number;
-}
+import { PassportStrategy } from '@nestjs/passport';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Repository } from 'typeorm';
+import { ERROR_MESSAGES } from 'src/common/constant/error-messages';
+import { User } from '../../user/entities/user.entity';
+import { TokenPayload } from '../interfaces/auth.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
-    private configService: ConfigService,
-    @InjectModel(User)
-    private userModel: typeof User,
+    configService: ConfigService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('app.jwt.accessSecret'),
+      secretOrKey: configService.getOrThrow<string>('app.jwt.accessSecret'),
     });
   }
 
-  async validate(payload: JwtPayload) {
-    const user = await this.userModel.findByPk(payload.sub, {
-      include: [Role],
-      attributes: { exclude: ['passwordHash'] },
+  async validate(payload: TokenPayload) {
+    const user = await this.userRepository.findOne({
+      where: { id: payload.sub },
+      relations: ['role_id'],
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        role_id: {
+          role_name: true,
+        },
+      },
     });
 
     if (!user) {
-      throw new UnauthorizedException({
-        errorCode: 'AUTH_002',
-        message: ERROR_CODES.AUTH_002,
-      });
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_TOKEN);
     }
 
-    if (!user.isActive) {
-      throw new UnauthorizedException({
-        errorCode: 'AUTH_004',
-        message: ERROR_CODES.AUTH_004,
-      });
-    }
-
-    const roleName = (user.role as Role)?.name;
     return {
-      sub: user.id,
+      id: user.id,
       email: user.email,
-      role: roleName,
+      name: user.name,
+      role: user.role_id?.role_name ?? user.role,
     };
   }
 }

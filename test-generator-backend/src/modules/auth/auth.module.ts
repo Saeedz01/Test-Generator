@@ -1,15 +1,38 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule, JwtSignOptions } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserService } from '../user/user.service';
-import { JwtModule } from '@nestjs/jwt';
+import { User } from '../user/entities/user.entity';
+import { UserModule } from '../user/user.module';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { JwtStrategy } from './strategies/jwt.strategy';
+
 @Module({
-  imports: [UserService, JwtModule.register({
-    secret: process.env.JWT_SECRET,
-    signOptions: { expiresIn: '1d',},
-  })],
+  imports: [
+    UserModule,
+    TypeOrmModule.forFeature([User]),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const expiresIn = configService.getOrThrow<string>(
+          'app.jwt.accessExpiresIn',
+        );
+
+        return {
+          secret: configService.getOrThrow<string>('app.jwt.accessSecret'),
+          signOptions: {
+            expiresIn: expiresIn as JwtSignOptions['expiresIn'],
+          },
+        };
+      },
+    }),
+  ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, JwtStrategy],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}
