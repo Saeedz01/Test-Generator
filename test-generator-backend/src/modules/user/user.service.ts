@@ -29,7 +29,6 @@ export class UserService {
     }
   }
 
-
   // user service methods
   async create(createUserDto: CreateUserDto) {
 

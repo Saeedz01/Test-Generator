@@ -9,7 +9,9 @@ import { ChapterModule } from './modules/chapter/chapter.module';
 import { ClassModule } from './modules/class/class.module';
 import { BookModule } from './modules/book/book.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-
+import { ConfigModule } from '@nestjs/config';
+import appConfig from './config/app.config';
+import path from 'path';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -21,6 +23,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       database: process.env.DB_NAME ?? 'test-generator',
       autoLoadEntities: true,
       synchronize: process.env.NODE_ENV !== 'production',
+    }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: path.join(__dirname, '..', '.env'),
+      load: [appConfig, {/*databaseConfig, smtpConfig*/}],
     }),
     BookModule, ClassModule, ChapterModule, UserModule, AdminModule, AuthModule, QuestionsModule],
   controllers: [AppController],
