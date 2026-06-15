@@ -20,8 +20,8 @@ export class User {
   @Column({ type: 'varchar', length: 255 })
   password!: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  role!: string;
+  // @Column({ type: 'varchar', length: 255 })
+  // role!: string;
 
   @ManyToOne(() => UserRole, (role) => role.id, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'roleId' })

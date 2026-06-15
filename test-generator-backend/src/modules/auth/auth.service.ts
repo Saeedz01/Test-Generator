@@ -18,6 +18,7 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
@@ -31,7 +32,7 @@ export class AuthService {
         email: true,
         name: true,
         password: true,
-        role: true,
+        // role: true,
         role_id: {
           role_name: true,
         },
@@ -42,7 +43,7 @@ export class AuthService {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
-    const role = user.role_id?.role_name ?? user.role;
+    const role = user.role_id?.role_name;
     const payload: TokenPayload = {
       sub: user.id,
       email: user.email,
@@ -53,12 +54,13 @@ export class AuthService {
     const tokens = await this.generateTokens(payload);
 
     return {
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role,
-      },
+      // user: {
+      //   id: user.id,
+      //   email: user.email,
+      //   name: user.name,
+      //   role,
+      // },
+      user : payload,
       tokens,
     };
   }
@@ -127,10 +129,7 @@ export class AuthService {
       'app.jwt.refreshExpiresIn',
     );
 
-    const signOptions = (
-      secret: string,
-      expiresIn: string,
-    ): JwtSignOptions => ({
+    const signOptions = (secret: string, expiresIn: string,): JwtSignOptions => ({
       secret,
       expiresIn: expiresIn as JwtSignOptions['expiresIn'],
     });

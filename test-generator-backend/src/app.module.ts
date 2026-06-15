@@ -24,6 +24,7 @@ import path from 'path';
       autoLoadEntities: true,
       synchronize: process.env.NODE_ENV !== 'production',
     }),
+    // configurations
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: path.join(__dirname, '..', '.env'),
