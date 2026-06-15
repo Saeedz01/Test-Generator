@@ -54,13 +54,13 @@ export class AuthService {
     const tokens = await this.generateTokens(payload);
 
     return {
-      // user: {
-      //   id: user.id,
-      //   email: user.email,
-      //   name: user.name,
-      //   role,
-      // },
-      user : payload,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role,
+      },
+      // user:{...payload},
       tokens,
     };
   }
@@ -68,7 +68,6 @@ export class AuthService {
   async refreshToken(refreshToken: string): Promise<AuthTokens> {
     const refreshSecret =
       this.configService.getOrThrow<string>('app.jwt.refreshSecret');
-
     let payload: TokenPayload;
     try {
       payload = this.jwtService.verify<TokenPayload>(refreshToken, {
@@ -85,7 +84,7 @@ export class AuthService {
         id: true,
         email: true,
         name: true,
-        role: true,
+        // role: true,
         role_id: {
           role_name: true,
         },
@@ -100,7 +99,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       name: user.name,
-      role: user.role_id?.role_name ?? user.role,
+      role: user.role_id?.role_name,
     });
   }
 
@@ -129,12 +128,16 @@ export class AuthService {
       'app.jwt.refreshExpiresIn',
     );
 
+    // here "secret" and "expiresIn" should be fixed because signOptions in signAsync aspect the  same varibale
     const signOptions = (secret: string, expiresIn: string,): JwtSignOptions => ({
       secret,
       expiresIn: expiresIn as JwtSignOptions['expiresIn'],
     });
 
     const [accessToken, refreshToken] = await Promise.all([
+      //this is the actual structure but we use the signOptions function for better readability,
+      //  here "secret" and "expiresIn" should be fixed because signOptions aspect the  same varibale
+      // this.jwtService.signAsync(payload, { secret: accessSecret,expiresIn: accessExpires as JwtSignOptions['expiresIn']}),
       this.jwtService.signAsync(payload, signOptions(accessSecret, accessExpires)),
       this.jwtService.signAsync(payload, signOptions(refreshSecret, refreshExpires)),
     ]);
