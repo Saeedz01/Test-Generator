@@ -5,8 +5,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Repository } from 'typeorm';
 import { ERROR_MESSAGES } from 'src/common/constant/error-messages';
-import { User } from '../../user/entities/user.entity';
-import { TokenPayload } from '../interfaces/auth.interface';
+import { User } from '../../modules/user/entities/user.entity';
+import { TokenPayload } from '../../modules/auth/interfaces/auth.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -30,7 +30,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         id: true,
         email: true,
         name: true,
-        role: true,
+        // role: true,
         role_id: {
           role_name: true,
         },
@@ -45,7 +45,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role_id?.role_name ?? user.role,
+      // role: user.role_id?.role_name ?? user.role,
+      role: user.role_id?.role_name,
     };
   }
 }
