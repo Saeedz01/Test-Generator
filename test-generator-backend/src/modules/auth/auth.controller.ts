@@ -12,7 +12,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import ms from 'ms';
 import { Throttle } from '@nestjs/throttler';
-import { JwtAuthGuard } from 'src/common/guards/jwr-auth.guard';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {

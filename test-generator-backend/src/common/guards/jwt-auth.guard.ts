@@ -25,6 +25,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         message: ERROR_MESSAGES.INVALID_CREDENTIALS,
       });
     }
+  // If everything is valid, the authenticated user is passed forward.
+  // NestJS then attaches this user to req.user for the controller to use.
     return user;
   }
 }
