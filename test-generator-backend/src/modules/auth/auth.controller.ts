@@ -5,12 +5,14 @@ import {
   HttpStatus,
   Post,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import ms from 'ms';
 import { Throttle } from '@nestjs/throttler';
+import { JwtAuthGuard } from 'src/common/guards/jwr-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -78,6 +80,7 @@ export class AuthController {
   // }
 
   @Post('logout')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('access_token');

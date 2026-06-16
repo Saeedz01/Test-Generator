@@ -65,6 +65,11 @@ export class AuthService {
     };
   }
 
+  // async logout(userId: string) {
+  //   await this.refreshTokenModel.destroy({ where: { userId } });
+  //   return { message: 'Logged out successfully' };
+  // }
+
   async refreshToken(refreshToken: string): Promise<AuthTokens> {
     const refreshSecret =
       this.configService.getOrThrow<string>('app.jwt.refreshSecret');

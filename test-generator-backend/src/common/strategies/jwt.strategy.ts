@@ -8,6 +8,8 @@ import { ERROR_MESSAGES } from 'src/common/constant/error-messages';
 import { User } from '../../modules/user/entities/user.entity';
 import { TokenPayload } from '../../modules/auth/interfaces/auth.interface';
 
+
+// when app starts then this strategy is registered in passport registry with the name 'jwt', we can set any name for the strategy
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
@@ -16,7 +18,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     private readonly userRepository: Repository<User>,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      // if you want to fetch the token from the header then use this
+      // jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+
+      // if you want to fetch the token from the cookies then use this
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (req) => req?.cookies?.access_token,
+      ]),
       ignoreExpiration: false,
       secretOrKey: configService.getOrThrow<string>('app.jwt.accessSecret'),
     });

@@ -2,18 +2,29 @@ import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/com
 import { AuthGuard } from '@nestjs/passport';
 import { ERROR_MESSAGES } from 'src/common/constant/error-messages';
 
+
+//AuthGuard call the jwt strategy from the passport registry and validate the token
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-    canActivate(context: ExecutionContext) {
-        return super.canActivate(context);
-      }
-    
-      handleRequest<TUser = unknown>(err: Error | null, user: TUser): TUser {
-        if (err || !user) {
-          throw new UnauthorizedException({
-            message: ERROR_MESSAGES.INVALID_CREDENTIALS,
-          });
-        }
-        return user;
-      }
+
+  // When a request arrives at a protected route, this method tells Passport
+  // to start the JWT authentication process (extract token, verify it,
+  // and run the JWT strategy). Without this, the authentication flow
+  // would not begin.
+  canActivate(context: ExecutionContext) {
+    return super.canActivate(context);
+  }
+
+  // After Passport finishes checking the JWT token and running the strategy,
+  // it sends the result here. If authentication failed or no user was found,
+  // we stop the request and return a custom Unauthorized error.
+  // If everything is valid, we allow the request to continue with the user attached.
+  handleRequest<TUser = unknown>(err: Error | null, user: TUser): TUser {
+    if (err || !user) {
+      throw new UnauthorizedException({
+        message: ERROR_MESSAGES.INVALID_CREDENTIALS,
+      });
+    }
+    return user;
+  }
 }
