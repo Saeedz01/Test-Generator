@@ -26,12 +26,6 @@ export class AuthController {
   // async register(@Body() registerDto: CreateUserDto) {
   //   return this.authService.register(registerDto);
   // }
-  @Throttle({ default: { limit: 3, ttl: 60_000 } })
-  @Post('send-otp')
-  @HttpCode(HttpStatus.OK)
-  sendOtp(@Body() sendOtpDto: SendOtpDto) {
-    return this.authService.sendOtp(sendOtpDto);
-  }
 
   @Throttle({ default: { limit: 3, ttl: 60_000 } })
   @Post('login')
@@ -61,34 +55,14 @@ export class AuthController {
     });
 
     return { user };
+    
+  }
 
-    // const result = await this.authService.login(loginDto);
-    //
-    // if ('requiresOtp' in result) {
-    //   return result;
-    // }
-    //
-    // const { user, tokens } = result;
-    // const isProduction = process.env.NODE_ENV === 'production';
-    //
-    // // syntax of res.cookie('TokenName', 'TokenValue', { options })
-    // res.cookie('access_token', tokens.accessToken, {
-    //   httpOnly: true,
-    //   secure: isProduction,
-    //   sameSite: 'lax',
-    //   // maxAge: tokens.expiresIn * 1000,
-    //   maxAge: ms(tokens.expiresIn) as unknown as number,
-    // });
-    //
-    // res.cookie('refresh_token', tokens.refreshToken, {
-    //   httpOnly: true,
-    //   secure: isProduction,
-    //   sameSite: 'lax',
-    //   // maxAge: tokens.refreshExpiresIn * 1000,
-    //   maxAge: ms(tokens.refreshExpiresIn) as unknown as number,
-    // });
-    //
-    // return { user };
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @Post('send-otp')
+  @HttpCode(HttpStatus.OK)
+  sendOtp(@Body() sendOtpDto: SendOtpDto) {
+    return this.authService.sendOtp(sendOtpDto);
   }
 
   // @Post('forgot-password')

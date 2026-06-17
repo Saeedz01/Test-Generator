@@ -1,6 +1,8 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MailerModule } from '@nestjs-modules/mailer';
+import { MailerModule, MailerOptions } from '@nestjs-modules/mailer';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
+import { join } from 'path';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 @Global()
@@ -9,22 +11,29 @@ import type SMTPTransport from 'nodemailer/lib/smtp-transport';
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
+      useFactory: (configService: ConfigService): MailerOptions => {
         const enabled = configService.get<boolean>('mail.enabled', true);
         const from = configService.getOrThrow<string>('mail.from');
+        const template = {
+          dir: join(__dirname, '..', '..', 'templates'),
+          adapter: new HandlebarsAdapter(),
+          options: {
+            strict: true,
+          },
+        };
 
         if (!enabled) {
           return {
             transport: { jsonTransport: true },
             defaults: { from },
+            template,
           };
         }
 
         const host = configService.get<string>('mail.host');
         const user = configService.get<string>('mail.user');
         const password = configService.get<string>('mail.password');
-        const isProduction =
-          configService.get<string>('app.nodeEnv') === 'production';
+        const isProduction = configService.get<string>('app.nodeEnv') === 'production';
 
         if (isProduction && (!host || !user || !password)) {
           throw new Error(
@@ -36,6 +45,7 @@ import type SMTPTransport from 'nodemailer/lib/smtp-transport';
           return {
             transport: { jsonTransport: true },
             defaults: { from },
+            template,
           };
         }
 
@@ -55,6 +65,7 @@ import type SMTPTransport from 'nodemailer/lib/smtp-transport';
         return {
           transport,
           defaults: { from },
+          template,
         };
       },
     }),

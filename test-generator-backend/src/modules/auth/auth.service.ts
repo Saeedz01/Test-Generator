@@ -28,21 +28,6 @@ export class AuthService {
     private readonly mailerService: MailerService,
   ) {}
 
-  async sendOtp(sendOtpDto: SendOtpDto): Promise<OtpPendingResult> {
-    const user = await this.userRepository.findOne({
-      where: { email: sendOtpDto.email },
-      select: {
-        id: true,
-        email: true,
-      },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
-    }
-
-    return this.sendLoginOtp(user);
-  }
 
   async login(loginDto: LoginDto): Promise<LoginResult> {
     const user = await this.userRepository.findOne({
@@ -90,6 +75,22 @@ export class AuthService {
     };
   }
 
+  async sendOtp(sendOtpDto: SendOtpDto): Promise<OtpPendingResult> {
+    const user = await this.userRepository.findOne({
+      where: { email: sendOtpDto.email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+    }
+
+    return this.sendLoginOtp(user);
+  }
   // async login(loginDto: LoginDto): Promise<LoginResponse> {
   //   const user = await this.userRepository.findOne({
   //     where: { email: loginDto.email },
@@ -237,10 +238,22 @@ export class AuthService {
 
     await this.mailerService.sendMail({
       to: user.email,
-      subject: 'Your login OTP',
-      text: `Your login OTP is ${otp}. It expires in ${expiresInMinutes} minutes.`,
-      html: `<p>Your login OTP is <strong>${otp}</strong>.</p><p>It expires in ${expiresInMinutes} minutes.</p>`,
+      subject: 'Your login OTP - Test Generator',
+      template: 'otp',
+      context: {
+        name: user.name ?? 'User',
+        otp,
+        expiresInMinutes,
+        year: new Date().getFullYear(),
+      },
     });
+
+    // await this.mailerService.sendMail({
+    //   to: user.email,
+    //   subject: 'Your login OTP',
+    //   text: `Your login OTP is ${otp}. It expires in ${expiresInMinutes} minutes.`,
+    //   html: `<p>Your login OTP is <strong>${otp}</strong>.</p><p>It expires in ${expiresInMinutes} minutes.</p>`,
+    // });
 
     return {
       requiresOtp: true as const,
