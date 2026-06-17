@@ -10,9 +10,12 @@ import {
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { SendOtpDto } from './dto/send-otp.dto';
 import ms from 'ms';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { Roles } from 'src/common/decorator/roles.decorator';
+import { RolesGuard } from 'src/common/guards/role.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -23,6 +26,13 @@ export class AuthController {
   // async register(@Body() registerDto: CreateUserDto) {
   //   return this.authService.register(registerDto);
   // }
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @Post('send-otp')
+  @HttpCode(HttpStatus.OK)
+  sendOtp(@Body() sendOtpDto: SendOtpDto) {
+    return this.authService.sendOtp(sendOtpDto);
+  }
+
   @Throttle({ default: { limit: 3, ttl: 60_000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)   // After a login request, if we don’t set the status manually, NestJS sends 201 by default (as if a new resource was created), but here we force 200 OK because this is not creation, it’s just a login response
@@ -51,6 +61,34 @@ export class AuthController {
     });
 
     return { user };
+
+    // const result = await this.authService.login(loginDto);
+    //
+    // if ('requiresOtp' in result) {
+    //   return result;
+    // }
+    //
+    // const { user, tokens } = result;
+    // const isProduction = process.env.NODE_ENV === 'production';
+    //
+    // // syntax of res.cookie('TokenName', 'TokenValue', { options })
+    // res.cookie('access_token', tokens.accessToken, {
+    //   httpOnly: true,
+    //   secure: isProduction,
+    //   sameSite: 'lax',
+    //   // maxAge: tokens.expiresIn * 1000,
+    //   maxAge: ms(tokens.expiresIn) as unknown as number,
+    // });
+    //
+    // res.cookie('refresh_token', tokens.refreshToken, {
+    //   httpOnly: true,
+    //   secure: isProduction,
+    //   sameSite: 'lax',
+    //   // maxAge: tokens.refreshExpiresIn * 1000,
+    //   maxAge: ms(tokens.refreshExpiresIn) as unknown as number,
+    // });
+    //
+    // return { user };
   }
 
   // @Post('forgot-password')
@@ -80,7 +118,8 @@ export class AuthController {
   // }
 
   @Post('logout')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @HttpCode(HttpStatus.OK)
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('access_token');

@@ -1,15 +1,19 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
+import { MailerService } from '@nestjs-modules/mailer';
 import { InjectRepository } from '@nestjs/typeorm';
+import { randomInt } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { ERROR_MESSAGES } from 'src/common/constant/error-messages';
 import { User } from '../user/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
+import { SendOtpDto } from './dto/send-otp.dto';
 import {
   AuthTokens,
   LoginResult,
+  OtpPendingResult,
   TokenPayload,
 } from './interfaces/auth.interface';
 
@@ -21,7 +25,24 @@ export class AuthService {
 
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly mailerService: MailerService,
   ) {}
+
+  async sendOtp(sendOtpDto: SendOtpDto): Promise<OtpPendingResult> {
+    const user = await this.userRepository.findOne({
+      where: { email: sendOtpDto.email },
+      select: {
+        id: true,
+        email: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+    }
+
+    return this.sendLoginOtp(user);
+  }
 
   async login(loginDto: LoginDto): Promise<LoginResult> {
     const user = await this.userRepository.findOne({
@@ -32,6 +53,8 @@ export class AuthService {
         email: true,
         name: true,
         password: true,
+        otp: true,
+        otpExpiresAt: true,
         // role: true,
         role_id: {
           role_name: true,
@@ -42,6 +65,8 @@ export class AuthService {
     if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
+
+    await this.verifyOtp(user, loginDto.otp);
 
     const role = user.role_id?.role_name;
     const payload: TokenPayload = {
@@ -63,6 +88,66 @@ export class AuthService {
       // user:{...payload},
       tokens,
     };
+  }
+
+  // async login(loginDto: LoginDto): Promise<LoginResponse> {
+  //   const user = await this.userRepository.findOne({
+  //     where: { email: loginDto.email },
+  //     relations: ['role_id'],
+  //     select: {
+  //       id: true,
+  //       email: true,
+  //       name: true,
+  //       password: true,
+  //       otp: true,
+  //       otpExpiresAt: true,
+  //       // role: true,
+  //       role_id: {
+  //         role_name: true,
+  //       },
+  //     },
+  //   });
+  //
+  //   if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
+  //     throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+  //   }
+  //
+  //   if (!loginDto.otp) {
+  //     return this.sendLoginOtp(user);
+  //   }
+  //
+  //   await this.verifyOtp(user, loginDto.otp);
+  //
+  //   const role = user.role_id?.role_name;
+  //   const payload: TokenPayload = {
+  //     sub: user.id,
+  //     email: user.email,
+  //     name: user.name,
+  //     role,
+  //   };
+  //
+  //   const tokens = await this.generateTokens(payload);
+  //
+  //   return {
+  //     user: {
+  //       id: user.id,
+  //       email: user.email,
+  //       name: user.name,
+  //       role,
+  //     },
+  //     // user:{...payload},
+  //     tokens,
+  //   };
+  // }
+
+  async forgotPassword(email: string) {
+    const user = await this.userRepository.findOne({
+      where: { email },
+    });
+    if (!user) {
+      throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
+    }
+    return user;
   }
 
   // async logout(userId: string) {
@@ -120,6 +205,100 @@ export class AuthService {
       return null;
     }
   }
+
+  // private async findUserByEmail(email: string): Promise<User | null> {
+  //   return this.userRepository.findOne({
+  //     where: { email },
+  //     relations: ['role_id'],
+  //     select: {
+  //       id: true,
+  //       email: true,
+  //       name: true,
+  //       password: true,
+  //       otp: true,
+  //       otpExpiresAt: true,
+  //       role_id: {
+  //         role_name: true,
+  //       },
+  //     },
+  //   });
+  // }
+
+  private async sendLoginOtp(user: User) {
+    const expiresInMinutes = 5;
+    const otp = this.generateOtp();
+    const hashedOtp = await bcrypt.hash(otp, 10);
+    const otpExpiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
+
+    await this.userRepository.update(user.id, {
+      otp: hashedOtp,
+      otpExpiresAt,
+    });
+
+    await this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Your login OTP',
+      text: `Your login OTP is ${otp}. It expires in ${expiresInMinutes} minutes.`,
+      html: `<p>Your login OTP is <strong>${otp}</strong>.</p><p>It expires in ${expiresInMinutes} minutes.</p>`,
+    });
+
+    return {
+      requiresOtp: true as const,
+      message: 'OTP sent to your email address',
+      expiresInMinutes,
+    };
+  }
+
+  private async verifyOtp(user: User, otp: string): Promise<void> {
+    if (!user.otp || !user.otpExpiresAt) {
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
+    }
+
+    if (user.otpExpiresAt.getTime() < Date.now()) {
+      await this.clearOtp(user.id);
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
+    }
+
+    const isOtpValid = await bcrypt.compare(otp, user.otp);
+    if (!isOtpValid) {
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
+    }
+
+    await this.clearOtp(user.id);
+  }
+
+  private async clearOtp(userId: string): Promise<void> {
+    await this.userRepository.update(userId, {
+      otp: null,
+      otpExpiresAt: null,
+    });
+  }
+
+  private generateOtp(): string {
+    return randomInt(100000, 1000000).toString();
+  }
+
+  // private async completeLogin(user: User): Promise<LoginResult> {
+  //   const role = user.role_id?.role_name;
+  //   const payload: TokenPayload = {
+  //     sub: user.id,
+  //     email: user.email,
+  //     name: user.name,
+  //     role,
+  //   };
+  //
+  //   const tokens = await this.generateTokens(payload);
+  //
+  //   return {
+  //     user: {
+  //       id: user.id,
+  //       email: user.email,
+  //       name: user.name,
+  //       role,
+  //     },
+  //     tokens,
+  //   };
+  // }
 
   private async generateTokens(payload: TokenPayload): Promise<AuthTokens> {
     const accessSecret =

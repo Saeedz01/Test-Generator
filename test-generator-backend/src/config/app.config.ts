@@ -15,7 +15,9 @@ export default registerAs('app', () => ({
     accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },
-  recordsPerPage: parseInt(process.env.RECORDS_PER_PAGE || '10', 10),
+  otp: {
+    expiresInMinutes: parseInt(process.env.OTP_EXPIRES_IN_MINUTES || '5', 10),
+  },
   // redis: {
   //   enabled: parseRedisEnabled(process.env.REDIS_ENABLED),
   //   host: process.env.REDIS_HOST || 'localhost',

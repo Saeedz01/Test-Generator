@@ -9,6 +9,7 @@ export const ERROR_MESSAGES = {
   USER_ROLE_NOT_FOUND: 'User role not found',
   INVALID_CREDENTIALS: 'Invalid credentials',
   INVALID_TOKEN: 'Token expired or invalid',
+  INVALID_OTP: 'Invalid or expired OTP',
 
   VALIDATION_FAILED: 'Validation failed',
   PERMISSION_DENIED: 'Permission denied',

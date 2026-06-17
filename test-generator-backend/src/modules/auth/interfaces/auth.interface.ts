@@ -21,3 +21,11 @@ export interface LoginResult {
   };
   tokens: AuthTokens;
 }
+
+export interface OtpPendingResult {
+  requiresOtp: true;
+  message: string;
+  expiresInMinutes: number;
+}
+
+export type LoginResponse = LoginResult | OtpPendingResult;

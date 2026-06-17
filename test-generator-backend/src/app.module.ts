@@ -11,6 +11,8 @@ import { BookModule } from './modules/book/book.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import appConfig from './config/app.config';
+import mailConfig from './config/mail.config';
+import { MailModule } from './modules/mail/mail.module';
 import path from 'path';
 @Module({
   imports: [
@@ -28,8 +30,9 @@ import path from 'path';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: path.join(__dirname, '..', '.env'),
-      load: [appConfig, /*databaseConfig, smtpConfig*/],
+      load: [appConfig, mailConfig],
     }),
+    MailModule,
     BookModule, ClassModule, ChapterModule, UserModule, AdminModule, AuthModule, QuestionsModule],
   controllers: [AppController],
   providers: [AppService],

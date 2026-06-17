@@ -20,6 +20,12 @@ export class User {
   @Column({ type: 'varchar', length: 255 })
   password!: string;
 
+  @Column({ nullable: true })
+  otp!: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  otpExpiresAt!: Date | null;
+
   // @Column({ type: 'varchar', length: 255 })
   // role!: string;
 

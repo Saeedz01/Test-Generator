@@ -19,6 +19,7 @@ interface AuthenticatedUser {
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
+  // it fetch the roles from the decorator(Roles) that are registered in metadata(setMetadata) by the decorator(Roles)
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
       context.getHandler(),
@@ -30,7 +31,7 @@ export class RolesGuard implements CanActivate {
     }
 
     const { user } = context.switchToHttp().getRequest<{ user?: AuthenticatedUser }>();
-
+    
     if (!user?.role) {
       throw new ForbiddenException(ERROR_MESSAGES.PERMISSION_DENIED);
     }
