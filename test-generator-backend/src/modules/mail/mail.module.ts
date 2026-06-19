@@ -7,8 +7,7 @@ import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 @Global()
 @Module({
-  imports: [
-    MailerModule.forRootAsync({
+  imports: [ MailerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService): MailerOptions => {

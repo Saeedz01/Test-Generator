@@ -314,16 +314,10 @@ export class AuthService {
   // }
 
   private async generateTokens(payload: TokenPayload): Promise<AuthTokens> {
-    const accessSecret =
-      this.configService.getOrThrow<string>('app.jwt.accessSecret');
-    const refreshSecret =
-      this.configService.getOrThrow<string>('app.jwt.refreshSecret');
-    const accessExpires = this.configService.getOrThrow<string>(
-      'app.jwt.accessExpiresIn',
-    );
-    const refreshExpires = this.configService.getOrThrow<string>(
-      'app.jwt.refreshExpiresIn',
-    );
+    const accessSecret =this.configService.getOrThrow<string>('app.jwt.accessSecret');
+    const refreshSecret =this.configService.getOrThrow<string>('app.jwt.refreshSecret');
+    const accessExpires = this.configService.getOrThrow<string>('app.jwt.accessExpiresIn');
+    const refreshExpires = this.configService.getOrThrow<string>('app.jwt.refreshExpiresIn');
 
     // here "secret" and "expiresIn" should be fixed because signOptions in signAsync aspect the  same varibale
     const signOptions = (secret: string, expiresIn: string,): JwtSignOptions => ({
