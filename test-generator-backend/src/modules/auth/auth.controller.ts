@@ -4,13 +4,16 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { SendOtpDto } from './dto/send-otp.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import ms from 'ms';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
@@ -65,31 +68,24 @@ export class AuthController {
     return this.authService.sendOtp(sendOtpDto);
   }
 
-  // @Post('forgot-password')
-  // @HttpCode(HttpStatus.OK)
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
   // @ApiOperation({ summary: 'Request password reset (mock)' })
-  // @Throttle({ default: { limit: 3, ttl: 60_000 } })
-  // forgotPassword(@Body() dto: ForgotPasswordDto) {
-  //   return this.authService.forgotPassword(dto.email);
-  // }
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
 
-  // @Post('reset-password')
-  // @HttpCode(HttpStatus.OK)
-  // // @ApiOperation({ summary: 'Reset password with token (stub)' })
-  // resetPassword(@Body() dto: ResetPasswordDto) {
-  //   return this.authService.resetPassword(dto.token, dto.newPassword);
-  // }
+  @Post('reset-password')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  resetPassword(
+    @Req() req: Request & { user: { id: string } },
+    @Body() dto: ResetPasswordDto,
+  ) {
+    return this.authService.resetPassword(req.user.id, dto);
+  }
 
-  // @Put('change-password')
-  // @HttpCode(HttpStatus.OK)
-  // @UseGuards(JwtAuthGuard)
-  // // @ApiOperation({ summary: 'Change password (requires current password)' })
-  // changePassword(
-  //   @CurrentUser('sub') userId: string,
-  //   @Body() dto: ChangePasswordDto,
-  // ) {
-  //   return this.authService.changePassword(userId, dto.currentPassword, dto.newPassword);
-  // }
 
   @Post('logout')
   @UseGuards(JwtAuthGuard, RolesGuard)

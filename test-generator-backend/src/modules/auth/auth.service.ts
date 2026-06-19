@@ -10,6 +10,8 @@ import { ERROR_MESSAGES } from 'src/common/constant/error-messages';
 import { User } from '../user/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { SendOtpDto } from './dto/send-otp.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import {
   AuthTokens,
   LoginResult,
@@ -91,64 +93,64 @@ export class AuthService {
 
     return this.sendLoginOtp(user);
   }
-  // async login(loginDto: LoginDto): Promise<LoginResponse> {
-  //   const user = await this.userRepository.findOne({
-  //     where: { email: loginDto.email },
-  //     relations: ['role_id'],
-  //     select: {
-  //       id: true,
-  //       email: true,
-  //       name: true,
-  //       password: true,
-  //       otp: true,
-  //       otpExpiresAt: true,
-  //       // role: true,
-  //       role_id: {
-  //         role_name: true,
-  //       },
-  //     },
-  //   });
-  //
-  //   if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
-  //     throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
-  //   }
-  //
-  //   if (!loginDto.otp) {
-  //     return this.sendLoginOtp(user);
-  //   }
-  //
-  //   await this.verifyOtp(user, loginDto.otp);
-  //
-  //   const role = user.role_id?.role_name;
-  //   const payload: TokenPayload = {
-  //     sub: user.id,
-  //     email: user.email,
-  //     name: user.name,
-  //     role,
-  //   };
-  //
-  //   const tokens = await this.generateTokens(payload);
-  //
-  //   return {
-  //     user: {
-  //       id: user.id,
-  //       email: user.email,
-  //       name: user.name,
-  //       role,
-  //     },
-  //     // user:{...payload},
-  //     tokens,
-  //   };
-  // }
 
-  async forgotPassword(email: string) {
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
     const user = await this.userRepository.findOne({
-      where: { email },
+      where: { email: forgotPasswordDto.email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
     });
     if (!user) {
       throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
     }
-    return user;
+
+    const temporaryPassword = this.generateOtp();
+    const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+
+    await this.userRepository.update(user.id, {
+      password: hashedPassword,
+    });
+
+    await this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Your temporary password - Test Generator',
+      template: 'forgot-password',
+      context: {
+        name: user.name ?? 'User',
+        password: temporaryPassword,
+        year: new Date().getFullYear(),
+      },
+    });
+
+    return { message: 'Temporary password sent to your email address' };
+  }
+
+  async resetPassword(userId: string, resetPasswordDto: ResetPasswordDto) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: {
+        id: true,
+        password: true,
+      },
+    });
+
+    if (
+      !user ||
+      !(await bcrypt.compare(resetPasswordDto.oldPassword, user.password))
+    ) {
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+    }
+
+    const hashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, 10);
+
+    await this.userRepository.update(user.id, {
+      password: hashedPassword,
+    });
+
+    return { message: 'Password updated successfully' };
   }
 
   // async logout(userId: string) {
@@ -206,24 +208,6 @@ export class AuthService {
       return null;
     }
   }
-
-  // private async findUserByEmail(email: string): Promise<User | null> {
-  //   return this.userRepository.findOne({
-  //     where: { email },
-  //     relations: ['role_id'],
-  //     select: {
-  //       id: true,
-  //       email: true,
-  //       name: true,
-  //       password: true,
-  //       otp: true,
-  //       otpExpiresAt: true,
-  //       role_id: {
-  //         role_name: true,
-  //       },
-  //     },
-  //   });
-  // }
 
   private async sendLoginOtp(user: User) {
     const expiresInMinutes = 5;
@@ -291,28 +275,6 @@ export class AuthService {
     return randomInt(100000, 1000000).toString();
   }
 
-  // private async completeLogin(user: User): Promise<LoginResult> {
-  //   const role = user.role_id?.role_name;
-  //   const payload: TokenPayload = {
-  //     sub: user.id,
-  //     email: user.email,
-  //     name: user.name,
-  //     role,
-  //   };
-  //
-  //   const tokens = await this.generateTokens(payload);
-  //
-  //   return {
-  //     user: {
-  //       id: user.id,
-  //       email: user.email,
-  //       name: user.name,
-  //       role,
-  //     },
-  //     tokens,
-  //   };
-  // }
-
   private async generateTokens(payload: TokenPayload): Promise<AuthTokens> {
     const accessSecret =this.configService.getOrThrow<string>('app.jwt.accessSecret');
     const refreshSecret =this.configService.getOrThrow<string>('app.jwt.refreshSecret');
@@ -326,9 +288,9 @@ export class AuthService {
     });
 
     const [accessToken, refreshToken] = await Promise.all([
+      //this.jwtService.signAsync(payload, { secret: accessSecret,expiresIn: accessExpires as JwtSignOptions['expiresIn']}),
       //this is the actual structure but we use the signOptions function for better readability,
-      //  here "secret" and "expiresIn" should be fixed because signOptions aspect the  same varibale
-      // this.jwtService.signAsync(payload, { secret: accessSecret,expiresIn: accessExpires as JwtSignOptions['expiresIn']}),
+      //here "secret" and "expiresIn" should be fixed because signOptions aspect the  same varibale
       this.jwtService.signAsync(payload, signOptions(accessSecret, accessExpires)),
       this.jwtService.signAsync(payload, signOptions(refreshSecret, refreshExpires)),
     ]);

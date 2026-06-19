@@ -14,6 +14,7 @@ import { JwtStrategy } from '../../common/strategies/jwt.strategy';
     UserModule,
     TypeOrmModule.forFeature([User]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
+
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -21,7 +22,6 @@ import { JwtStrategy } from '../../common/strategies/jwt.strategy';
         const expiresIn = configService.getOrThrow<string>(
           'app.jwt.accessExpiresIn',
         );
-
         return {
           secret: configService.getOrThrow<string>('app.jwt.accessSecret'),
           signOptions: {

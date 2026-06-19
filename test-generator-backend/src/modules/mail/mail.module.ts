@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Module, Logger } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailerModule, MailerOptions } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
@@ -11,6 +11,7 @@ import type SMTPTransport from 'nodemailer/lib/smtp-transport';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService): MailerOptions => {
+        Logger.log('Loading mail module', 'MailModule');
         const enabled = configService.get<boolean>('mail.enabled', true);
         const from = configService.getOrThrow<string>('mail.from');
         const template = {
