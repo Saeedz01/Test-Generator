@@ -1,0 +1,2 @@
+/** Book-specific hooks. */
+export {};

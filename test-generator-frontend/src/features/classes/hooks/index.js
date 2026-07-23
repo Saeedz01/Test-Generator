@@ -1,0 +1,2 @@
+/** Class-specific hooks. */
+export {};
