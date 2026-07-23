@@ -27,7 +27,7 @@ export function HomeCtaSection() {
         </p>
         <div className="mt-8 flex justify-center">
           <Link
-            href={ROUTES.DASHBOARD}
+            href={ROUTES.CLASSES}
             className={cn(
               buttonVariants({ variant: "secondary", size: "lg" }),
               "border-transparent bg-neutral-0 text-primary-800 hover:bg-primary-50",

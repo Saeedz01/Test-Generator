@@ -1,6 +1,7 @@
-import { redirect } from "next/navigation";
-import { ROUTES } from "@/constants";
+"use client";
 
-export default function LegacyChaptersPage() {
-  redirect(ROUTES.CLASSES);
+import { ChaptersAdmin } from "@/features/admin";
+
+export default function AdminChaptersPage() {
+  return <ChaptersAdmin />;
 }

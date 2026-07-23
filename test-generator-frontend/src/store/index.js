@@ -7,11 +7,13 @@
 
 import { configureStore } from "@reduxjs/toolkit";
 import selectionReducer from "./selectionSlice";
+import adminContentReducer from "./adminContentSlice";
 
 export function makeStore() {
   return configureStore({
     reducer: {
       selection: selectionReducer,
+      adminContent: adminContentReducer,
     },
     devTools: process.env.NODE_ENV !== "production",
   });

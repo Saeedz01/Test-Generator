@@ -31,7 +31,7 @@ export const featuredClasses: FeaturedClassCard[] = [
     subtitle: "Secondary foundation",
     booksCount: 8,
     icon: "graduation",
-    href: "/dashboard/classes/class-9/books",
+    href: "/classes/class-9/books",
   },
   {
     id: "feat-10",
@@ -39,7 +39,7 @@ export const featuredClasses: FeaturedClassCard[] = [
     subtitle: "Board preparation",
     booksCount: 10,
     icon: "book",
-    href: "/dashboard/classes/class-10/books",
+    href: "/classes/class-10/books",
   },
   {
     id: "feat-11",
@@ -47,7 +47,7 @@ export const featuredClasses: FeaturedClassCard[] = [
     subtitle: "Pre-college track",
     booksCount: 12,
     icon: "flask",
-    href: "/dashboard/classes/class-11/books",
+    href: "/classes/class-11/books",
   },
   {
     id: "feat-12",
@@ -55,7 +55,7 @@ export const featuredClasses: FeaturedClassCard[] = [
     subtitle: "Final secondary year",
     booksCount: 14,
     icon: "graduation",
-    href: "/dashboard/classes/class-12/books",
+    href: "/classes/class-12/books",
   },
   {
     id: "feat-ics",
@@ -63,7 +63,7 @@ export const featuredClasses: FeaturedClassCard[] = [
     subtitle: "Computer science group",
     booksCount: 9,
     icon: "laptop",
-    href: "/dashboard/classes/class-ics/books",
+    href: "/classes/class-ics/books",
   },
   {
     id: "feat-icom",
@@ -71,7 +71,7 @@ export const featuredClasses: FeaturedClassCard[] = [
     subtitle: "Commerce group",
     booksCount: 7,
     icon: "briefcase",
-    href: "/dashboard/classes/class-icom/books",
+    href: "/classes/class-icom/books",
   },
   {
     id: "feat-fa",
@@ -79,7 +79,7 @@ export const featuredClasses: FeaturedClassCard[] = [
     subtitle: "Arts & humanities",
     booksCount: 6,
     icon: "palette",
-    href: "/dashboard/classes/class-fa/books",
+    href: "/classes/class-fa/books",
   },
 ];
 
@@ -150,8 +150,7 @@ export const homeStats: HomeStat[] = [
 ];
 
 export const footerNav = [
-  { label: "Classes", href: "/dashboard/classes" },
-  { label: "Generate Test", href: "/dashboard" },
+  { label: "Classes", href: "/classes" },
+  { label: "Admin", href: "/dashboard" },
   { label: "Sign in", href: "/login" },
-  { label: "Create account", href: "/register" },
 ];

@@ -1,11 +1,15 @@
 /**
  * Asymmetrical flowing divider — left higher, right lower.
- * Soft cubic path (not a sharp triangle) so the next section continues cleanly.
+ * Black 1px stroke follows the curve so the hero edge reads as a zigzag border.
  */
+
+const CURVE_PATH =
+  "M0,48 C180,18 320,10 480,28 C720,58 820,110 1080,92 C1260,80 1360,70 1440,88";
+
 export function HeroDivider() {
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 bottom-0 leading-[0]"
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-10 leading-[0]"
       aria-hidden="true"
     >
       <svg
@@ -13,9 +17,20 @@ export function HeroDivider() {
         preserveAspectRatio="none"
         className="block h-16 w-full sm:h-20 lg:h-24"
       >
+        {/* White fill continues into the next section */}
         <path
-          d="M0,48 C180,18 320,10 480,28 C720,58 820,110 1080,92 C1260,80 1360,70 1440,88 L1440,120 L0,120 Z"
+          d={`${CURVE_PATH} L1440,120 L0,120 Z`}
           className="fill-neutral-0"
+        />
+        {/* 1px black border along the zigzag curve */}
+        <path
+          d={CURVE_PATH}
+          fill="none"
+          stroke="#000000"
+          strokeWidth="1"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
         />
       </svg>
     </div>

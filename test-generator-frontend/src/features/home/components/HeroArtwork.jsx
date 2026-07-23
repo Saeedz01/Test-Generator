@@ -4,7 +4,7 @@
  */
 export function HeroArtwork() {
   return (
-    <div className="relative aspect-square w-full max-w-lg mx-auto lg:ml-auto">
+    <div className="relative mx-auto aspect-square h-full max-h-full w-full max-w-lg lg:ml-auto">
       <div
         aria-hidden="true"
         className="absolute inset-6 rounded-[var(--radius-2xl)] border border-neutral-200/80 bg-neutral-0/80 shadow-sm backdrop-blur-sm"

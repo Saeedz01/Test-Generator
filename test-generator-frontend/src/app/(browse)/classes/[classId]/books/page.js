@@ -1,7 +1,6 @@
 "use client";
 
-import { use } from "react";
-import { useEffect } from "react";
+import { use, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { BooksGrid } from "@/features/books";
 import { getClassById } from "@/data/curriculum";

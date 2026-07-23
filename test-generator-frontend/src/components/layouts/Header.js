@@ -1,5 +1,5 @@
 /**
- * Premium public header — brand + primary navigation.
+ * Premium public header — Classes (browse) + Admin (dashboard) + Login only.
  */
 import Link from "next/link";
 import { buttonVariants, Container } from "@/components/ui";
@@ -8,7 +8,7 @@ import { cn } from "@/utils";
 
 const NAV = [
   { label: "Classes", href: ROUTES.CLASSES },
-  { label: "Dashboard", href: ROUTES.DASHBOARD },
+  { label: "Admin", href: ROUTES.DASHBOARD },
 ];
 
 export default function Header() {
@@ -37,18 +37,9 @@ export default function Header() {
         <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href={ROUTES.LOGIN}
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "sm" }),
-              "hidden sm:inline-flex",
-            )}
-          >
-            Sign in
-          </Link>
-          <Link
-            href={ROUTES.REGISTER}
             className={cn(buttonVariants({ variant: "primary", size: "sm" }))}
           >
-            Get started
+            Sign in
           </Link>
         </div>
       </Container>

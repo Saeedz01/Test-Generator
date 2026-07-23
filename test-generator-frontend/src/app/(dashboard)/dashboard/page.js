@@ -1,6 +1,7 @@
-import { redirect } from "next/navigation";
-import { ROUTES } from "@/constants";
+"use client";
 
-export default function DashboardHomePage() {
-  redirect(ROUTES.CLASSES);
+import { AdminOverview } from "@/features/admin";
+
+export default function AdminDashboardPage() {
+  return <AdminOverview />;
 }

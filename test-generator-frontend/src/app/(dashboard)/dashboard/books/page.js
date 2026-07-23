@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation";
-import { ROUTES } from "@/constants";
+"use client";
 
-/** Legacy flat route → classes library */
-export default function LegacyBooksPage() {
-  redirect(ROUTES.CLASSES);
+import { BooksAdmin } from "@/features/admin";
+
+export default function AdminBooksPage() {
+  return <BooksAdmin />;
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { ClassesGrid } from "@/features/classes";
+import { ClassesAdmin } from "@/features/admin";
 
-export default function ClassesPage() {
-  return <ClassesGrid />;
+export default function AdminClassesPage() {
+  return <ClassesAdmin />;
 }

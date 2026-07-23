@@ -1,6 +1,7 @@
-import { redirect } from "next/navigation";
-import { ROUTES } from "@/constants";
+"use client";
 
-export default function LegacyQuestionsPage() {
-  redirect(ROUTES.CLASSES);
+import { QuestionsAdmin } from "@/features/admin";
+
+export default function AdminQuestionsPage() {
+  return <QuestionsAdmin />;
 }

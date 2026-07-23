@@ -7,11 +7,18 @@ import { HeroArtwork } from "./HeroArtwork";
 import { HeroDivider } from "./HeroDivider";
 
 /**
- * Full-bleed interactive hero — brand, quote, CTAs, and decorative artwork.
+ * Full-bleed interactive hero — capped to one viewport (below sticky header)
+ * so the asymmetrical bottom curve is visible without scrolling.
  */
 export function HomeHero() {
   return (
-    <section className="relative isolate overflow-hidden bg-gradient-to-br from-primary-50 via-neutral-0 to-info-50">
+    <section
+      className={cn(
+        "relative isolate flex flex-col overflow-hidden",
+        "h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)]",
+        "bg-gradient-to-br from-primary-50 via-neutral-0 to-info-50",
+      )}
+    >
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 overflow-hidden"
@@ -25,9 +32,15 @@ export function HomeHero() {
         <span className="animate-float absolute top-[42%] left-[8%] size-1.5 rounded-full bg-neutral-400/40" />
       </div>
 
-      <Container className="relative grid items-center gap-12 pt-14 pb-28 lg:grid-cols-2 lg:gap-16 lg:pt-20 lg:pb-36">
+      <Container
+        className={cn(
+          "relative grid min-h-0 flex-1 items-center",
+          "gap-6 py-8 pb-20 sm:gap-8 sm:py-10 sm:pb-24",
+          "lg:grid-cols-2 lg:gap-12 lg:py-12 lg:pb-28",
+        )}
+      >
         <div className="max-w-xl">
-          <p className="mb-5 inline-flex max-w-md items-start gap-2 rounded-[var(--radius-md)] border border-primary-200/80 bg-neutral-0/70 px-3 py-2 text-caption leading-relaxed text-primary-800 shadow-xs backdrop-blur-sm">
+          <p className="mb-4 inline-flex max-w-md items-start gap-2 rounded-[var(--radius-md)] border border-primary-200/80 bg-neutral-0/70 px-3 py-2 text-caption leading-relaxed text-primary-800 shadow-xs backdrop-blur-sm">
             <span className="mt-0.5 text-primary-500" aria-hidden="true">
               ❝
             </span>
@@ -39,25 +52,25 @@ export function HomeHero() {
             </span>
           </p>
 
-          <p className="mb-3 text-small font-semibold tracking-[0.08em] text-primary-700 uppercase">
+          <p className="mb-2 text-small font-semibold tracking-[0.08em] text-primary-700 uppercase">
             Test Generator
           </p>
 
           <Heading
             level="display"
-            className="max-w-lg text-[2.35rem] sm:text-display"
+            className="max-w-lg text-[2rem] leading-tight sm:text-[2.35rem] lg:text-display"
           >
             Build better exams in minutes, not hours
           </Heading>
 
-          <p className="mt-5 max-w-md text-body text-neutral-600">
+          <p className="mt-3 max-w-md text-small text-neutral-600 sm:mt-4 sm:text-body">
             A calm, modern workspace for teachers — generate balanced papers
             from chapter-wise MCQs, short, and long questions.
           </p>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:items-center">
             <Link
-              href={ROUTES.DASHBOARD}
+              href={ROUTES.CLASSES}
               className={cn(
                 buttonVariants({ variant: "primary", size: "lg" }),
                 "sm:min-w-[10.5rem]",
@@ -77,8 +90,10 @@ export function HomeHero() {
           </div>
         </div>
 
-        <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-          <HeroArtwork />
+        <div className="relative mx-auto hidden w-full max-w-md min-[480px]:block lg:max-w-none">
+          <div className="mx-auto flex h-[min(42vh,22rem)] w-full items-center justify-center lg:h-[min(52vh,28rem)]">
+            <HeroArtwork />
+          </div>
         </div>
       </Container>
 

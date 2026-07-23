@@ -1,11 +1,10 @@
 /**
- * =============================================================================
- * features/admin
- * =============================================================================
- * Admin console domain (user/role management, platform ops).
- * Aligns with NestJS `modules/admin`.
- * Add `services/api/admin.api.ts` when this surface is implemented.
- * =============================================================================
+ * features/admin — system admin CRUD surfaces (frontend-only for now).
  */
-
-export {};
+export {
+  AdminOverview,
+  ClassesAdmin,
+  BooksAdmin,
+  ChaptersAdmin,
+  QuestionsAdmin,
+} from "./components";
