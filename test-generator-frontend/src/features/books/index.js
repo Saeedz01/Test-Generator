@@ -1,11 +1,4 @@
 /**
- * =============================================================================
- * features/books
- * =============================================================================
- * Books / curriculum texts domain.
- * Aligns with NestJS `modules/book`.
- * API: `services/api/books.api.ts`
- * =============================================================================
+ * features/books — book browsing for a selected class.
  */
-
-export {};
+export { BookCard, BooksSearch, BooksGrid } from "./components";

@@ -1,4 +1,2 @@
-/**
- * Class-specific UI components.
- */
-export {};
+export { ClassCard } from "./ClassCard";
+export { ClassesGrid } from "./ClassesGrid";

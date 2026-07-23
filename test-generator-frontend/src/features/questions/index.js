@@ -1,11 +1,9 @@
 /**
- * =============================================================================
- * features/questions
- * =============================================================================
- * Question bank domain (MCQ, short, long).
- * Aligns with NestJS `modules/questions`.
- * API: `services/api/questions.api.ts`
- * =============================================================================
+ * features/questions — chapter question selection board.
  */
-
-export {};
+export {
+  QuestionItem,
+  QuestionGroup,
+  StickyGenerateBar,
+  QuestionsBoard,
+} from "./components";

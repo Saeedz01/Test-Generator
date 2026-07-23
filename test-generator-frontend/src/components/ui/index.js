@@ -8,7 +8,8 @@
  * =============================================================================
  */
 
-export { Button, buttonVariants } from "./Button";
+export { Button } from "./Button";
+export { buttonVariants } from "./button-variants";
 export { Badge, badgeVariants } from "./Badge";
 export { Loader, loaderVariants } from "./Loader";
 export { Skeleton, skeletonVariants } from "./Skeleton";

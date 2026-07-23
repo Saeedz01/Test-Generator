@@ -1,11 +1,4 @@
 /**
- * =============================================================================
- * features/classes
- * =============================================================================
- * Academic classes / grades domain.
- * Aligns with NestJS `modules/class`.
- * API: `services/api/classes.api.ts`
- * =============================================================================
+ * features/classes — class selection UI for the test-builder flow.
  */
-
-export {};
+export { ClassCard, ClassesGrid } from "./components";

@@ -1,4 +1,4 @@
-/**
- * Question-specific UI (lists, editors, filters). Domain-aware — not design tokens.
- */
-export {};
+export { QuestionItem } from "./QuestionItem";
+export { QuestionGroup } from "./QuestionGroup";
+export { StickyGenerateBar } from "./StickyGenerateBar";
+export { QuestionsBoard } from "./QuestionsBoard";

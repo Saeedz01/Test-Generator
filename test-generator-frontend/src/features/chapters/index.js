@@ -1,11 +1,4 @@
 /**
- * =============================================================================
- * features/chapters
- * =============================================================================
- * Chapters within books.
- * Aligns with NestJS `modules/chapter`.
- * API: `services/api/chapters.api.ts`
- * =============================================================================
+ * features/chapters — chapter sidebar navigation.
  */
-
-export {};
+export { ChapterSidebar, ChaptersLayout } from "./components";

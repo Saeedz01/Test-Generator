@@ -25,3 +25,26 @@ export {
   getQuestionsByChapterId,
   getQuestionsByType,
 } from "./dummy";
+
+export {
+  homeQuote,
+  featuredClasses,
+  platformFeatures,
+  homeStats,
+  footerNav,
+} from "./home";
+
+export {
+  curriculumClasses,
+  curriculumBooks,
+  curriculumChapters,
+  curriculumQuestions,
+  getClassById,
+  getBookById,
+  getChapterById,
+  getBooksByClassId as getCurriculumBooksByClassId,
+  getChaptersByBookId as getCurriculumChaptersByBookId,
+  getQuestionsByChapterId as getCurriculumQuestionsByChapterId,
+  getBooksCountByClassId,
+  groupQuestionsByType,
+} from "./curriculum";

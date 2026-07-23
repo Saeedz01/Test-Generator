@@ -46,3 +46,61 @@ body {
   white-space: nowrap;
   border-width: 0;
 }
+
+/* Subtle floating motion for hero decorations (opacity / translateY only) */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+}
+
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float {
+  animation: float 5.5s var(--ease-standard) infinite;
+}
+
+.animate-float-delayed {
+  animation: float 6.5s var(--ease-standard) 0.8s infinite;
+}
+
+.animate-float-slow {
+  animation: float-soft 7.5s var(--ease-standard) 0.4s infinite;
+}
+
+@keyframes fadeRise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-float-delayed,
+  .animate-float-slow {
+    animation: none;
+  }
+
+  .animate-\[fadeRise_0\.35s_ease_both\] {
+    animation: none !important;
+  }
+}

@@ -1,4 +1,2 @@
-/**
- * Chapter-specific UI components.
- */
-export {};
+export { ChapterSidebar } from "./ChapterSidebar";
+export { ChaptersLayout } from "./ChaptersLayout";
