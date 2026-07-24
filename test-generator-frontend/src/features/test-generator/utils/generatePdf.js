@@ -1,6 +1,6 @@
 /**
  * Prints a test paper via a hidden iframe (no pop-up window).
- * Browsers allow print() from a user click without enabling pop-ups.
+ * Uses a blob URL so the print footer does not show /test.
  * Later: replace with `fetch('/api/tests/pdf', { method: 'POST', body })`.
  */
 
@@ -52,29 +52,33 @@ export function generatePdf(meta, questions) {
   try {
     const html = buildTestPaperHtml(meta, questions, { autoPrint: false });
     const iframe = getPrintFrame();
-    const frameWindow = iframe.contentWindow;
-    const frameDocument = frameWindow?.document;
+    const blob = new Blob([html], { type: "text/html" });
+    const blobUrl = URL.createObjectURL(blob);
 
-    if (!frameWindow || !frameDocument) {
-      return { ok: false, error: "Could not prepare the print view. Please try again." };
-    }
-
-    frameDocument.open();
-    frameDocument.write(html);
-    frameDocument.close();
-
-    // document.write often skips the load event — print on the next frames.
-    const triggerPrint = () => {
-      frameWindow.focus();
-      frameWindow.print();
+    const cleanup = () => {
+      URL.revokeObjectURL(blobUrl);
     };
 
-    if (frameDocument.readyState === "complete") {
+    const triggerPrint = () => {
+      const frameWindow = iframe.contentWindow;
+      if (!frameWindow) {
+        cleanup();
+        return;
+      }
+      try {
+        frameWindow.document.title = " ";
+      } catch {
+        // ignore cross-document title issues
+      }
+      frameWindow.focus();
+      frameWindow.print();
+      window.setTimeout(cleanup, 1000);
+    };
+
+    iframe.onload = () => {
       window.setTimeout(triggerPrint, 100);
-    } else {
-      iframe.onload = () => window.setTimeout(triggerPrint, 100);
-      window.setTimeout(triggerPrint, 400);
-    }
+    };
+    iframe.src = blobUrl;
 
     return { ok: true };
   } catch {

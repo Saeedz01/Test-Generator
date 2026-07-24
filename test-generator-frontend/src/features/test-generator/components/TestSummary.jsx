@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
 import { FileDown, Trash2 } from "lucide-react";
@@ -25,6 +26,8 @@ import {
 } from "@/store/selectionSlice";
 import { cn } from "@/utils";
 import { generatePdf } from "../utils/generatePdf";
+import { applyMarksConfig } from "../utils/testSettingsStorage";
+import { GenerateTestModal } from "./GenerateTestModal";
 
 const TYPE_LABEL = {
   mcq: "MCQ",
@@ -43,29 +46,40 @@ export function TestSummary() {
   const questions = useSelector(selectSelectedQuestionsList);
   const count = useSelector(selectSelectedQuestionCount);
   const marks = useSelector(selectTotalMarks);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const ordered = [...questions].sort((a, b) => {
     const order = { mcq: 0, short: 1, long: 2 };
     return (order[a.type] ?? 9) - (order[b.type] ?? 9);
   });
 
-  const handleGeneratePdf = () => {
+  const handleConfirmSettings = (settings) => {
+    const { scored, totalMarks } = applyMarksConfig(ordered, settings);
+
     const result = generatePdf(
       {
-        title: "Generated Class Test",
+        instituteName: settings.lastInstitute,
         className: schoolClass?.name,
         bookName: book?.name,
         chapterName: chapter?.name,
+        timeAllowed: settings.timeAllowed,
+        totalMarks,
+        copiesPerPage: settings.copiesPerPage || 1,
+        headingFontSize: settings.headingFontSize,
+        subtextFontSize: settings.subtextFontSize,
       },
-      ordered,
+      scored,
     );
+
+    setSettingsOpen(false);
 
     if (!result.ok) {
       toast.error(result.error || "Could not generate PDF.");
       return;
     }
-    toast.success("Print dialog opened — choose “Save as PDF” if you want a file.");
-  };
+    toast.success(
+      "Print dialog opened — turn off “Headers and footers” to hide date/URL, then Save as PDF.",
+    );  };
 
   if (count === 0) {
     return (
@@ -89,7 +103,8 @@ export function TestSummary() {
       <div>
         <Heading level="h1">Test Summary</Heading>
         <p className="mt-2 text-body text-neutral-600">
-          Review your selection, then generate a printable paper.
+          Review your selection, then set marks and time before generating the
+          paper.
         </p>
       </div>
 
@@ -100,7 +115,7 @@ export function TestSummary() {
         </Card>
         <Card className="text-center">
           <p className="text-h3 font-semibold text-primary-700">{marks}</p>
-          <p className="text-caption text-neutral-500">Total marks</p>
+          <p className="text-caption text-neutral-500">Bank marks</p>
         </Card>
         <Card className="text-center">
           <p className="text-h5 font-semibold text-neutral-900">
@@ -171,12 +186,20 @@ export function TestSummary() {
           >
             Back to questions
           </Link>
-          <Button variant="primary" onClick={handleGeneratePdf}>
+          <Button variant="primary" onClick={() => setSettingsOpen(true)}>
             <FileDown className="size-4" aria-hidden="true" />
             Generate PDF
           </Button>
         </div>
       </div>
+
+      <GenerateTestModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        questions={ordered}
+        defaultClassName={schoolClass?.name || ""}
+        onConfirm={handleConfirmSettings}
+      />
     </div>
   );
 }
