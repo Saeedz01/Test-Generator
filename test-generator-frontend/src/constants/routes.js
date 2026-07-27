@@ -13,7 +13,7 @@ export const ROUTES = {
   bookChapters: (classId, bookId) =>
     `/classes/${classId}/books/${bookId}/chapters`,
   chapterQuestions: (classId, bookId, chapterId) =>
-    `/classes/${classId}/books/${bookId}/chapters/${chapterId}/questions`,
+    `/classes/${classId}/books/${bookId}/chapters/${chapterId}`,
 
   // System admin
   DASHBOARD: "/dashboard",
