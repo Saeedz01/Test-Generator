@@ -2,5 +2,7 @@ import { IsString, } from 'class-validator';
 
 export class CreateSchoolClassDto {
   @IsString()
-  name: string;
+  name !: string;
+  code !: string;
+  description !: string;
 }

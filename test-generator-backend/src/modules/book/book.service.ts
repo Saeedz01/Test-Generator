@@ -26,7 +26,7 @@ export class BookService {
   ) {}
   
   // book service methods
-  async create(createBookDto: CreateBookDto) {
+  async createBook(createBookDto: CreateBookDto) {
     const schoolClassRecord = await this.classRepository.findOne({
       where: {
         name: createBookDto.class_name,
@@ -39,11 +39,13 @@ export class BookService {
 
     const book = this.bookRepository.create({
       book_name: createBookDto.book_name,
+      description: createBookDto.description,
+      edition: createBookDto.edition,
       class: schoolClassRecord,
     });
 
     return await this.bookRepository.save(book);
-  } 
+  }
 
   async findAll(): Promise<Book[]> {
     const books = await this.bookRepository.find();

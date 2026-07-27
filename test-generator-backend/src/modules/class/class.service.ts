@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UpdateClassDto } from './dto/update-class.dto';
+import { UpdateClassDto } from '../admin/dto/update-class.dto';
 import { schoolClass } from './entities/class.entity';
-import { CreateSchoolClassDto } from './dto/create-class.dto';
+import { CreateSchoolClassDto } from '../admin/dto/create-class.dto';
 
 @Injectable()
 export class ClassService {
@@ -30,20 +30,12 @@ export class ClassService {
   }
 
   async findAll() {
-    const classes = await this.schoolClassRepository.find({
-    //   order: {
-    //   sortOrder: 'ASC',
-    // },
-    // relations: {
-    //   books: true,
-    //   chapters: true,
-    //   questions: true,
-    // },
-    })
-    if(!classes || classes.length === 0) {
-      throw new NotFoundException('No classes found');
-    }
-    return classes;
+    return this.schoolClassRepository.find({
+      order: {
+        sortOrder: 'ASC',
+        name: 'ASC',
+      },
+    });
   }
 
   async findOne(id: string): Promise<schoolClass> {

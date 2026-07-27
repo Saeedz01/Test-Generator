@@ -12,6 +12,6 @@ import { ClassModule } from '../class/class.module';
   ],
   controllers: [BookController],
   providers: [BookService],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, BookService],
 })
 export class BookModule {}

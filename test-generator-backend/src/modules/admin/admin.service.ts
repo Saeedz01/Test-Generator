@@ -1,26 +1,35 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAdminDto } from './dto/create-admin.dto';
-import { UpdateAdminDto } from './dto/update-admin.dto';
+import { ConflictException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { schoolClass } from '../class/entities/class.entity';
+import { CreateSchoolClassDto } from './dto/create-class.dto';
+import { UpdateClassDto } from './dto/update-class.dto';
 
 @Injectable()
 export class AdminService {
-  create(createAdminDto: CreateAdminDto) {
-    return 'This action adds a new admin';
-  }
 
-  findAll() {
-    return `This action returns all admin`;
-  }
+  constructor(
+    @InjectRepository(schoolClass)
+    private readonly schoolClassRepository: Repository<schoolClass>
+  ) {}
 
-  findOne(id: number) {
-    return `This action returns a #${id} admin`;
-  }
+  // -------service methods for admin------------
 
-  update(id: number, updateAdminDto: UpdateAdminDto) {
-    return `This action updates a #${id} admin`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} admin`;
-  }
+  async createClass(dto: CreateSchoolClassDto): Promise<schoolClass> {
+      const existingClass = await this.schoolClassRepository.findOne({
+        where: { name: dto.name },
+      });
+      if (existingClass) {
+        throw new ConflictException('Class name already exists');
+      }
+  
+      const newClass = this.schoolClassRepository.create({
+        name: dto.name,
+        description: dto.description,
+        code: dto.code,
+        sortOrder: 0,
+      });
+      return await this.schoolClassRepository.save(newClass);
+    }
+ 
 }

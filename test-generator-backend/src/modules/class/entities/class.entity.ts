@@ -8,32 +8,38 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 @Entity('classes')
 export class schoolClass {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column({ type: 'varchar', length: 255, unique: true })
-    name: string;
+    name!: string;
 
-    @Column({ type: 'int' })
-    sortOrder: number;
+    @Column({ type: 'varchar', length: 50, unique: true })
+    code!: string;
+
+    @Column({ type: 'text', nullable: true })
+    description!: string | null;
+
+    @Column({ type: 'int', default: 0 })
+    sortOrder!: number;
 
     @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    createdAt: Date;
+    createdAt!: Date;
 
     @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
-    updatedAt: Date;
+    updatedAt!: Date;
 
     @OneToMany(() => Book, (book) => book.class)
-    books: Book[];
+    books!: Book[];
 
     @OneToMany(() => Chapter, (chapter) => chapter.class)
-    chapters: Chapter[];
+    chapters!: Chapter[];
 
     @OneToMany(() => LongQuestion, (question) => question.class)
-    questions: LongQuestion[];
+    questions!: LongQuestion[];
 
     @OneToMany(() => ShortQuestion, (question) => question.class)
-    shortQuestions: ShortQuestion[];
+    shortQuestions!: ShortQuestion[];
 
     @OneToMany(() => McqQuestion, (question) => question.class)
-    mcqQuestions: McqQuestion[];
+    mcqQuestions!: McqQuestion[];
 }

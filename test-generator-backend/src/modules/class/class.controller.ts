@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { ClassService } from './class.service';
-import { CreateSchoolClassDto } from './dto/create-class.dto';
-import { UpdateClassDto } from './dto/update-class.dto';
+import { CreateSchoolClassDto } from '../admin/dto/create-class.dto';
+import { UpdateClassDto } from '../admin/dto/update-class.dto';
 
-@Controller('class')
+@Controller('schoolclasses')
 export class ClassController {
   constructor(private readonly classService: ClassService) {}
 

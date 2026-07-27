@@ -29,7 +29,10 @@ export default registerAs('app', () => ({
     listTtl: 600,
   },
   cors: {
-    origins: (process.env.CORS_ORIGINS || 'http://localhost:5000')
+    origins: (
+      process.env.CORS_ORIGINS ||
+      'http://localhost:3000,http://localhost:3001'
+    )
       .split(',')
       .map((o) => o.trim())
       .filter(Boolean),
