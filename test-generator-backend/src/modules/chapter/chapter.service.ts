@@ -21,7 +21,7 @@ export class ChapterService {
   ) {}
 
   async create(createChapterDto: CreateChapterDto) {
-    const { classId, bookId, chapter_name } = createChapterDto;
+    const { classId, bookId, chapter_name, order } = createChapterDto;
     //check if chapter already exists
     const existingChapter = await this.chapterRepository.findOne({
       where: { chapter_name, class: { id: classId }, book: { id: bookId } },
@@ -54,17 +54,33 @@ export class ChapterService {
       chapter_name,
       class: schoolClass,
       book: book,
+      order,
     });
 
     return await this.chapterRepository.save(chapter);
   }
 
   async findAll() {
-    const chapters = await this.chapterRepository.find();
+    const chapters = await this.chapterRepository.find({
+      relations: { class: true, book: true },
+    });
     if (!chapters) {
       throw new NotFoundException('Chapters not found');
     }
-    return chapters;
+
+    // Normalize shape for frontend: provide `id`, `name`, `classId`, `bookId`, `order`, `description`
+    return chapters.map((ch) => ({
+      id: ch.id,
+      name: ch.chapter_name,
+      classId: ch.class?.id,
+      className: ch.class?.name,
+      bookId: ch.book?.id,
+      bookName: ch.book?.book_name,
+      order: ch.order,
+      description: ch.description,
+      createdAt: ch.createdAt,
+      updatedAt: ch.updatedAt,
+    }));
   }
 
   async findOne(id: string) {

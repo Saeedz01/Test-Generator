@@ -3,12 +3,15 @@ import { AdminService } from './admin.service';
 import { CreateSchoolClassDto } from './dto/create-class.dto';
 import { BookService } from '../book/book.service';
 import { CreateBookDto } from '../book/dto/create-book.dto';
+import { ChapterService } from '../chapter/chapter.service';
+import { CreateChapterDto } from '../chapter/dto/create-chapter.dto';
 
 @Controller('admin')
 export class AdminController {
   constructor(
     private readonly adminService: AdminService,
-    private readonly bookService: BookService
+    private readonly bookService: BookService,
+    private readonly chapterService: ChapterService
   ) {}
 
   @Post('createClass')
@@ -21,6 +24,10 @@ export class AdminController {
     return this.bookService.createBook(dto);
   }
 
+  @Post('createChapter')
+  createChapter(@Body() dto: CreateChapterDto) {
+    return this.chapterService.create(dto);
+  }
   // @Get()
   // findAll() {
   //   return this.adminService.findAll();

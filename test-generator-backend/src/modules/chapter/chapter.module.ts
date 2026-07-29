@@ -14,6 +14,6 @@ import { BookModule } from '../book/book.module';
   ],
   controllers: [ChapterController],
   providers: [ChapterService],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, ChapterService],
 })
 export class ChapterModule {}

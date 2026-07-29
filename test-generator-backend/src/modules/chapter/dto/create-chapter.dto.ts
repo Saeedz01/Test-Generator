@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber } from 'class-validator';
 
 export class CreateChapterDto {
   @IsString()
@@ -12,4 +12,8 @@ export class CreateChapterDto {
   @IsString()
   @IsNotEmpty()
   chapter_name: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  order: number;
 }

@@ -1,20 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui";
-import {
-  addChapter,
-  deleteChapter,
-  selectAdminBooks,
-  selectAdminChapters,
-  selectAdminClasses,
-  updateChapter,
-} from "@/store/adminContentSlice";
+import { updateChapter } from "@/store/adminContentSlice";
 import { AdminCrudPage } from "./AdminCrudPage";
 import { AdminModal } from "./AdminModal";
 import { Field, TextInput, TextSelect, TextTextarea } from "./AdminFormFields";
+import {useGetBooksQuery} from "@/services/api/books.api";
+import {useGetClassesQuery} from "@/services/api/classes.api";
+import { useAddChapterMutation, useGetChaptersQuery } from "@/services/api/chapters.api";
 
 const EMPTY = {
   name: "",
@@ -26,27 +22,31 @@ const EMPTY = {
 
 export function ChaptersAdmin() {
   const dispatch = useDispatch();
-  const chapters = useSelector(selectAdminChapters);
-  const books = useSelector(selectAdminBooks);
-  const classes = useSelector(selectAdminClasses);
+
+  // chapters now come from the API
+  const { data: apiChapters = [], isLoading: chaptersLoading, isError: chaptersError, refetch: refetchChapters } = useGetChaptersQuery();
+
+  // fetch real classes and books from API for the dropdowns
+  const { data: apiBooks = [], isLoading: apiBooksLoading } = useGetBooksQuery();
+  const { data: apiClasses = [], isLoading: apiClassesLoading } = useGetClassesQuery();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
 
   const booksForClass = useMemo(
-    () => books.filter((book) => book.classId === form.classId),
-    [books, form.classId],
+    () => apiBooks.filter((book) => book.classId === form.classId),
+    [apiBooks, form.classId],
   );
 
   const labels = useMemo(() => {
-    const classMap = Object.fromEntries(classes.map((c) => [c.id, c.name]));
-    const bookMap = Object.fromEntries(books.map((b) => [b.id, b.name]));
+    const classMap = Object.fromEntries(apiClasses.map((c) => [c.id, c.name]));
+    const bookMap = Object.fromEntries(apiBooks.map((b) => [b.id, b.name]));
     return { classMap, bookMap };
-  }, [classes, books]);
+  }, [apiClasses, apiBooks]);
 
   const rows = useMemo(
     () =>
-      [...chapters]
+      [...apiChapters]
         .sort((a, b) => a.order - b.order)
         .map((item) => ({
           ...item,
@@ -63,11 +63,11 @@ export function ChaptersAdmin() {
           },
           onDelete: () => {
             if (!window.confirm(`Delete chapter “${item.name}”?`)) return;
-            dispatch(deleteChapter(item.id));
-            toast.success("Chapter deleted");
+            // Deleting chapters via API is not yet implemented; show message
+            toast.error("Deleting chapters is not supported yet.");
           },
         })),
-    [chapters, dispatch],
+    [apiChapters, dispatch],
   );
 
   const close = () => {
@@ -76,20 +76,35 @@ export function ChaptersAdmin() {
     setForm(EMPTY);
   };
 
-  const submit = (event) => {
+  const [addChapterMutation, { isLoading: adding }] = useAddChapterMutation();
+
+  const submit = async (event) => {
     event.preventDefault();
     if (!form.name.trim() || !form.classId || !form.bookId) {
       toast.error("Name, class, and book are required");
       return;
     }
     if (editing) {
+      // Updating chapters via API not implemented; fallback to local update
       dispatch(updateChapter({ id: editing.id, ...form }));
-      toast.success("Chapter updated");
-    } else {
-      dispatch(addChapter(form));
-      toast.success("Chapter added");
+      toast.success("Chapter updated (local)");
+      close();
+      return;
     }
-    close();
+
+    try {
+      await addChapterMutation({
+        chapter_name: form.name.trim(),
+        classId: form.classId,
+        bookId: form.bookId,
+        order: Number(form.order),
+        description: form.description || "",
+      }).unwrap();
+      toast.success("Chapter added");
+      close();
+    } catch (err) {
+      toast.error(err?.data?.message || err?.error || "Failed to add chapter");
+    }
   };
 
   return (
@@ -99,8 +114,8 @@ export function ChaptersAdmin() {
         description="Organize chapters under each book for question banks."
         addLabel="Add chapter"
         onAdd={() => {
-          const firstClass = classes[0];
-          const firstBook = books.find((b) => b.classId === firstClass?.id);
+          const firstClass = apiClasses[0];
+          const firstBook = apiBooks.find((b) => b.classId === firstClass?.id);
           setEditing(null);
           setForm({
             ...EMPTY,
@@ -144,7 +159,7 @@ export function ChaptersAdmin() {
               value={form.classId}
               onChange={(e) => {
                 const classId = e.target.value;
-                const nextBook = books.find((b) => b.classId === classId);
+                const nextBook = apiBooks.find((b) => b.classId === classId);
                 setForm((f) => ({
                   ...f,
                   classId,
@@ -152,9 +167,10 @@ export function ChaptersAdmin() {
                 }));
               }}
               required
+              disabled={apiClassesLoading}
             >
-              <option value="">Select class</option>
-              {classes.map((item) => (
+              <option value="">{apiClassesLoading ? "Loading classes..." : "Select class"}</option>
+              {apiClasses.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.name}
                 </option>
@@ -166,8 +182,9 @@ export function ChaptersAdmin() {
               value={form.bookId}
               onChange={(e) => setForm((f) => ({ ...f, bookId: e.target.value }))}
               required
+              disabled={apiBooksLoading}
             >
-              <option value="">Select book</option>
+              <option value="">{apiBooksLoading ? "Loading books..." : "Select book"}</option>
               {booksForClass.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.name}
@@ -175,7 +192,7 @@ export function ChaptersAdmin() {
               ))}
             </TextSelect>
           </Field>
-          <Field label="Order">
+          <Field label="Chapter No">
             <TextInput
               type="number"
               min="1"

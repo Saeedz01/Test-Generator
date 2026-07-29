@@ -10,10 +10,16 @@ export const API_ENDPOINTS = {
   // getClasses: `${BASE_URL}/api/admin/classes`,
 
 
-
 //   ------------Books-----------------
   addBook: `${BASE_URL}/api/admin/createBook`,
-  getBooks: `${BASE_URL}/api/admin/books`,
+  getBooks: `${BASE_URL}/api/book`,
   updateBook: (id) => `${BASE_URL}/api/admin/books/${id}`,
   deleteBook: (id) => `${BASE_URL}/api/admin/books/${id}`,
+
+
+
+// ------------Chapters-----------------
+  addChapter: `${BASE_URL}/api/admin/createChapter`,
+  getChapters: `${BASE_URL}/api/chapter`,
+
 };

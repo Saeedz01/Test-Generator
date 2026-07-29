@@ -1,19 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useMemo, useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
-import { Button } from "@/components/ui";
-import {
-  addBook,
-  deleteBook,
-  selectAdminBooks,
-  updateBook,
-} from "@/store/adminContentSlice";
+import { Button, EmptyState } from "@/components/ui";
 import { AdminCrudPage } from "./AdminCrudPage";
 import { AdminModal } from "./AdminModal";
 import { Field, TextInput, TextSelect, TextTextarea } from "./AdminFormFields";
 import { useGetClassesQuery } from "@/services/api/classes.api";
+import { useGetBooksQuery, useAddBookMutation } from "@/services/api/books.api";
 
 const EMPTY = {
   name: "",
@@ -29,8 +23,23 @@ export function BooksAdmin() {
     error: getClassesError,
   } = useGetClassesQuery();
 
-  const dispatch = useDispatch();
-  const books = useSelector(selectAdminBooks);
+  const [addBookMutation, { isLoading: isAdding }] = useAddBookMutation();
+
+  const {
+    data: books = [],
+    isLoading: booksLoading,
+    isError: booksError,
+    error: booksQueryError,
+    refetch: refetchBooks,
+  } = useGetBooksQuery();
+
+  // Some backends return a 404 with message "There are no book" when the list is empty.
+  // Treat that specific case as an empty list so the UI can show the Add flow.
+  const backendNoBooks = Boolean(
+    booksError &&
+      (String(booksQueryError?.data?.message || "").toLowerCase().includes("no book") ||
+        String(booksQueryError?.error || "").toLowerCase().includes("no book"))
+  );
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -47,27 +56,8 @@ export function BooksAdmin() {
   }, [classes]);
 
   const rows = useMemo(
-    () =>
-      books.map((item) => ({
-        ...item,
-        onEdit: () => {
-          setEditing(item);
-          setForm({
-            name: item.name,
-            classId: item.classId,
-            description: item.description || "",
-            edition: item.edition || "",
-          });
-          setOpen(true);
-        },
-        onDelete: () => {
-          if (!window.confirm(`Delete book "${item.name}"?`)) return;
-
-          dispatch(deleteBook(item.id));
-          toast.success("Book deleted");
-        },
-      })),
-    [books, dispatch]
+    () => books.map((item) => ({ ...item })),
+    [books]
   );
 
   const close = () => {
@@ -76,7 +66,7 @@ export function BooksAdmin() {
     setForm(EMPTY);
   };
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault();
 
     if (!form.name.trim() || !form.classId) {
@@ -85,15 +75,63 @@ export function BooksAdmin() {
     }
 
     if (editing) {
-      dispatch(updateBook({ id: editing.id, ...form }));
-      toast.success("Book updated");
-    } else {
-      dispatch(addBook(form));
-      toast.success("Book added");
+      toast.error("Editing books is not supported yet.");
+      return;
     }
 
-    close();
+    const selectedClass = classes.find((item) => item.id === form.classId);
+    if (!selectedClass) {
+      toast.error("Selected class is not available.");
+      return;
+    }
+
+    try {
+      await addBookMutation({
+        book_name: form.name.trim(),
+        class_name: selectedClass.name,
+        description: form.description.trim(),
+        edition: form.edition.trim(),
+      }).unwrap();
+      toast.success("Book added");
+      close();
+    } catch (error) {
+      toast.error(
+        error?.data?.message || error?.error || "Failed to add book",
+      );
+    }
   };
+
+  const autoOpenedRef = useRef(false);
+
+  useEffect(() => {
+    // If fetch finished and there are no books (including backend 'no book' 404), open modal once
+    const isEmpty = !booksLoading && (books.length === 0 || backendNoBooks);
+    if (isEmpty && !open && !autoOpenedRef.current) {
+      setForm((f) => ({ ...EMPTY, classId: classes[0]?.id || "" }));
+      setOpen(true);
+      autoOpenedRef.current = true;
+    }
+  }, [booksLoading, books, backendNoBooks, classes, open]);
+
+  if (booksLoading) {
+    return (
+      <EmptyState title="Loading books…" description="Fetching books from the API." />
+    );
+  }
+
+  if (booksError && !backendNoBooks) {
+    const message =
+      booksQueryError?.data?.message ||
+      booksQueryError?.error ||
+      "Could not reach the books API. Is the backend running on port 5000?";
+    return (
+      <EmptyState
+        title="Failed to load books"
+        description={String(message)}
+        action={<Button type="button" onClick={() => refetchBooks()}>Retry</Button>}
+      />
+    );
+  }
 
   return (
     <>
@@ -116,8 +154,7 @@ export function BooksAdmin() {
             label: "Class",
             render: (row) => classNameById[row.classId] || row.classId,
           },
-          { key: "subject", label: "Subject" },
-          { key: "author", label: "Author" },
+          { key: "edition", label: "Edition" },
         ]}
         rows={rows}
       />
@@ -218,7 +255,8 @@ export function BooksAdmin() {
 
             <Button
               type="submit"
-              disabled={getClassesLoading || classes.length === 0}
+              loading={isAdding}
+              disabled={getClassesLoading || classes.length === 0 || isAdding}
             >
               {editing ? "Save changes" : "Create"}
             </Button>

@@ -5,6 +5,6 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || 'http
 export const SplitApiSettings = createApi({
   reducerPath: 'splitApi',
   baseQuery: fetchBaseQuery({ baseUrl: `${BACKEND_URL}/api` }),
-  tagTypes: ['SchoolClass'],
+  tagTypes: ['SchoolClass', 'Book', 'Chapter'],
   endpoints: () => ({}),
 });

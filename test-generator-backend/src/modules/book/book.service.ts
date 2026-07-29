@@ -48,12 +48,20 @@ export class BookService {
   }
 
   async findAll(): Promise<Book[]> {
-    const books = await this.bookRepository.find();
+    // load the related class for each book so frontend can show class name
+    const books = await this.bookRepository.find({ relations: ["class"] });
 
-    if(!books || books.length === 0) {
-      throw new NotFoundException(ERROR_MESSAGES.BOOKS_NOT_FOUND);
+    if (!books || books.length === 0) {
+      // return empty array instead of 404 so clients can handle empty lists gracefully
+      return [];
     }
-    return books;
+
+    // map to include convenient fields expected by frontend (classId and class_name)
+    return books.map((b) => ({
+      ...b,
+      classId: b.class?.id,
+      class_name: b.class?.name,
+    }));
   }
 
   async findOne(id: string): Promise<Book> {
