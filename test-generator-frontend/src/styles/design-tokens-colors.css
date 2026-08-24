@@ -1,0 +1,131 @@
+/**
+ * =============================================================================
+ * DESIGN SYSTEM — Test Generator (Education Platform)
+ * =============================================================================
+ * Visual direction: Coursera clarity + Khan Academy approachability +
+ * Notion calm structure + Stripe trust + Linear precision.
+ *
+ * Principles
+ * - Bright, spacious, trustworthy — never playful or childish
+ * - Olive green as the brand signal; neutrals carry most of the UI
+ * - Borders over heavy shadows; motion only to clarify interaction
+ * - Tokens first — components consume these variables later
+ *
+ * Tailwind v4: values under `@theme` / `@theme inline` become utilities
+ * (e.g. bg-primary-500, text-display, rounded-card, shadow-soft).
+ * =============================================================================
+ */
+
+/* ---------------------------------------------------------------------------
+ * 1. COLOR — Primary Olive (50–900)
+ * ---------------------------------------------------------------------------
+ * Decision: A fresh “Verdant Olive” centered on #6F9A35 — clear green identity
+ * without khaki muddiness. Mid tones stay slightly vibrant for CTAs; deep
+ * tones (700–900) handle text-on-tint and pressed states with AA contrast.
+ * White + neutrals do the heavy lifting so the UI stays premium, not “green UI”.
+ * --------------------------------------------------------------------------- */
+/** Color tokens (primary, neutral, semantic, surfaces). */
+:root {
+
+  --color-primary-50: #f3f7eb;
+  --color-primary-100: #e4eed4;
+  --color-primary-200: #c9ddaa;
+  --color-primary-300: #a7c675;
+  --color-primary-400: #88b04e;
+  --color-primary-500: #6f9a35; /* Brand accent / icons / focus companion */
+  --color-primary-600: #587b2a; /* Primary buttons, key actions */
+  --color-primary-700: #446022; /* Hover (darken) / brand text on light */
+  --color-primary-800: #374c1e; /* Active / pressed */
+  --color-primary-900: #2e401b; /* High-emphasis brand type */
+
+  /* ---------------------------------------------------------------------------
+   * 2. COLOR — Neutral Gray Scale
+   * ---------------------------------------------------------------------------
+   * Decision: Warm-stone neutrals (Notion-adjacent) with a whisper of green in
+   * the undertone so olive accents feel native. Cool blue-grays would clash;
+   * cream paper tones would feel dated. Near-black (#1A1A18) for type, not pure
+   * #000, to soften contrast without losing readability.
+   * --------------------------------------------------------------------------- */
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #f7f7f5;
+  --color-neutral-100: #f1f1ee;
+  --color-neutral-200: #e3e3de;
+  --color-neutral-300: #cfcfc8;
+  --color-neutral-400: #a8a89f;
+  --color-neutral-500: #78786f;
+  --color-neutral-600: #5c5c55;
+  --color-neutral-700: #44443e;
+  --color-neutral-800: #2f2f2b;
+  --color-neutral-900: #1a1a18;
+  --color-neutral-950: #111110;
+
+  /* ---------------------------------------------------------------------------
+   * 3. COLOR — Semantic
+   * ---------------------------------------------------------------------------
+   * Decision: Semantic hues stay restrained and mature. Success leans teal-forest
+   * so it does not compete with brand olive. Warning is soft amber (not orange
+   * candy). Error is a deep rose-red (Stripe-like). Info is a calm slate-blue
+   * for focus/links — complements olive without neon saturation.
+   * --------------------------------------------------------------------------- */
+  --color-success-50: #ecf7f2;
+  --color-success-100: #d2ebe0;
+  --color-success-500: #2f9a6a;
+  --color-success-600: #247a53;
+  --color-success-700: #1c5f41;
+
+  --color-warning-50: #fbf5e8;
+  --color-warning-100: #f5e6c4;
+  --color-warning-500: #c48a1a;
+  --color-warning-600: #9a6c14;
+  --color-warning-700: #785410;
+
+  --color-error-50: #fbf0f0;
+  --color-error-100: #f5d6d6;
+  --color-error-500: #d14545;
+  --color-error-600: #b13434;
+  --color-error-700: #8f2a2a;
+
+  --color-info-50: #eef5fb;
+  --color-info-100: #d6e7f5;
+  --color-info-500: #3b7cb8;
+  --color-info-600: #2f6699;
+  --color-info-700: #25507a;
+
+  /* ---------------------------------------------------------------------------
+   * 4. COLOR — Backgrounds, Surfaces, Borders, Text, Dividers
+   * ---------------------------------------------------------------------------
+   * Decision: Canvas is soft neutral-50 (eases eye strain for long study sessions).
+   * Surfaces are pure white so content cards read as “paper on desk”. Borders are
+   * quiet (200) — elevation comes from edge definition, not drop shadows.
+   * --------------------------------------------------------------------------- */
+  --color-bg-canvas: var(--color-neutral-50);
+  --color-bg-subtle: var(--color-neutral-100);
+  --color-bg-muted: var(--color-neutral-100);
+  --color-bg-inverse: var(--color-neutral-900);
+
+  --color-surface-default: var(--color-neutral-0);
+  --color-surface-raised: var(--color-neutral-0);
+  --color-surface-sunken: var(--color-neutral-50);
+  --color-surface-overlay: var(--color-neutral-0);
+  --color-surface-brand-subtle: var(--color-primary-50);
+
+  --color-border-default: var(--color-neutral-200);
+  --color-border-subtle: var(--color-neutral-100);
+  --color-border-strong: var(--color-neutral-300);
+  --color-border-brand: var(--color-primary-300);
+  --color-border-focus: var(--color-info-500);
+
+  --color-text-primary: var(--color-neutral-900);
+  --color-text-secondary: var(--color-neutral-600);
+  --color-text-tertiary: var(--color-neutral-500);
+  --color-text-disabled: var(--color-neutral-400);
+  --color-text-inverse: var(--color-neutral-0);
+  --color-text-brand: var(--color-primary-700);
+  --color-text-link: var(--color-info-600);
+  --color-text-success: var(--color-success-700);
+  --color-text-warning: var(--color-warning-700);
+  --color-text-error: var(--color-error-700);
+
+  --color-divider: var(--color-neutral-200);
+  --color-divider-subtle: var(--color-neutral-100);
+}

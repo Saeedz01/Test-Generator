@@ -1,6 +1,6 @@
 "use client";
 
-import { BooksAdmin } from "@/features/admin";
+import { BooksAdmin } from "./features";
 
 export default function AdminBooksPage() {
   return <BooksAdmin />;

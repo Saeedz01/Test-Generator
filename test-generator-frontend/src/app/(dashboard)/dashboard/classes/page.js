@@ -1,6 +1,6 @@
 "use client";
 
-import { ClassesAdmin } from "@/features/admin";
+import { ClassesAdmin } from "./features";
 
 export default function AdminClassesPage() {
   return <ClassesAdmin />;

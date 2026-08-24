@@ -1,6 +1,6 @@
 "use client";
 
-import { TestSummary } from "@/features/test-generator";
+import { TestSummary } from "./features";
 
 export default function TestSummaryPage() {
   return <TestSummary />;

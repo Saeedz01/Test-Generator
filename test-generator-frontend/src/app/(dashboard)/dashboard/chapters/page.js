@@ -1,6 +1,6 @@
 "use client";
 
-import { ChaptersAdmin } from "@/features/admin";
+import { ChaptersAdmin } from "./features";
 
 export default function AdminChaptersPage() {
   return <ChaptersAdmin />;

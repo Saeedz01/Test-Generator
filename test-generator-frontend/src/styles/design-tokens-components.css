@@ -1,0 +1,114 @@
+/** Button, card, motion, focus tokens. */
+:root {
+/* ---------------------------------------------------------------------------
+   * 9. BUTTON TOKENS (variants + states — for future components)
+   * ---------------------------------------------------------------------------
+   * Decision: Primary carries brand trust. Secondary is neutral surface (Stripe).
+   * Outline/Ghost stay quiet for dense education UIs. Destructive uses error-600.
+   * Hover darkens slightly; active darkens further + tiny scale via motion tokens.
+   * Disabled: lower opacity, no pointer — never rely on color alone.
+   * --------------------------------------------------------------------------- */
+  --btn-height-sm: 2rem; /* 32px */
+  --btn-height-md: 2.5rem; /* 40px */
+  --btn-height-lg: 2.75rem; /* 44px */
+  --btn-px-md: var(--space-4);
+  --btn-font-size: var(--text-small-size);
+  --btn-font-weight: 600;
+  --btn-radius: var(--radius-button);
+
+  /* Primary */
+  --btn-primary-bg: var(--color-primary-600);
+  --btn-primary-bg-hover: var(--color-primary-700);
+  --btn-primary-bg-active: var(--color-primary-800);
+  --btn-primary-text: var(--color-text-inverse);
+  --btn-primary-border: transparent;
+
+  /* Secondary */
+  --btn-secondary-bg: var(--color-neutral-100);
+  --btn-secondary-bg-hover: var(--color-neutral-200);
+  --btn-secondary-bg-active: var(--color-neutral-300);
+  --btn-secondary-text: var(--color-text-primary);
+  --btn-secondary-border: var(--color-border-default);
+
+  /* Outline */
+  --btn-outline-bg: transparent;
+  --btn-outline-bg-hover: var(--color-neutral-50);
+  --btn-outline-bg-active: var(--color-neutral-100);
+  --btn-outline-text: var(--color-text-primary);
+  --btn-outline-border: var(--color-border-strong);
+
+  /* Ghost */
+  --btn-ghost-bg: transparent;
+  --btn-ghost-bg-hover: var(--color-neutral-100);
+  --btn-ghost-bg-active: var(--color-neutral-200);
+  --btn-ghost-text: var(--color-text-secondary);
+  --btn-ghost-border: transparent;
+
+  /* Destructive */
+  --btn-destructive-bg: var(--color-error-600);
+  --btn-destructive-bg-hover: var(--color-error-700);
+  --btn-destructive-bg-active: var(--color-error-700);
+  --btn-destructive-text: var(--color-text-inverse);
+  --btn-destructive-border: transparent;
+
+  /* Shared states */
+  --btn-disabled-opacity: 0.45;
+  --btn-focus-ring: var(--shadow-focus-brand);
+
+  /* ---------------------------------------------------------------------------
+   * 10. CARD TOKENS
+   * ---------------------------------------------------------------------------
+   * Decision: White surface + 1px border. Hover: border strengthens + optional
+   * 1px lift (translateY). Selected: brand-tint border + subtle brand fill —
+   * readable in grids of courses/questions without loud selection chrome.
+   * --------------------------------------------------------------------------- */
+  --card-bg: var(--color-surface-default);
+  --card-bg-hover: var(--color-surface-default);
+  --card-bg-selected: var(--color-surface-brand-subtle);
+  --card-border: var(--color-border-default);
+  --card-border-hover: var(--color-border-strong);
+  --card-border-selected: var(--color-primary-400);
+  --card-radius: var(--radius-card);
+  --card-padding: var(--space-6);
+  --card-shadow: var(--shadow-none);
+  --card-shadow-hover: var(--shadow-xs);
+
+  /* ---------------------------------------------------------------------------
+   * 11. MOTION
+   * ---------------------------------------------------------------------------
+   * Decision: 150–250ms ease — fast enough to feel responsive, slow enough to
+   * perceive. Only opacity, translateY, micro-scale, and color. No bounce,
+   * spring gimmicks, or decorative parallax.
+   * --------------------------------------------------------------------------- */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 250ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+  --motion-fade: opacity var(--duration-normal) var(--ease-standard);
+  --motion-lift: transform var(--duration-normal) var(--ease-standard);
+  --motion-color: color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+  --motion-interactive: var(--motion-color), var(--motion-lift), var(--motion-fade);
+
+  --motion-hover-translate-y: -1px;
+  --motion-active-scale: 0.98;
+
+  /* ---------------------------------------------------------------------------
+   * 12. FOCUS & A11Y
+   * ---------------------------------------------------------------------------
+   * Decision: Visible 2px ring + offset for keyboard users. Info blue for
+   * generic focus; brand olive ring for primary actions. Never remove outlines
+   * without an equivalent :focus-visible style.
+   * --------------------------------------------------------------------------- */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-color: var(--color-info-500);
+  --focus-ring-color-brand: var(--color-primary-500);
+
+  /* Legacy aliases used by existing root layout / body styles */
+  --background: var(--color-bg-canvas);
+  --foreground: var(--color-text-primary);
+}

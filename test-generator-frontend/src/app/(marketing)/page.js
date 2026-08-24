@@ -1,22 +1,13 @@
-/**
- * Marketing homepage — composes home feature sections only.
- */
-import {
-  FeaturedClassesSection,
-  FeaturesSection,
-  HomeCtaSection,
-  HomeHero,
-  StatisticsSection,
-} from "@/features/home";
+import { FeaturedClasses, Features, Hero, HomeCta, Statistics } from "./features";
 
 export default function HomePage() {
   return (
     <main className="flex flex-1 flex-col">
-      <HomeHero />
-      <FeaturedClassesSection />
-      <FeaturesSection />
-      <StatisticsSection />
-      <HomeCtaSection />
+      <Hero />
+      <FeaturedClasses />
+      <Features />
+      <Statistics />
+      <HomeCta />
     </main>
   );
 }

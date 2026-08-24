@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import { ChaptersLayout } from "@/features/chapters";
+import { ChaptersLayout } from "./features";
 
 export default function BookChaptersPage({ params }) {
   const { classId, bookId } = use(params);

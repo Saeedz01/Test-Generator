@@ -1,0 +1,140 @@
+/** Typography, spacing, radius, shadows. */
+:root {
+/* ---------------------------------------------------------------------------
+   * 5. TYPOGRAPHY
+   * ---------------------------------------------------------------------------
+   * Decision: Plus Jakarta Sans — geometric, warm, and clear at small sizes.
+   * Feels closer to modern education / product UI (Coursera/Notion/Linear) than
+   * system defaults, without Inter’s generic “AI SaaS” look. Load via next/font
+   * in the root layout when wiring UI; tokens reference the CSS variable names.
+   *
+   * Display / headings: slightly tight tracking (Linear/Notion precision).
+   * Body: comfortable 1.5–1.625 line-height for reading lesson copy.
+   * Caption: slightly open tracking for uppercase/meta labels if needed.
+   * --------------------------------------------------------------------------- */
+  --font-sans: var(--font-plus-jakarta), "Plus Jakarta Sans", ui-sans-serif, system-ui,
+    sans-serif;
+  --font-display: var(--font-plus-jakarta), "Plus Jakarta Sans", ui-sans-serif, system-ui,
+    sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* Size / weight / line-height / letter-spacing triplets */
+  --text-display-size: 3rem; /* 48px */
+  --text-display-weight: 700;
+  --text-display-leading: 1.15;
+  --text-display-tracking: -0.03em;
+
+  --text-h1-size: 2.25rem; /* 36px */
+  --text-h1-weight: 700;
+  --text-h1-leading: 1.2;
+  --text-h1-tracking: -0.025em;
+
+  --text-h2-size: 1.875rem; /* 30px */
+  --text-h2-weight: 600;
+  --text-h2-leading: 1.25;
+  --text-h2-tracking: -0.02em;
+
+  --text-h3-size: 1.5rem; /* 24px */
+  --text-h3-weight: 600;
+  --text-h3-leading: 1.3;
+  --text-h3-tracking: -0.015em;
+
+  --text-h4-size: 1.25rem; /* 20px */
+  --text-h4-weight: 600;
+  --text-h4-leading: 1.35;
+  --text-h4-tracking: -0.01em;
+
+  --text-h5-size: 1.125rem; /* 18px */
+  --text-h5-weight: 600;
+  --text-h5-leading: 1.4;
+  --text-h5-tracking: -0.01em;
+
+  --text-h6-size: 1rem; /* 16px */
+  --text-h6-weight: 600;
+  --text-h6-leading: 1.4;
+  --text-h6-tracking: 0;
+
+  --text-body-size: 1rem; /* 16px */
+  --text-body-weight: 400;
+  --text-body-leading: 1.625;
+  --text-body-tracking: 0;
+
+  --text-body-strong-weight: 600;
+
+  --text-small-size: 0.875rem; /* 14px */
+  --text-small-weight: 400;
+  --text-small-leading: 1.5;
+  --text-small-tracking: 0;
+
+  --text-caption-size: 0.75rem; /* 12px */
+  --text-caption-weight: 500;
+  --text-caption-leading: 1.4;
+  --text-caption-tracking: 0.02em;
+
+  /* ---------------------------------------------------------------------------
+   * 6. SPACING (4px base)
+   * ---------------------------------------------------------------------------
+   * Decision: 4px rhythm matches Tailwind defaults and scales cleanly from
+   * compact toolbars to spacious marketing/education layouts. Prefer larger
+   * section gaps (12–16) so the product feels airy like Coursera/Notion.
+   * --------------------------------------------------------------------------- */
+  --space-0: 0;
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem; /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem; /* 16px */
+  --space-5: 1.25rem; /* 20px */
+  --space-6: 1.5rem; /* 24px */
+  --space-7: 1.75rem; /* 28px */
+  --space-8: 2rem; /* 32px */
+  --space-9: 2.25rem; /* 36px */
+  --space-10: 2.5rem; /* 40px */
+  --space-12: 3rem; /* 48px */
+  --space-14: 3.5rem; /* 56px */
+  --space-16: 4rem; /* 64px */
+  --space-20: 5rem; /* 80px */
+  --space-24: 6rem; /* 96px */
+
+  /* Layout rhythm helpers */
+  --space-section: var(--space-16);
+  --space-section-sm: var(--space-10);
+  --space-stack: var(--space-6);
+  --space-inline: var(--space-4);
+
+  /* ---------------------------------------------------------------------------
+   * 7. RADIUS
+   * ---------------------------------------------------------------------------
+   * Decision: Subtle rounding only — premium product UI, not consumer-app pills.
+   * Cards ~10–12px, controls ~8–10px. Avoid radius-full except rare chips/avatars.
+   * --------------------------------------------------------------------------- */
+  --radius-none: 0;
+  --radius-sm: 0.375rem; /* 6px — tight chips, tags */
+  --radius-md: 0.5rem; /* 8px — inputs, small buttons */
+  --radius-lg: 0.625rem; /* 10px — default buttons */
+  --radius-xl: 0.75rem; /* 12px — cards, panels */
+  --radius-2xl: 1rem; /* 16px — large shells only */
+  --radius-full: 9999px; /* avatars / rare indicators only */
+
+  --radius-button: var(--radius-lg);
+  --radius-input: var(--radius-md);
+  --radius-card: var(--radius-xl);
+
+  /* ---------------------------------------------------------------------------
+   * 8. SHADOWS
+   * ---------------------------------------------------------------------------
+   * Decision: Almost flat. Use 1px borders as the default separator. Soft shadows
+   * only for transient elevation (dropdowns, popovers, dragged cards).
+   * Shadow tint uses near-black with a green bias to match the brand neutrally.
+   * --------------------------------------------------------------------------- */
+  --shadow-color: 26 26 24; /* neutral-900 as RGB channels */
+
+  --shadow-none: none;
+  --shadow-xs: 0 1px 2px rgb(var(--shadow-color) / 0.04);
+  --shadow-sm: 0 1px 2px rgb(var(--shadow-color) / 0.05),
+    0 1px 3px rgb(var(--shadow-color) / 0.04);
+  --shadow-md: 0 2px 6px rgb(var(--shadow-color) / 0.06),
+    0 1px 2px rgb(var(--shadow-color) / 0.04);
+  --shadow-focus: 0 0 0 3px color-mix(in srgb, var(--color-info-500) 28%, transparent);
+  --shadow-focus-brand: 0 0 0 3px
+    color-mix(in srgb, var(--color-primary-500) 30%, transparent);
+}

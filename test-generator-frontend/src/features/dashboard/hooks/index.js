@@ -1,2 +1,0 @@
-/** Dashboard-specific hooks. */
-export {};

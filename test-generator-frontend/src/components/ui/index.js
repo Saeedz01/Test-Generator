@@ -1,15 +1,9 @@
 /**
- * =============================================================================
- * components/ui
- * =============================================================================
- * Design-system primitives shared across the entire application.
- *
- * Import from `@/components/ui` — keep feature-specific UI in `features/`.
- * =============================================================================
+ * Design-system primitives. Import from `@/components/ui`.
+ * Feature-specific UI stays in page `features/` folders.
  */
 
-export { Button } from "./Button";
-export { buttonVariants } from "./button-variants";
+export { Button, buttonVariants } from "./Button";
 export { Badge, badgeVariants } from "./Badge";
 export { Loader, loaderVariants } from "./Loader";
 export { Skeleton, skeletonVariants } from "./Skeleton";
@@ -23,6 +17,6 @@ export {
 } from "./Card";
 export { Checkbox } from "./Checkbox";
 export { EmptyState } from "./EmptyState";
-export { Heading } from "./Heading";
+export { Typography, Heading } from "./Typography";
 export { Container, containerVariants } from "./Container";
 export { Section } from "./Section";

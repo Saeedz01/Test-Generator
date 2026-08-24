@@ -2,7 +2,7 @@
  * Public / marketing route group layout.
  * Wraps landing pages with shared public chrome (header + footer).
  */
-import { Footer, Header } from "@/components/layouts";
+import { Footer, Header } from "@/components/shared";
 
 export default function MarketingLayout({ children }) {
   return (
