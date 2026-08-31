@@ -16,6 +16,11 @@ import { MailModule } from './modules/mail/mail.module';
 import path from 'path';
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: path.join(__dirname, '..', '.env'),
+      load: [appConfig, mailConfig],
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST ?? 'localhost',
@@ -26,14 +31,15 @@ import path from 'path';
       autoLoadEntities: true,
       synchronize: process.env.NODE_ENV !== 'production',
     }),
-    // configurations
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: path.join(__dirname, '..', '.env'),
-      load: [appConfig, mailConfig],
-    }),
     MailModule,
-    BookModule, ClassModule, ChapterModule, UserModule, AdminModule, AuthModule, QuestionsModule],
+    BookModule,
+    ClassModule,
+    ChapterModule,
+    UserModule,
+    AdminModule,
+    AuthModule,
+    QuestionsModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
