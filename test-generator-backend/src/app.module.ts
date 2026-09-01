@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { QuestionsModule } from './modules/questions/questions.module';
@@ -21,6 +22,12 @@ import path from 'path';
       envFilePath: path.join(__dirname, '..', '.env'),
       load: [appConfig, mailConfig],
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60_000,
+        limit: 30,
+      },
+    ]),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST ?? 'localhost',

@@ -1,21 +1,21 @@
-/**
- * Admin dashboard sidebar — CRUD navigation for system admin.
- */
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSelector } from "react-redux";
 import {
   BookOpen,
   GraduationCap,
   LayoutDashboard,
   ListTree,
   MessageSquareText,
+  Shield,
 } from "lucide-react";
 import { ROUTES } from "@/constants";
+import { selectAuthUser } from "@/store/authSlice";
 import { cn } from "@/utils";
 
-const LINKS = [
+const BASE_LINKS = [
   { href: ROUTES.DASHBOARD, label: "Overview", Icon: LayoutDashboard, exact: true },
   { href: ROUTES.ADMIN_CLASSES, label: "Classes", Icon: GraduationCap },
   { href: ROUTES.ADMIN_BOOKS, label: "Books", Icon: BookOpen },
@@ -25,6 +25,14 @@ const LINKS = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const user = useSelector(selectAuthUser);
+  const links =
+    user?.role === "super_admin"
+      ? [
+          ...BASE_LINKS,
+          { href: ROUTES.ADMIN_ADMINS, label: "Admins", Icon: Shield },
+        ]
+      : BASE_LINKS;
 
   return (
     <aside className="hidden w-56 shrink-0 border-r border-neutral-200 bg-neutral-0 p-4 md:block">
@@ -32,7 +40,7 @@ export default function AdminSidebar() {
         Admin
       </p>
       <nav aria-label="Admin" className="flex flex-col gap-1">
-        {LINKS.map(({ href, label, Icon, exact }) => {
+        {links.map(({ href, label, Icon, exact }) => {
           const active = exact
             ? pathname === href
             : pathname === href || pathname?.startsWith(`${href}/`);

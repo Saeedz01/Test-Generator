@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CreateSchoolClassDto } from './dto/create-class.dto';
 import { BookService } from '../book/book.service';
@@ -13,8 +13,14 @@ import { CreateShortQuestionDto } from '../questions/dto/create-short-question.d
 import { CreateMcqQuestionDto } from '../questions/dto/create-mcq-question.dto';
 import { UpdateQuestionDto } from '../questions/dto/update-question.dto';
 import { UpdateMcqQuestionDto } from '../questions/dto/update-mcq-question.dto';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/role.guard';
+import { Roles } from 'src/common/decorator/roles.decorator';
+import { Role } from '../user/entities/user.entity';
 
 @Controller('admin')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN, Role.SUPER_ADMIN)
 export class AdminController {
   constructor(
     private readonly adminService: AdminService,

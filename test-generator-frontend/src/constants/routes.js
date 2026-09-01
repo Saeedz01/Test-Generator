@@ -21,4 +21,5 @@ export const ROUTES = {
   ADMIN_BOOKS: "/dashboard/books",
   ADMIN_CHAPTERS: "/dashboard/chapters",
   ADMIN_QUESTIONS: "/dashboard/questions",
+  ADMIN_ADMINS: "/dashboard/admins",
 };

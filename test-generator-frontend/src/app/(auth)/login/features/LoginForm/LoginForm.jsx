@@ -1,21 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
 import { Button, Heading } from "@/components/ui";
 import { ROUTES } from "@/constants";
+import { useLoginMutation } from "@/services/api/auth.api";
+import { setUser } from "@/store/authSlice";
 
-/**
- * Admin login form — frontend-only auth stub (no signup).
- * Later: wire to NestJS auth + RTK Query.
- */
 export function LoginForm() {
   const router = useRouter();
-  const [email, setEmail] = useState("admin@testgenerator.com");
-  const [password, setPassword] = useState("admin123");
-  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
+  const [email, setEmail] = useState("admin@gmail.com");
+  const [password, setPassword] = useState("1122");
+  const [login, { isLoading }] = useLoginMutation();
 
   const onSubmit = async (event) => {
     event.preventDefault();
@@ -24,12 +23,25 @@ export function LoginForm() {
       return;
     }
 
-    setLoading(true);
-    // Simulated auth — replace with API login later
-    await new Promise((resolve) => setTimeout(resolve, 450));
-    setLoading(false);
-    toast.success("Signed in as admin");
-    router.push(ROUTES.DASHBOARD);
+    try {
+      const user = await login({
+        email: email.trim(),
+        password: password.trim(),
+      }).unwrap();
+
+      dispatch(setUser(user));
+      toast.success(`Signed in as ${user.name || user.email}`);
+
+      if (user.role === "super_admin") {
+        router.push(ROUTES.ADMIN_ADMINS);
+      } else {
+        router.push(ROUTES.DASHBOARD);
+      }
+    } catch (error) {
+      toast.error(
+        error?.data?.message || error?.error || "Invalid email or password",
+      );
+    }
   };
 
   return (
@@ -67,20 +79,10 @@ export function LoginForm() {
           />
         </label>
 
-        <Button type="submit" fullWidth loading={loading}>
+        <Button type="submit" fullWidth loading={isLoading}>
           Sign in
         </Button>
       </form>
-
-      <p className="mt-5 text-center text-caption text-neutral-500">
-        Browse content without signing in?{" "}
-        <Link
-          href={ROUTES.CLASSES}
-          className="font-semibold text-primary-700 hover:text-primary-800"
-        >
-          View classes
-        </Link>
-      </p>
     </div>
   );
 }

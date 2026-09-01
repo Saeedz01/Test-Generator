@@ -36,7 +36,10 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException(ERROR_MESSAGES.PERMISSION_DENIED);
     }
 
-    if (!requiredRoles.includes(user.role)) {
+    const effectiveRoles =
+      user.role === 'super_admin' ? ['super_admin', 'admin'] : [user.role];
+
+    if (!requiredRoles.some((role) => effectiveRoles.includes(role))) {
       throw new ForbiddenException(ERROR_MESSAGES.PERMISSION_DENIED);
     }
 

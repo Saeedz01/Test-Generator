@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -8,6 +8,8 @@ import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { ERROR_MESSAGES } from 'src/common/constant/error-messages';
 import { User } from '../user/entities/user.entity';
+import { Role } from '../user/entities/user.entity';
+import { UserService } from '../user/user.service';
 import { LoginDto } from './dto/login.dto';
 import { SendOtpDto } from './dto/send-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -28,6 +30,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly mailerService: MailerService,
+    private readonly userService: UserService,
   ) {}
 
 
@@ -42,6 +45,7 @@ export class AuthService {
         password: true,
         otp: true,
         otpExpiresAt: true,
+        isSuspended: true,
         // role: true,
         role_id: {
           role_name: true,
@@ -53,9 +57,19 @@ export class AuthService {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
-    await this.verifyOtp(user, loginDto.otp);
+    if (user.isSuspended) {
+      throw new ForbiddenException(ERROR_MESSAGES.ACCOUNT_SUSPENDED);
+    }
 
     const role = user.role_id?.role_name;
+    const isPanelUser = role === Role.ADMIN || role === Role.SUPER_ADMIN;
+
+    if (loginDto.otp) {
+      await this.verifyOtp(user, loginDto.otp);
+    } else if (!isPanelUser) {
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
+    }
+
     const payload: TokenPayload = {
       sub: user.id,
       email: user.email,
@@ -177,7 +191,7 @@ export class AuthService {
         id: true,
         email: true,
         name: true,
-        // role: true,
+        isSuspended: true,
         role_id: {
           role_name: true,
         },
@@ -186,6 +200,10 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_TOKEN);
+    }
+
+    if (user.isSuspended) {
+      throw new ForbiddenException(ERROR_MESSAGES.ACCOUNT_SUSPENDED);
     }
 
     return this.generateTokens({
@@ -207,6 +225,54 @@ export class AuthService {
     } catch {
       return null;
     }
+  }
+
+  async getProfile(userId: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['role_id'],
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isSuspended: true,
+        role_id: {
+          role_name: true,
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_TOKEN);
+    }
+
+    if (user.isSuspended) {
+      throw new ForbiddenException(ERROR_MESSAGES.ACCOUNT_SUSPENDED);
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role_id?.role_name,
+      isSuspended: user.isSuspended,
+    };
+  }
+
+  listAdmins() {
+    return this.userService.findAllAdmins();
+  }
+
+  createAdmin(email: string, password: string, name?: string) {
+    return this.userService.createAdmin(email, password, name);
+  }
+
+  toggleAdminSuspension(id: string) {
+    return this.userService.toggleSuspendAdmin(id);
+  }
+
+  deleteAdmin(id: string) {
+    return this.userService.removeAdmin(id);
   }
 
   private async sendLoginOtp(user: User) {

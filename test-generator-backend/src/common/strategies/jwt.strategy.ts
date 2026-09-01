@@ -38,6 +38,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         id: true,
         email: true,
         name: true,
+        isSuspended: true,
         // role: true,
         role_id: {
           role_name: true,
@@ -47,6 +48,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
     if (!user) {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_TOKEN);
+    }
+
+    if (user.isSuspended) {
+      throw new UnauthorizedException(ERROR_MESSAGES.ACCOUNT_SUSPENDED);
     }
 
     return {

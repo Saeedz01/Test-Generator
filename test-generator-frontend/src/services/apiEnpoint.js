@@ -1,6 +1,15 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || "http://localhost:5000";
 
 export const API_ENDPOINTS = {
+  // ---------------Auth-----------------
+  login: `${BASE_URL}/api/auth/login`,
+  logout: `${BASE_URL}/api/auth/logout`,
+  getMe: `${BASE_URL}/api/auth/me`,
+  getAdmins: `${BASE_URL}/api/auth/admins`,
+  createAdmin: `${BASE_URL}/api/auth/admins`,
+  suspendAdmin: (id) => `${BASE_URL}/api/auth/admins/${id}/suspend`,
+  deleteAdmin: (id) => `${BASE_URL}/api/auth/admins/${id}`,
+
   // ---------------Classes-----------------
   addSchoolClass: `${BASE_URL}/api/admin/createClass`,
   getClasses: `${BASE_URL}/api/schoolclasses`,

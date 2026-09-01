@@ -10,6 +10,7 @@ export const ERROR_MESSAGES = {
   INVALID_CREDENTIALS: 'Invalid credentials',
   INVALID_TOKEN: 'Token expired or invalid',
   INVALID_OTP: 'Invalid or expired OTP',
+  ACCOUNT_SUSPENDED: 'Your account has been suspended',
 
   VALIDATION_FAILED: 'Validation failed',
   PERMISSION_DENIED: 'Permission denied',

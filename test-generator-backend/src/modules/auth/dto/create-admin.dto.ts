@@ -1,15 +1,14 @@
 import { IsEmail, IsOptional, IsString, Length, MinLength } from 'class-validator';
 
-export class LoginDto {
+export class CreateAdminDto {
   @IsEmail()
-  email: string;
+  email!: string;
 
   @IsString()
   @MinLength(4)
-  password: string;
+  password!: string;
 
   @IsOptional()
   @IsString()
-  @Length(6, 6)
-  otp?: string;
+  name?: string;
 }
