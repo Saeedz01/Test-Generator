@@ -6,6 +6,7 @@ import { CreateShortQuestionDto } from './dto/create-short-question.dto';
 import { CreateMcqQuestionDto } from './dto/create-mcq-question.dto';
 import { CreateQuestionBaseDto } from './dto/create-question-base.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
+import { UpdateMcqQuestionDto } from './dto/update-mcq-question.dto';
 import { LongQuestion } from './entities/question.longQuestion';
 import { ShortQuestion } from './entities/question.shortQuestion';
 import { McqQuestion } from './entities/question.mcqs';
@@ -74,12 +75,13 @@ export class QuestionsService {
   private async assertUniqueStatement<T extends QuestionEntity>(
     repository: Repository<T>,
     statement: string,
+    excludeId?: string,
   ): Promise<void> {
     const existing = await repository.findOne({
       where: { question_text: statement } as FindOptionsWhere<T>,
     });
 
-    if (existing) {
+    if (existing && existing.id !== excludeId) {
       throw new ConflictException('Question already exists');
     }
   }
@@ -179,6 +181,67 @@ export class QuestionsService {
 
   async findAllshortQuestions() {
     return this.findAllFromRepository(this.shortQuestionRepository, 'short');
+  }
+
+  private async updateQuestion<T extends QuestionEntity>(
+    repository: Repository<T>,
+    id: string,
+    dto: Partial<CreateQuestionBaseDto> & { options?: string[] },
+    type: 'long' | 'short' | 'mcq',
+  ) {
+    const question = await repository.findOne({
+      where: { id } as FindOptionsWhere<T>,
+      relations: ['class', 'book', 'chapter'],
+    });
+
+    if (!question) {
+      throw new NotFoundException('Question not found');
+    }
+
+    const classId = dto.classId ?? question.class.id;
+    const bookId = dto.bookId ?? question.book.id;
+    const chapterId = dto.chapterId ?? question.chapter.id;
+    const statement = dto.statement ?? question.question_text;
+
+    if (statement !== question.question_text) {
+      await this.assertUniqueStatement(repository, statement, id);
+    }
+
+    const { schoolClass, book, chapter } = await this.resolveQuestionRelations(
+      classId,
+      bookId,
+      chapterId,
+    );
+
+    question.question_text = statement;
+    question.class = schoolClass;
+    question.book = book;
+    question.chapter = chapter;
+
+    if (type === 'mcq' && dto.options) {
+      (question as McqQuestion).options = dto.options;
+    }
+
+    const savedQuestion = await repository.save(question);
+    return this.mapQuestionResponse(savedQuestion, type);
+  }
+
+  async updateLongQuestion(id: string, dto: UpdateQuestionDto) {
+    return this.updateQuestion(this.longQuestionRepository, id, dto, 'long');
+  }
+
+  async updateShortQuestion(id: string, dto: UpdateQuestionDto) {
+    return this.updateQuestion(this.shortQuestionRepository, id, dto, 'short');
+  }
+
+  async updateMcqQuestion(id: string, dto: UpdateMcqQuestionDto) {
+    const { options, ...baseDto } = dto;
+    return this.updateQuestion(
+      this.mcqQuestionRepository,
+      id,
+      { ...baseDto, options },
+      'mcq',
+    );
   }
 
   findOne(id: number) {

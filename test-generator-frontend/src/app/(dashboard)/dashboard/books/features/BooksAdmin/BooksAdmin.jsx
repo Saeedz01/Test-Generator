@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef } from "react";
+import { deleteWithToast } from "../../../features/deleteWithToast";
 import toast from "react-hot-toast";
 import { Button, EmptyState } from "@/components/ui";
 import { AdminCrudPage } from "../../../features/AdminCrudPage";
 import { AdminModal } from "../../../features/AdminModal";
 import { Field, TextInput, TextSelect, TextTextarea } from "../../../features/AdminFormFields";
 import { useGetClassesQuery } from "@/services/api/classes.api";
-import { useGetBooksQuery, useAddBookMutation } from "@/services/api/books.api";
+import { useGetBooksQuery, useAddBookMutation, useUpdateBookMutation, useDeleteBookMutation } from "@/services/api/books.api";
 
 const EMPTY = {
   name: "",
@@ -24,6 +25,8 @@ export function BooksAdmin() {
   } = useGetClassesQuery();
 
   const [addBookMutation, { isLoading: isAdding }] = useAddBookMutation();
+  const [updateBookMutation, { isLoading: isUpdating }] = useUpdateBookMutation();
+  const [deleteBookMutation] = useDeleteBookMutation();
 
   const {
     data: books = [],
@@ -56,8 +59,27 @@ export function BooksAdmin() {
   }, [classes]);
 
   const rows = useMemo(
-    () => books.map((item) => ({ ...item })),
-    [books]
+    () =>
+      books.map((item) => ({
+        ...item,
+        onEdit: () => {
+          setEditing(item);
+          setForm({
+            name: item.name,
+            classId: item.classId,
+            description: item.description || "",
+            edition: item.edition || "",
+          });
+          setOpen(true);
+        },
+        onDelete: () =>
+          deleteWithToast({
+            entityLabel: "Book",
+            entityName: item.name,
+            onDelete: () => deleteBookMutation(item.id).unwrap(),
+          }),
+      })),
+    [books, deleteBookMutation],
   );
 
   const close = () => {
@@ -75,7 +97,21 @@ export function BooksAdmin() {
     }
 
     if (editing) {
-      toast.error("Editing books is not supported yet.");
+      try {
+        await updateBookMutation({
+          id: editing.id,
+          book_name: form.name.trim(),
+          classId: form.classId,
+          description: form.description.trim(),
+          edition: form.edition.trim(),
+        }).unwrap();
+        toast.success("Book updated");
+        close();
+      } catch (error) {
+        toast.error(
+          error?.data?.message || error?.error || "Failed to update book",
+        );
+      }
       return;
     }
 
@@ -255,8 +291,8 @@ export function BooksAdmin() {
 
             <Button
               type="submit"
-              loading={isAdding}
-              disabled={getClassesLoading || classes.length === 0 || isAdding}
+              loading={isAdding || isUpdating}
+              disabled={getClassesLoading || classes.length === 0 || isAdding || isUpdating}
             >
               {editing ? "Save changes" : "Create"}
             </Button>

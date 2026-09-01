@@ -13,14 +13,15 @@ export const API_ENDPOINTS = {
 //   ------------Books-----------------
   addBook: `${BASE_URL}/api/admin/createBook`,
   getBooks: `${BASE_URL}/api/book`,
-  updateBook: (id) => `${BASE_URL}/api/admin/books/${id}`,
-  deleteBook: (id) => `${BASE_URL}/api/admin/books/${id}`,
-
+  updateBook: (id) => `${BASE_URL}/api/admin/updateBook/${id}`,
+  deleteBook: (id) => `${BASE_URL}/api/admin/deleteBook/${id}`,
 
 
 // ------------Chapters-----------------
   addChapter: `${BASE_URL}/api/admin/createChapter`,
   getChapters: `${BASE_URL}/api/chapter`,
+  updateChapter: (id) => `${BASE_URL}/api/admin/updateChapter/${id}`,
+  deleteChapter: (id) => `${BASE_URL}/api/admin/deleteChapter/${id}`,
 
   // ------------Questions-----------------
   getLongQuestions: `${BASE_URL}/api/questions`,
@@ -29,8 +30,11 @@ export const API_ENDPOINTS = {
   createLongQuestion: `${BASE_URL}/api/admin/createLongQuestion`,
   createShortQuestion: `${BASE_URL}/api/admin/createShortQuestion`,
   createMcqQuestion: `${BASE_URL}/api/admin/createMcqQuestion`,
-  deleteLongQuestion: (id) => `${BASE_URL}/api/questions/delLng/${id}`,
-  deleteShortQuestion: (id) => `${BASE_URL}/api/questions/delShort/${id}`,
-  deleteMcqQuestion: (id) => `${BASE_URL}/api/questions/delMcq/${id}`,
+  updateLongQuestion: (id) => `${BASE_URL}/api/admin/updateLongQuestion/${id}`,
+  updateShortQuestion: (id) => `${BASE_URL}/api/admin/updateShortQuestion/${id}`,
+  updateMcqQuestion: (id) => `${BASE_URL}/api/admin/updateMcqQuestion/${id}`,
+  deleteLongQuestion: (id) => `${BASE_URL}/api/admin/deleteLongQuestion/${id}`,
+  deleteShortQuestion: (id) => `${BASE_URL}/api/admin/deleteShortQuestion/${id}`,
+  deleteMcqQuestion: (id) => `${BASE_URL}/api/admin/deleteMcqQuestion/${id}`,
 
 };

@@ -51,7 +51,38 @@ export const booksApi = SplitApiSettings.injectEndpoints({
         { type: "DashboardStats", id: "SUMMARY" },
       ],
     }),
+
+    updateBook: builder.mutation({
+      query: ({ id, ...payload }) => ({
+        url: API_ENDPOINTS.updateBook(id),
+        method: "PATCH",
+        body: payload,
+      }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: "Book", id },
+        { type: "Book", id: "LIST" },
+        { type: "DashboardStats", id: "SUMMARY" },
+      ],
+    }),
+
+    deleteBook: builder.mutation({
+      query: (id) => ({
+        url: API_ENDPOINTS.deleteBook(id),
+        method: "DELETE",
+      }),
+      invalidatesTags: (_result, _error, id) => [
+        { type: "Book", id },
+        { type: "Book", id: "LIST" },
+        { type: "Chapter", id: "LIST" },
+        { type: "DashboardStats", id: "SUMMARY" },
+      ],
+    }),
   }),
 });
 
-export const { useGetBooksQuery, useAddBookMutation } = booksApi;
+export const {
+  useGetBooksQuery,
+  useAddBookMutation,
+  useUpdateBookMutation,
+  useDeleteBookMutation,
+} = booksApi;

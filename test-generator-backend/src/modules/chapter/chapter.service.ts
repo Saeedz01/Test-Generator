@@ -21,7 +21,7 @@ export class ChapterService {
   ) {}
 
   async create(createChapterDto: CreateChapterDto) {
-    const { classId, bookId, chapter_name, order } = createChapterDto;
+    const { classId, bookId, chapter_name, order, description } = createChapterDto;
     //check if chapter already exists
     const existingChapter = await this.chapterRepository.findOne({
       where: { chapter_name, class: { id: classId }, book: { id: bookId } },
@@ -55,6 +55,7 @@ export class ChapterService {
       class: schoolClass,
       book: book,
       order,
+      description: description ?? null,
     });
 
     return await this.chapterRepository.save(chapter);
@@ -82,18 +83,7 @@ export class ChapterService {
     }
 
     // Normalize shape for frontend: provide `id`, `name`, `classId`, `bookId`, `order`, `description`
-    return chapters.map((ch) => ({
-      id: ch.id,
-      name: ch.chapter_name,
-      classId: ch.class?.id,
-      className: ch.class?.name,
-      bookId: ch.book?.id,
-      bookName: ch.book?.book_name,
-      order: ch.order,
-      description: ch.description,
-      createdAt: ch.createdAt,
-      updatedAt: ch.updatedAt,
-    }));
+    return chapters.map((ch) => this.mapChapterResponse(ch));
   }
 
   async findOne(id: string) {
@@ -106,8 +96,85 @@ export class ChapterService {
     return chapter;
   }
 
-  update(id: number, updateChapterDto: UpdateChapterDto) {
-    return `This action updates a #${id} chapter`;
+  private mapChapterResponse(ch: Chapter) {
+    return {
+      id: ch.id,
+      name: ch.chapter_name,
+      classId: ch.class?.id,
+      className: ch.class?.name,
+      bookId: ch.book?.id,
+      bookName: ch.book?.book_name,
+      order: ch.order,
+      description: ch.description,
+      createdAt: ch.createdAt,
+      updatedAt: ch.updatedAt,
+    };
+  }
+
+  async update(id: string, updateChapterDto: UpdateChapterDto) {
+    const chapter = await this.chapterRepository.findOne({
+      where: { id },
+      relations: { class: true, book: true },
+    });
+
+    if (!chapter) {
+      throw new NotFoundException('Chapter not found');
+    }
+
+    const nextClassId = updateChapterDto.classId ?? chapter.class.id;
+    const nextBookId = updateChapterDto.bookId ?? chapter.book.id;
+    const nextChapterName = updateChapterDto.chapter_name ?? chapter.chapter_name;
+
+    const duplicateChapter = await this.chapterRepository.findOne({
+      where: {
+        chapter_name: nextChapterName,
+        class: { id: nextClassId },
+        book: { id: nextBookId },
+      },
+    });
+
+    if (duplicateChapter && duplicateChapter.id !== id) {
+      throw new ConflictException('Chapter already exists');
+    }
+
+    if (updateChapterDto.classId || updateChapterDto.bookId) {
+      const schoolClass = await this.schoolClassRepository.findOne({
+        where: { id: nextClassId },
+      });
+      if (!schoolClass) {
+        throw new NotFoundException('Class not found');
+      }
+
+      const book = await this.bookRepository.findOne({
+        where: { id: nextBookId },
+        relations: { class: true },
+      });
+      if (!book) {
+        throw new NotFoundException('Book not found');
+      }
+
+      if (book.class.id !== nextClassId) {
+        throw new BadRequestException('Book does not belong to the specified class');
+      }
+
+      chapter.class = schoolClass;
+      chapter.book = book;
+    }
+
+    if (updateChapterDto.chapter_name !== undefined) {
+      chapter.chapter_name = updateChapterDto.chapter_name;
+    }
+
+    if (updateChapterDto.order !== undefined) {
+      chapter.order = updateChapterDto.order;
+    }
+
+    if (updateChapterDto.description !== undefined) {
+      chapter.description = updateChapterDto.description;
+    }
+
+    const savedChapter = await this.chapterRepository.save(chapter);
+    return this.mapChapterResponse(savedChapter);
   }
 
   async remove(id: string) {

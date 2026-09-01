@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
+import { deleteWithToast } from "../../../features/deleteWithToast";
 import toast from "react-hot-toast";
 import { Button, EmptyState } from "@/components/ui";
 import { deleteClass, updateClass } from "@/store/adminContentSlice";
@@ -47,17 +48,15 @@ export function ClassesAdmin() {
           });
           setOpen(true);
         },
-        onDelete: () => {
-          if (
-            !window.confirm(
-              `Delete class “${item.name}” and related content?`,
-            )
-          ) {
-            return;
-          }
-          dispatch(deleteClass(item.id));
-          toast.success("Class deleted");
-        },
+        onDelete: () =>
+          deleteWithToast({
+            entityLabel: "Class",
+            entityName: item.name,
+            confirmMessage: `Delete class "${item.name}" and all related content? This cannot be undone.`,
+            onDelete: async () => {
+              dispatch(deleteClass(item.id));
+            },
+          }),
       })),
     [classes, dispatch],
   );

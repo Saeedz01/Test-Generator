@@ -97,8 +97,51 @@ export class BookService {
   };
 }
 
-  update(id: number, updateBookDto: UpdateBookDto) {
-    return `This action updates a #${id} book`;
+  async update(id: string, updateBookDto: UpdateBookDto) {
+    const book = await this.bookRepository.findOne({
+      where: { id },
+      relations: { class: true },
+    });
+
+    if (!book) {
+      throw new NotFoundException(ERROR_MESSAGES.BOOK_NOT_FOUND);
+    }
+
+    if (updateBookDto.book_name !== undefined) {
+      book.book_name = updateBookDto.book_name;
+    }
+
+    if (updateBookDto.description !== undefined) {
+      book.description = updateBookDto.description;
+    }
+
+    if (updateBookDto.edition !== undefined) {
+      book.edition = updateBookDto.edition;
+    }
+
+    if (updateBookDto.classId) {
+      const schoolClassRecord = await this.classRepository.findOne({
+        where: { id: updateBookDto.classId },
+      });
+
+      if (!schoolClassRecord) {
+        throw new NotFoundException(ERROR_MESSAGES.CLASS_NOT_FOUND);
+      }
+
+      book.class = schoolClassRecord;
+    } else if (updateBookDto.class_name) {
+      const schoolClassRecord = await this.classRepository.findOne({
+        where: { name: updateBookDto.class_name },
+      });
+
+      if (!schoolClassRecord) {
+        throw new NotFoundException(ERROR_MESSAGES.CLASS_NOT_FOUND);
+      }
+
+      book.class = schoolClassRecord;
+    }
+
+    return this.bookRepository.save(book);
   }
 
   async remove(id: string): Promise<void> {

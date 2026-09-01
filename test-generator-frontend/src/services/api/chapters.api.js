@@ -59,7 +59,38 @@ export const chaptersApi = SplitApiSettings.injectEndpoints({
         { type: "DashboardStats", id: "SUMMARY" },
       ],
     }),
+
+    updateChapter: builder.mutation({
+      query: ({ id, ...payload }) => ({
+        url: API_ENDPOINTS.updateChapter(id),
+        method: "PATCH",
+        body: payload,
+      }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: "Chapter", id },
+        { type: "Chapter", id: "LIST" },
+        { type: "DashboardStats", id: "SUMMARY" },
+      ],
+    }),
+
+    deleteChapter: builder.mutation({
+      query: (id) => ({
+        url: API_ENDPOINTS.deleteChapter(id),
+        method: "DELETE",
+      }),
+      invalidatesTags: (_result, _error, id) => [
+        { type: "Chapter", id },
+        { type: "Chapter", id: "LIST" },
+        { type: "Question", id: "LIST" },
+        { type: "DashboardStats", id: "SUMMARY" },
+      ],
+    }),
   }),
 });
 
-export const { useGetChaptersQuery, useAddChapterMutation } = chaptersApi;
+export const {
+  useGetChaptersQuery,
+  useAddChapterMutation,
+  useUpdateChapterMutation,
+  useDeleteChapterMutation,
+} = chaptersApi;

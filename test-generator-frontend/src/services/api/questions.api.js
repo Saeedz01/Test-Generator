@@ -109,6 +109,42 @@ export const questionsApi = SplitApiSettings.injectEndpoints({
       ],
     }),
 
+    updateLongQuestion: builder.mutation({
+      query: ({ id, ...payload }) => ({
+        url: API_ENDPOINTS.updateLongQuestion(id),
+        method: "PATCH",
+        body: payload,
+      }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: "Question", id },
+        { type: "Question", id: "LIST" },
+      ],
+    }),
+
+    updateShortQuestion: builder.mutation({
+      query: ({ id, ...payload }) => ({
+        url: API_ENDPOINTS.updateShortQuestion(id),
+        method: "PATCH",
+        body: payload,
+      }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: "Question", id },
+        { type: "Question", id: "LIST" },
+      ],
+    }),
+
+    updateMcqQuestion: builder.mutation({
+      query: ({ id, ...payload }) => ({
+        url: API_ENDPOINTS.updateMcqQuestion(id),
+        method: "PATCH",
+        body: payload,
+      }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: "Question", id },
+        { type: "Question", id: "LIST" },
+      ],
+    }),
+
     deleteLongQuestion: builder.mutation({
       query: (id) => ({
         url: API_ENDPOINTS.deleteLongQuestion(id),
@@ -149,6 +185,9 @@ export const {
   useCreateLongQuestionMutation,
   useCreateShortQuestionMutation,
   useCreateMcqQuestionMutation,
+  useUpdateLongQuestionMutation,
+  useUpdateShortQuestionMutation,
+  useUpdateMcqQuestionMutation,
   useDeleteLongQuestionMutation,
   useDeleteShortQuestionMutation,
   useDeleteMcqQuestionMutation,

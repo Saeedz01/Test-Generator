@@ -1,16 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useDispatch } from "react-redux";
+import { deleteWithToast } from "../../../features/deleteWithToast";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui";
-import { updateChapter } from "@/store/adminContentSlice";
 import { AdminCrudPage } from "../../../features/AdminCrudPage";
 import { AdminModal } from "../../../features/AdminModal";
 import { Field, TextInput, TextSelect, TextTextarea } from "../../../features/AdminFormFields";
-import {useGetBooksQuery} from "@/services/api/books.api";
-import {useGetClassesQuery} from "@/services/api/classes.api";
-import { useAddChapterMutation, useGetChaptersQuery } from "@/services/api/chapters.api";
+import { useGetBooksQuery } from "@/services/api/books.api";
+import { useGetClassesQuery } from "@/services/api/classes.api";
+import {
+  useAddChapterMutation,
+  useDeleteChapterMutation,
+  useGetChaptersQuery,
+  useUpdateChapterMutation,
+} from "@/services/api/chapters.api";
 
 const EMPTY = {
   name: "",
@@ -21,14 +25,18 @@ const EMPTY = {
 };
 
 export function ChaptersAdmin() {
-  const dispatch = useDispatch();
-
-  // chapters now come from the API
-  const { data: apiChapters = [], isLoading: chaptersLoading, isError: chaptersError, refetch: refetchChapters } = useGetChaptersQuery();
-
-  // fetch real classes and books from API for the dropdowns
+  const {
+    data: apiChapters = [],
+    isLoading: chaptersLoading,
+    isError: chaptersError,
+    refetch: refetchChapters,
+  } = useGetChaptersQuery();
   const { data: apiBooks = [], isLoading: apiBooksLoading } = useGetBooksQuery();
   const { data: apiClasses = [], isLoading: apiClassesLoading } = useGetClassesQuery();
+  const [addChapterMutation, { isLoading: adding }] = useAddChapterMutation();
+  const [updateChapterMutation, { isLoading: updating }] = useUpdateChapterMutation();
+  const [deleteChapterMutation] = useDeleteChapterMutation();
+
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
@@ -61,13 +69,14 @@ export function ChaptersAdmin() {
             });
             setOpen(true);
           },
-          onDelete: () => {
-            if (!window.confirm(`Delete chapter “${item.name}”?`)) return;
-            // Deleting chapters via API is not yet implemented; show message
-            toast.error("Deleting chapters is not supported yet.");
-          },
+          onDelete: () =>
+            deleteWithToast({
+              entityLabel: "Chapter",
+              entityName: item.name,
+              onDelete: () => deleteChapterMutation(item.id).unwrap(),
+            }),
         })),
-    [apiChapters, dispatch],
+    [apiChapters, deleteChapterMutation],
   );
 
   const close = () => {
@@ -76,36 +85,64 @@ export function ChaptersAdmin() {
     setForm(EMPTY);
   };
 
-  const [addChapterMutation, { isLoading: adding }] = useAddChapterMutation();
-
   const submit = async (event) => {
     event.preventDefault();
     if (!form.name.trim() || !form.classId || !form.bookId) {
       toast.error("Name, class, and book are required");
       return;
     }
-    if (editing) {
-      // Updating chapters via API not implemented; fallback to local update
-      dispatch(updateChapter({ id: editing.id, ...form }));
-      toast.success("Chapter updated (local)");
-      close();
-      return;
-    }
+
+    const payload = {
+      chapter_name: form.name.trim(),
+      classId: form.classId,
+      bookId: form.bookId,
+      order: Number(form.order),
+      description: form.description || "",
+    };
 
     try {
-      await addChapterMutation({
-        chapter_name: form.name.trim(),
-        classId: form.classId,
-        bookId: form.bookId,
-        order: Number(form.order),
-        description: form.description || "",
-      }).unwrap();
-      toast.success("Chapter added");
+      if (editing) {
+        await updateChapterMutation({ id: editing.id, ...payload }).unwrap();
+        toast.success("Chapter updated");
+      } else {
+        await addChapterMutation(payload).unwrap();
+        toast.success("Chapter added");
+      }
       close();
     } catch (err) {
-      toast.error(err?.data?.message || err?.error || "Failed to add chapter");
+      toast.error(err?.data?.message || err?.error || "Failed to save chapter");
     }
   };
+
+  if (chaptersLoading) {
+    return (
+      <AdminCrudPage
+        title="Manage Chapters"
+        description="Organize chapters under each book for question banks."
+        addLabel="Add chapter"
+        onAdd={() => {}}
+        columns={[]}
+        rows={[]}
+        emptyTitle="Loading chapters..."
+        emptyDescription="Fetching chapters from the database."
+      />
+    );
+  }
+
+  if (chaptersError) {
+    return (
+      <AdminCrudPage
+        title="Manage Chapters"
+        description="Organize chapters under each book for question banks."
+        addLabel="Add chapter"
+        onAdd={() => refetchChapters()}
+        columns={[]}
+        rows={[]}
+        emptyTitle="Failed to load chapters"
+        emptyDescription="Could not reach the chapters API."
+      />
+    );
+  }
 
   return (
     <>
@@ -212,7 +249,9 @@ export function ChaptersAdmin() {
             <Button type="button" variant="outline" onClick={close}>
               Cancel
             </Button>
-            <Button type="submit">{editing ? "Save changes" : "Create"}</Button>
+            <Button type="submit" loading={adding || updating} disabled={adding || updating}>
+              {editing ? "Save changes" : "Create"}
+            </Button>
           </div>
         </form>
       </AdminModal>

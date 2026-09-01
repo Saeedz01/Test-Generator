@@ -39,6 +39,7 @@ export function QuestionsFormFields({
         <TextSelect
           value={form.type}
           onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
+          disabled={Boolean(editing)}
         >
           <option value="mcq">MCQ</option>
           <option value="short">Short</option>

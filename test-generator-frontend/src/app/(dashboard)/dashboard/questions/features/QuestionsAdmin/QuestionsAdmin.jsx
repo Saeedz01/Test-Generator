@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { deleteWithToast } from "../../../features/deleteWithToast";
 import toast from "react-hot-toast";
 import { useGetBooksQuery } from "@/services/api/books.api";
 import { useGetChaptersQuery } from "@/services/api/chapters.api";
@@ -13,6 +14,9 @@ import {
   useDeleteMcqQuestionMutation,
   useDeleteShortQuestionMutation,
   useGetQuestionsQuery,
+  useUpdateLongQuestionMutation,
+  useUpdateMcqQuestionMutation,
+  useUpdateShortQuestionMutation,
 } from "@/services/api/questions.api";
 import { AdminCrudPage } from "../../../features/AdminCrudPage";
 import { AdminModal } from "../../../features/AdminModal";
@@ -23,6 +27,7 @@ import { QuestionsFormFields } from "./QuestionsFormFields";
 import {
   buildCreatePayload,
   buildMcqOptions,
+  buildQuestionFormFromItem,
   normalizeChapter,
 } from "./questionsAdminHelpers";
 import { QuestionsAdminError, QuestionsAdminLoading } from "./QuestionsAdminStates";
@@ -49,6 +54,12 @@ export function QuestionsAdmin() {
   const [deleteLongQuestion] = useDeleteLongQuestionMutation();
   const [deleteShortQuestion] = useDeleteShortQuestionMutation();
   const [deleteMcqQuestion] = useDeleteMcqQuestionMutation();
+  const [updateLongQuestion, { isLoading: updatingLong }] =
+    useUpdateLongQuestionMutation();
+  const [updateShortQuestion, { isLoading: updatingShort }] =
+    useUpdateShortQuestionMutation();
+  const [updateMcqQuestion, { isLoading: updatingMcq }] =
+    useUpdateMcqQuestionMutation();
 
   const chapters = useMemo(
     () => rawChapters.map(normalizeChapter),
@@ -60,7 +71,13 @@ export function QuestionsAdmin() {
   const [form, setForm] = useState(EMPTY);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
 
-  const isSaving = creatingLong || creatingShort || creatingMcq;
+  const isSaving =
+    creatingLong ||
+    creatingShort ||
+    creatingMcq ||
+    updatingLong ||
+    updatingShort ||
+    updatingMcq;
   const isLoading = questionsLoading || classesLoading || booksLoading || chaptersLoading;
 
   const classNameById = useMemo(
@@ -119,24 +136,25 @@ export function QuestionsAdmin() {
       filteredQuestions.map((item) => ({
         ...item,
         onEdit: () => {
-          toast.error("Editing questions via API is not supported yet.");
+          setEditing(item);
+          setForm(buildQuestionFormFromItem(item));
+          setOpen(true);
         },
-        onDelete: async () => {
-          if (!window.confirm("Delete this question?")) return;
-
-          try {
-            if (item.type === "long") {
-              await deleteLongQuestion(item.id).unwrap();
-            } else if (item.type === "short") {
-              await deleteShortQuestion(item.id).unwrap();
-            } else {
-              await deleteMcqQuestion(item.id).unwrap();
-            }
-            toast.success("Question deleted");
-          } catch (err) {
-            toast.error(err?.data?.message || err?.error || "Failed to delete question");
-          }
-        },
+        onDelete: () =>
+          deleteWithToast({
+            entityLabel: "Question",
+            entityName: item.statement,
+            confirmMessage: "Delete this question? This cannot be undone.",
+            onDelete: async () => {
+              if (item.type === "long") {
+                await deleteLongQuestion(item.id).unwrap();
+              } else if (item.type === "short") {
+                await deleteShortQuestion(item.id).unwrap();
+              } else {
+                await deleteMcqQuestion(item.id).unwrap();
+              }
+            },
+          }),
       })),
     [
       filteredQuestions,
@@ -165,7 +183,38 @@ export function QuestionsAdmin() {
     }
 
     if (editing) {
-      toast.error("Editing questions via API is not supported yet.");
+      const payload = buildCreatePayload(form);
+
+      try {
+        if (editing.type === "mcq") {
+          const options = buildMcqOptions(form.options);
+          if (options.length !== 4 || options.some((option) => !option)) {
+            toast.error("All four MCQ options are required");
+            return;
+          }
+
+          await updateMcqQuestion({
+            id: editing.id,
+            ...payload,
+            options,
+          }).unwrap();
+        } else if (editing.type === "short") {
+          await updateShortQuestion({
+            id: editing.id,
+            ...payload,
+          }).unwrap();
+        } else {
+          await updateLongQuestion({
+            id: editing.id,
+            ...payload,
+          }).unwrap();
+        }
+
+        toast.success("Question updated");
+        close();
+      } catch (err) {
+        toast.error(err?.data?.message || err?.error || "Failed to update question");
+      }
       return;
     }
 
