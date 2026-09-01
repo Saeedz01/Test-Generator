@@ -18,6 +18,6 @@ import { ChapterModule } from '../chapter/chapter.module';
   ],
   controllers: [QuestionsController],
   providers: [QuestionsService],
-  exports: [TypeOrmModule],
+  exports: [QuestionsService, TypeOrmModule],
 })
 export class QuestionsModule {}

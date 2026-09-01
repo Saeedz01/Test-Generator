@@ -5,7 +5,6 @@ import { useDispatch } from "react-redux";
 import { BookOpen, GraduationCap } from "lucide-react";
 import { Badge, Card } from "@/components/ui";
 import { ROUTES } from "@/constants";
-import { getBooksCountByClassId } from "@/data/curriculum";
 import { selectClass } from "@/store/selectionSlice";
 import { cn } from "@/utils";
 
@@ -14,7 +13,7 @@ import { cn } from "@/utils";
  */
 export function ClassCard({ schoolClass, className }) {
   const dispatch = useDispatch();
-  const booksCount = getBooksCountByClassId(schoolClass.id);
+  const booksCount = Number(schoolClass.booksCount ?? 0);
 
   return (
     <Link

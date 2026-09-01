@@ -47,28 +47,40 @@ export class BookService {
     return await this.bookRepository.save(book);
   }
 
-  async findAll(): Promise<Book[]> {
-    // load the related class for each book so frontend can show class name
-    const books = await this.bookRepository.find({ relations: ["class"] });
+  async findAll(classId?: string) {
+    const query = this.bookRepository
+      .createQueryBuilder('book')
+      .leftJoinAndSelect('book.class', 'class')
+      .loadRelationCountAndMap('book.chaptersCount', 'book.chapters')
+      .orderBy('book.book_name', 'ASC');
 
-    if (!books || books.length === 0) {
+    if (classId) {
+      query.andWhere('class.id = :classId', { classId });
+    }
+
+    const books = await query.getMany();
+
+    if (!books.length) {
       // return empty array instead of 404 so clients can handle empty lists gracefully
       return [];
     }
 
     // map to include convenient fields expected by frontend (classId and class_name)
-    return books.map((b) => ({
-      ...b,
-      classId: b.class?.id,
-      class_name: b.class?.name,
+    return books.map((book) => ({
+      ...book,
+      classId: book.class?.id,
+      class_name: book.class?.name,
+      chaptersCount: Number(
+        (book as Book & { chaptersCount?: number }).chaptersCount ?? 0,
+      ),
     }));
   }
 
-  async findOne(id: string): Promise<Book> {
+  async findOne(id: string) {
   const book = await this.bookRepository.findOne({
     where: { id },
+    relations: { class: true },
     // relations: {
-    //   class: true,
     //   chapters: true,
     //   questions: true,
     // },
@@ -78,7 +90,11 @@ export class BookService {
     throw new NotFoundException(ERROR_MESSAGES.BOOK_NOT_FOUND);
   }
 
-  return book;
+  return {
+    ...book,
+    classId: book.class?.id,
+    class_name: book.class?.name,
+  };
 }
 
   update(id: number, updateBookDto: UpdateBookDto) {

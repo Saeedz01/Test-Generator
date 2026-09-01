@@ -1,51 +1,58 @@
 "use client";
 
 import { useEffect } from "react";
+import { X } from "lucide-react";
 import { cn } from "@/utils";
 
 /**
  * Lightweight modal dialog for admin forms / confirmations.
+ * Closes only via the top-right close button — not backdrop or Escape.
  */
 export function AdminModal({ open, title, onClose, children, className }) {
   useEffect(() => {
     if (!open) return undefined;
-    const onKey = (event) => {
-      if (event.key === "Escape") onClose?.();
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
-      <button
-        type="button"
-        aria-label="Close dialog"
-        className="absolute inset-0 bg-neutral-900/40"
-        onClick={onClose}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        className={cn(
-          "relative z-10 w-full max-w-lg rounded-[var(--radius-card)] border border-neutral-200 bg-neutral-0 p-5 shadow-md sm:p-6",
-          className,
-        )}
-      >
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <h2 className="text-h5 font-semibold text-neutral-900">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-small font-medium text-neutral-500 transition-colors hover:text-neutral-800"
-          >
-            Close
-          </button>
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-neutral-900/40 p-4 sm:p-6"
+      aria-hidden={false}
+    >
+      <div className="flex min-h-full items-start justify-center sm:items-center">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={title}
+          className={cn(
+            "relative my-auto flex w-full max-h-[calc(100dvh-2rem)] max-w-lg flex-col overflow-hidden rounded-[var(--radius-card)] border border-neutral-200 bg-neutral-0 shadow-md",
+            className,
+          )}
+        >
+          <div className="flex shrink-0 items-start justify-between gap-3 border-b border-neutral-200 px-5 py-4 sm:px-6">
+            <h2 className="text-h5 font-semibold text-neutral-900">{title}</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close dialog"
+              className="inline-flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-800"
+            >
+              <X className="size-4" aria-hidden="true" />
+            </button>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5">
+            {children}
+          </div>
         </div>
-        {children}
       </div>
     </div>
   );

@@ -8,6 +8,19 @@ function asClassList(response) {
   return [];
 }
 
+function normalizeClasses(response) {
+  return asClassList(response).map((item) => ({
+    id: item.id,
+    name: item.name ?? "",
+    code: item.code ?? "",
+    description: item.description ?? "",
+    sortOrder: item.sortOrder ?? 0,
+    booksCount: Number(item.booksCount ?? 0),
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  }));
+}
+
 export const schoolclassApi = SplitApiSettings.injectEndpoints({
   endpoints: (builder) => ({
     getClasses: builder.query({
@@ -15,7 +28,7 @@ export const schoolclassApi = SplitApiSettings.injectEndpoints({
         url: API_ENDPOINTS.getClasses,
         method: "GET",
       }),
-      transformResponse: (response) => asClassList(response),
+      transformResponse: (response) => normalizeClasses(response),
       providesTags: (result) =>
         result?.length
           ? [
@@ -31,7 +44,10 @@ export const schoolclassApi = SplitApiSettings.injectEndpoints({
         method: "POST",
         body: newClass,
       }),
-      invalidatesTags: [{ type: "SchoolClass", id: "LIST" }],
+      invalidatesTags: [
+        { type: "SchoolClass", id: "LIST" },
+        { type: "DashboardStats", id: "SUMMARY" },
+      ],
     }),
   }),
 });

@@ -10,20 +10,20 @@ export class QuestionsController {
   constructor(private readonly questionsService: QuestionsService) {}
 
   // Create Endpoints
-  @Post('createlong')
-  create(@Body() createQuestionDto: CreatelngQuestionDto) {
-    return this.questionsService.createLongQuestion(createQuestionDto);
-  }
+  // @Post('createlong')
+  // create(@Body() createQuestionDto: CreatelngQuestionDto) {
+  //   return this.questionsService.createLongQuestion(createQuestionDto);
+  // }
 
-  @Post('creatshort')
-  createShort(@Body() createQuestionDto: CreateShortQuestionDto) {
-    return this.questionsService.createShortQuestion(createQuestionDto);
-  }
+  // @Post('creatshort')
+  // createShort(@Body() createQuestionDto: CreateShortQuestionDto) {
+  //   return this.questionsService.createShortQuestion(createQuestionDto);
+  // }
 
-  @Post('createmcq')
-  createMcq(@Body() createMcqQuestion: CreateMcqQuestionDto) {
-    return this.questionsService.createMcqQuestion(createMcqQuestion);
-  }
+  // @Post('createmcq')
+  // createMcq(@Body() createMcqQuestion: CreateMcqQuestionDto) {
+  //   return this.questionsService.createMcqQuestion(createMcqQuestion);
+  // }
 
   // Find All Endpoints
   @Get()

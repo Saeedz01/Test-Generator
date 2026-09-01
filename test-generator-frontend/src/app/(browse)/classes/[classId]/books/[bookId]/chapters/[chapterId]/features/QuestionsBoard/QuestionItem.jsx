@@ -41,10 +41,14 @@ export function QuestionItem({ question }) {
             <Badge variant={question.type === "mcq" ? "info" : "default"}>
               {TYPE_LABEL[question.type] ?? question.type}
             </Badge>
-            <Badge variant="outline">{question.difficulty}</Badge>
-            <span className="text-caption font-semibold text-primary-700">
-              {question.marks} {question.marks === 1 ? "mark" : "marks"}
-            </span>
+            {question.difficulty ? (
+              <Badge variant="outline">{question.difficulty}</Badge>
+            ) : null}
+            {question.marks != null ? (
+              <span className="text-caption font-semibold text-primary-700">
+                {question.marks} {question.marks === 1 ? "mark" : "marks"}
+              </span>
+            ) : null}
           </div>
           <p className="text-small leading-relaxed text-neutral-900 sm:text-body">
             {question.statement}

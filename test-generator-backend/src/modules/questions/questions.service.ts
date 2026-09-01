@@ -104,14 +104,41 @@ export class QuestionsService {
     return repository.save(question);
   }
 
-  private async findAllFromRepository<T extends QuestionEntity>(repository: Repository<T>): Promise<T[]> {
-    const questions = await repository.find();
+  private mapQuestionResponse(question: QuestionEntity, type: 'long' | 'short' | 'mcq') {
+    const response: Record<string, unknown> = {
+      id: question.id,
+      question_text: question.question_text,
+      type,
+      classId: question.class?.id ?? null,
+      className: question.class?.name ?? null,
+      bookId: question.book?.id ?? null,
+      bookName: question.book?.book_name ?? null,
+      chapterId: question.chapter?.id ?? null,
+      chapterName: question.chapter?.chapter_name ?? null,
+      createdAt: question.createdAt,
+      updatedAt: question.updatedAt,
+    };
+
+    if (type === 'mcq' && 'options' in question) {
+      response.options = question.options;
+    }
+
+    return response;
+  }
+
+  private async findAllFromRepository<T extends QuestionEntity>(
+    repository: Repository<T>,
+    type: 'long' | 'short' | 'mcq',
+  ) {
+    const questions = await repository.find({
+      relations: ['class', 'book', 'chapter'],
+    });
 
     if (questions.length === 0) {
       throw new NotFoundException('No questions found');
     }
 
-    return questions;
+    return questions.map((question) => this.mapQuestionResponse(question, type));
   }
 
   private async removeFromRepository<T extends QuestionEntity>(
@@ -143,15 +170,15 @@ export class QuestionsService {
 
   // question retrieval functions
   async findAlllngQuestions() {
-    return this.findAllFromRepository(this.longQuestionRepository);
+    return this.findAllFromRepository(this.longQuestionRepository, 'long');
   }
 
   async findAllmcqQuestions() {
-    return this.findAllFromRepository(this.mcqQuestionRepository);
+    return this.findAllFromRepository(this.mcqQuestionRepository, 'mcq');
   }
 
   async findAllshortQuestions() {
-    return this.findAllFromRepository(this.shortQuestionRepository);
+    return this.findAllFromRepository(this.shortQuestionRepository, 'short');
   }
 
   findOne(id: number) {

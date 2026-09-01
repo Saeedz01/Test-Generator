@@ -1,14 +1,24 @@
 import { API_ENDPOINTS } from "../apiEnpoint";
 import { SplitApiSettings } from "../SplitApiSetting";
 
+function buildBooksUrl(classId) {
+  if (!classId) return API_ENDPOINTS.getBooks;
+  const separator = API_ENDPOINTS.getBooks.includes("?") ? "&" : "?";
+  return `${API_ENDPOINTS.getBooks}${separator}classId=${encodeURIComponent(classId)}`;
+}
+
 function normalizeBooks(response) {
   if (!Array.isArray(response)) return [];
   return response.map((item) => ({
     id: item.id,
     name: item.book_name ?? item.name ?? "",
     classId: item.classId ?? item.class?.id ?? item.class?.classId ?? "",
+    className: item.class_name ?? item.class?.name ?? "",
     description: item.description ?? "",
     edition: item.edition ?? "",
+    subject: item.edition?.trim() || "General",
+    author: item.class_name ?? item.className ?? item.class?.name ?? "",
+    chaptersCount: Number(item.chaptersCount ?? 0),
   }));
 }
 
@@ -16,8 +26,8 @@ export const booksApi = SplitApiSettings.injectEndpoints({
   endpoints: (builder) => ({
     
     getBooks: builder.query({
-      query: () => ({
-        url: API_ENDPOINTS.getBooks,
+      query: (classId) => ({
+        url: buildBooksUrl(classId),
         method: "GET",
       }),
       transformResponse: (response) => normalizeBooks(response),
@@ -36,7 +46,10 @@ export const booksApi = SplitApiSettings.injectEndpoints({
         method: "POST",
         body: newBook,
       }),
-      invalidatesTags: [{ type: "Book", id: "LIST" }],
+      invalidatesTags: [
+        { type: "Book", id: "LIST" },
+        { type: "DashboardStats", id: "SUMMARY" },
+      ],
     }),
   }),
 });

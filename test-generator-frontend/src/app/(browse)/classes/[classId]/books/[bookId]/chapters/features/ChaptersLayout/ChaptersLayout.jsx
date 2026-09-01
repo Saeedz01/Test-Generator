@@ -5,11 +5,9 @@ import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
 import { EmptyState, Heading } from "@/components/ui";
 import { ROUTES } from "@/constants";
-import {
-  getBookById,
-  getChaptersByBookId,
-  getClassById,
-} from "@/data/curriculum";
+import { useGetClassesQuery } from "@/services/api/classes.api";
+import { useGetBooksQuery } from "@/services/api/books.api";
+import { useGetChaptersQuery } from "@/services/api/chapters.api";
 import {
   selectBook,
   selectChapter,
@@ -24,14 +22,73 @@ import { ChapterSidebar } from "@/components/shared";
 export function ChaptersLayout({ classId, bookId, children }) {
   const dispatch = useDispatch();
   const selectedChapter = useSelector(selectSelectedChapter);
-  const schoolClass = getClassById(classId);
-  const book = getBookById(bookId);
-  const chapters = getChaptersByBookId(bookId);
+  const {
+    data: classes = [],
+    isLoading: classesLoading,
+    isError: classesError,
+    error: classesFetchError,
+    refetch: refetchClasses,
+  } = useGetClassesQuery();
+  const {
+    data: books = [],
+    isLoading: booksLoading,
+    isError: booksError,
+    error: booksFetchError,
+    refetch: refetchBooks,
+  } = useGetBooksQuery(classId);
+  const {
+    data: chapters = [],
+    isLoading: chaptersLoading,
+    isError: chaptersError,
+    error: chaptersFetchError,
+    refetch: refetchChapters,
+  } = useGetChaptersQuery({ bookId, classId });
+
+  const schoolClass = classes.find((item) => item.id === classId);
+  const book = books.find((item) => item.id === bookId);
+  const isLoading = classesLoading || booksLoading || chaptersLoading;
+  const isError = classesError || booksError || chaptersError;
+  const error = classesFetchError || booksFetchError || chaptersFetchError;
 
   useEffect(() => {
     if (schoolClass) dispatch(selectClass(schoolClass));
     if (book) dispatch(selectBook(book));
   }, [dispatch, schoolClass, book]);
+
+  if (isLoading) {
+    return (
+      <EmptyState
+        title="Loading chapters..."
+        description="Fetching book and chapter data from the database."
+      />
+    );
+  }
+
+  if (isError) {
+    return (
+      <EmptyState
+        title="Could not load chapters"
+        description={
+          error?.data?.message ||
+          error?.error ||
+          "Check that the backend is running, then try again."
+        }
+        action={
+          <button
+            type="button"
+            className="text-small font-semibold text-primary-700"
+            onClick={() => {
+              refetchClasses();
+              refetchBooks();
+              refetchChapters();
+            }}
+          >
+            Retry
+          </button>
+        }
+      />
+    );
+  }
 
   if (!schoolClass || !book) {
     return (
@@ -102,7 +159,7 @@ function ChapterOverview({
     return (
       <EmptyState
         title="No chapters yet"
-        description="This book does not have chapters in the dummy dataset."
+        description="Add chapters for this book from the admin dashboard."
       />
     );
   }

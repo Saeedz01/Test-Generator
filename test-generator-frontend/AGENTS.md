@@ -171,3 +171,14 @@ Prefer simple, readable JavaScript. Add abstractions only for real reuse.
 ## Preserve Functionality
 
 Restructuring is not a rewrite. Keep business logic, API behavior, auth, and interactions working exactly as before unless the user asks otherwise.
+
+## Preserve Commented Code
+
+When editing any file, **do not remove existing commented-out code** unless the user explicitly asks.
+
+- Keep `//`, `/* */`, and `{/* */}` blocks that contain disabled code or notes
+- Do not delete comments as part of cleanup, refactoring, or "code quality" passes
+- Only remove commented code when the user clearly requests it
+- If removal seems necessary, ask first
+
+This rule also lives in `.cursor/rules/preserve-commented-code.mdc` (`alwaysApply: true`).

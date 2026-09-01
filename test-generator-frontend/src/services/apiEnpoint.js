@@ -22,4 +22,15 @@ export const API_ENDPOINTS = {
   addChapter: `${BASE_URL}/api/admin/createChapter`,
   getChapters: `${BASE_URL}/api/chapter`,
 
+  // ------------Questions-----------------
+  getLongQuestions: `${BASE_URL}/api/questions`,
+  getShortQuestions: `${BASE_URL}/api/questions/getshort`,
+  getMcqQuestions: `${BASE_URL}/api/questions/getmcq`,
+  createLongQuestion: `${BASE_URL}/api/admin/createLongQuestion`,
+  createShortQuestion: `${BASE_URL}/api/admin/createShortQuestion`,
+  createMcqQuestion: `${BASE_URL}/api/admin/createMcqQuestion`,
+  deleteLongQuestion: (id) => `${BASE_URL}/api/questions/delLng/${id}`,
+  deleteShortQuestion: (id) => `${BASE_URL}/api/questions/delShort/${id}`,
+  deleteMcqQuestion: (id) => `${BASE_URL}/api/questions/delMcq/${id}`,
+
 };

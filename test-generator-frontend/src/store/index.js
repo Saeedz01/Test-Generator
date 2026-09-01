@@ -12,6 +12,9 @@ import { SplitApiSettings } from "../services/SplitApiSetting";
 // Ensure RTK Query endpoints are injected into the store.
 import "../services/api/classes.api";
 import "../services/api/books.api";
+import "../services/api/chapters.api";
+import "../services/api/questions.api";
+import "../services/api/admin.api";
 
 export function makeStore() {
   return configureStore({

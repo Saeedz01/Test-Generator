@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui";
-import { Field, TextInput, TextSelect, TextTextarea } from "../../../features/AdminFormFields";
+import { Field, TextSelect, TextTextarea } from "../../../features/AdminFormFields";
+import { McqOptionsFields } from "./McqOptionsFields";
 
 export function QuestionsFormFields({
   form,
@@ -12,7 +13,16 @@ export function QuestionsFormFields({
   editing,
   onClose,
   onSubmit,
+  isSubmitting = false,
 }) {
+  const updateMcqOption = (index, value) => {
+    setForm((current) => {
+      const nextOptions = [...(current.options || ["", "", "", ""])];
+      nextOptions[index] = value;
+      return { ...current, options: nextOptions };
+    });
+  };
+
   return (
     <form className="space-y-4" onSubmit={onSubmit}>
       <Field label="Statement">
@@ -24,38 +34,18 @@ export function QuestionsFormFields({
           required
         />
       </Field>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Type">
-          <TextSelect
-            value={form.type}
-            onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
-          >
-            <option value="mcq">MCQ</option>
-            <option value="short">Short</option>
-            <option value="long">Long</option>
-          </TextSelect>
-        </Field>
-        <Field label="Difficulty">
-          <TextSelect
-            value={form.difficulty}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, difficulty: e.target.value }))
-            }
-          >
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </TextSelect>
-        </Field>
-        <Field label="Marks">
-          <TextInput
-            type="number"
-            min="1"
-            value={form.marks}
-            onChange={(e) => setForm((f) => ({ ...f, marks: e.target.value }))}
-          />
-        </Field>
-      </div>
+
+      <Field label="Question type">
+        <TextSelect
+          value={form.type}
+          onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
+        >
+          <option value="mcq">MCQ</option>
+          <option value="short">Short</option>
+          <option value="long">Long</option>
+        </TextSelect>
+      </Field>
+
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="Class">
           <TextSelect
@@ -83,6 +73,7 @@ export function QuestionsFormFields({
             ))}
           </TextSelect>
         </Field>
+
         <Field label="Book">
           <TextSelect
             value={form.bookId}
@@ -105,6 +96,7 @@ export function QuestionsFormFields({
             ))}
           </TextSelect>
         </Field>
+
         <Field label="Chapter">
           <TextSelect
             value={form.chapterId}
@@ -124,46 +116,16 @@ export function QuestionsFormFields({
       </div>
 
       {form.type === "mcq" ? (
-        <>
-          <Field label="Options (one per line, 4 options)">
-            <TextTextarea
-              value={form.optionsText}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, optionsText: e.target.value }))
-              }
-            />
-          </Field>
-          <Field label="Correct option index (0–3)">
-            <TextInput
-              type="number"
-              min="0"
-              max="3"
-              value={form.correctOptionIndex}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  correctOptionIndex: e.target.value,
-                }))
-              }
-            />
-          </Field>
-        </>
-      ) : (
-        <Field label="Sample answer">
-          <TextTextarea
-            value={form.sampleAnswer}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, sampleAnswer: e.target.value }))
-            }
-          />
-        </Field>
-      )}
+        <McqOptionsFields options={form.options} onChange={updateMcqOption} />
+      ) : null}
 
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onClose}>
           Cancel
         </Button>
-        <Button type="submit">{editing ? "Save changes" : "Create"}</Button>
+        <Button type="submit" loading={isSubmitting} disabled={isSubmitting}>
+          {editing ? "Save changes" : "Create"}
+        </Button>
       </div>
     </form>
   );

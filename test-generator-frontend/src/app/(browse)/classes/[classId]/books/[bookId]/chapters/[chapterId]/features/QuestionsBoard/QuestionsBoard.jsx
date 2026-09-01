@@ -1,17 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useDispatch } from "react-redux";
 import { EmptyState, Heading } from "@/components/ui";
 import { ROUTES } from "@/constants";
-import {
-  getBookById,
-  getChapterById,
-  getClassById,
-  getQuestionsByChapterId,
-  groupQuestionsByType,
-} from "@/data/curriculum";
+import { groupQuestionsByType } from "@/data/curriculum";
+import { useGetClassesQuery } from "@/services/api/classes.api";
+import { useGetBooksQuery } from "@/services/api/books.api";
+import { useGetChaptersQuery } from "@/services/api/chapters.api";
+import { useGetQuestionsQuery } from "@/services/api/questions.api";
 import {
   selectBook,
   selectChapter,
@@ -20,25 +18,101 @@ import {
 import { QuestionGroup } from "./QuestionGroup";
 import { StickyGenerateBar } from "./StickyGenerateBar";
 import { ChapterSidebar } from "@/components/shared";
-import { getChaptersByBookId } from "@/data/curriculum";
 
 /**
  * Questions board — grouped MCQ → Short → Long with sticky generate CTA.
  */
 export function QuestionsBoard({ classId, bookId, chapterId }) {
   const dispatch = useDispatch();
-  const schoolClass = getClassById(classId);
-  const book = getBookById(bookId);
-  const chapter = getChapterById(chapterId);
-  const chapters = getChaptersByBookId(bookId);
-  const questions = getQuestionsByChapterId(chapterId);
+  const {
+    data: classes = [],
+    isLoading: classesLoading,
+    isError: classesError,
+    error: classesFetchError,
+    refetch: refetchClasses,
+  } = useGetClassesQuery();
+  const {
+    data: books = [],
+    isLoading: booksLoading,
+    isError: booksError,
+    error: booksFetchError,
+    refetch: refetchBooks,
+  } = useGetBooksQuery(classId);
+  const {
+    data: chapters = [],
+    isLoading: chaptersLoading,
+    isError: chaptersError,
+    error: chaptersFetchError,
+    refetch: refetchChapters,
+  } = useGetChaptersQuery({ bookId, classId });
+  const {
+    data: allQuestions = [],
+    isLoading: questionsLoading,
+    isError: questionsError,
+    error: questionsFetchError,
+    refetch: refetchQuestions,
+  } = useGetQuestionsQuery();
+
+  const schoolClass = classes.find((item) => item.id === classId);
+  const book = books.find((item) => item.id === bookId);
+  const chapter = chapters.find((item) => item.id === chapterId);
+  const questions = useMemo(
+    () => allQuestions.filter((item) => item.chapterId === chapterId),
+    [allQuestions, chapterId],
+  );
   const grouped = groupQuestionsByType(questions);
+
+  const isLoading =
+    classesLoading || booksLoading || chaptersLoading || questionsLoading;
+  const isError =
+    classesError || booksError || chaptersError || questionsError;
+  const error =
+    classesFetchError ||
+    booksFetchError ||
+    chaptersFetchError ||
+    questionsFetchError;
 
   useEffect(() => {
     if (schoolClass) dispatch(selectClass(schoolClass));
     if (book) dispatch(selectBook(book));
     if (chapter) dispatch(selectChapter(chapter));
   }, [dispatch, schoolClass, book, chapter]);
+
+  if (isLoading) {
+    return (
+      <EmptyState
+        title="Loading questions..."
+        description="Fetching chapter questions from the database."
+      />
+    );
+  }
+
+  if (isError) {
+    return (
+      <EmptyState
+        title="Could not load questions"
+        description={
+          error?.data?.message ||
+          error?.error ||
+          "Check that the backend is running, then try again."
+        }
+        action={
+          <button
+            type="button"
+            className="text-small font-semibold text-primary-700"
+            onClick={() => {
+              refetchClasses();
+              refetchBooks();
+              refetchChapters();
+              refetchQuestions();
+            }}
+          >
+            Retry
+          </button>
+        }
+      />
+    );
+  }
 
   if (!schoolClass || !book || !chapter) {
     return (

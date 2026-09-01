@@ -60,12 +60,25 @@ export class ChapterService {
     return await this.chapterRepository.save(chapter);
   }
 
-  async findAll() {
-    const chapters = await this.chapterRepository.find({
-      relations: { class: true, book: true },
-    });
-    if (!chapters) {
-      throw new NotFoundException('Chapters not found');
+  async findAll(bookId?: string, classId?: string) {
+    const query = this.chapterRepository
+      .createQueryBuilder('chapter')
+      .leftJoinAndSelect('chapter.class', 'class')
+      .leftJoinAndSelect('chapter.book', 'book')
+      .orderBy('chapter.order', 'ASC');
+
+    if (bookId) {
+      query.andWhere('book.id = :bookId', { bookId });
+    }
+
+    if (classId) {
+      query.andWhere('class.id = :classId', { classId });
+    }
+
+    const chapters = await query.getMany();
+
+    if (!chapters.length) {
+      return [];
     }
 
     // Normalize shape for frontend: provide `id`, `name`, `classId`, `bookId`, `order`, `description`

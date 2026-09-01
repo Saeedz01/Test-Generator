@@ -1,14 +1,14 @@
+export const EMPTY_MCQ_OPTIONS = ["", "", "", ""];
+
+export const MCQ_OPTION_LABELS = ["A", "B", "C", "D"];
+
 export const EMPTY = {
   statement: "",
   type: "mcq",
   classId: "",
   bookId: "",
   chapterId: "",
-  difficulty: "easy",
-  marks: 1,
-  optionsText: "Option A\nOption B\nOption C\nOption D",
-  correctOptionIndex: 0,
-  sampleAnswer: "",
+  options: [...EMPTY_MCQ_OPTIONS],
 };
 
 export const EMPTY_FILTERS = {

@@ -1,34 +1,67 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
-import { Badge } from "@/components/ui";
+import { useGetBooksQuery } from "@/services/api/books.api";
+import { useGetChaptersQuery } from "@/services/api/chapters.api";
+import { useGetClassesQuery } from "@/services/api/classes.api";
 import {
-  addQuestion,
-  deleteQuestion,
-  selectAdminBooks,
-  selectAdminChapters,
-  selectAdminClasses,
-  selectAdminQuestions,
-  updateQuestion,
-} from "@/store/adminContentSlice";
+  useCreateLongQuestionMutation,
+  useCreateMcqQuestionMutation,
+  useCreateShortQuestionMutation,
+  useDeleteLongQuestionMutation,
+  useDeleteMcqQuestionMutation,
+  useDeleteShortQuestionMutation,
+  useGetQuestionsQuery,
+} from "@/services/api/questions.api";
 import { AdminCrudPage } from "../../../features/AdminCrudPage";
 import { AdminModal } from "../../../features/AdminModal";
-import { EMPTY, EMPTY_FILTERS, TYPE_LABEL } from "./questionsAdminData";
+import { EMPTY, EMPTY_FILTERS } from "./questionsAdminData";
+import { buildQuestionColumns } from "./QuestionsAdminColumns";
 import { QuestionsFilters } from "./QuestionsFilters";
 import { QuestionsFormFields } from "./QuestionsFormFields";
+import {
+  buildCreatePayload,
+  buildMcqOptions,
+  normalizeChapter,
+} from "./questionsAdminHelpers";
+import { QuestionsAdminError, QuestionsAdminLoading } from "./QuestionsAdminStates";
 
 export function QuestionsAdmin() {
-  const dispatch = useDispatch();
-  const questions = useSelector(selectAdminQuestions);
-  const classes = useSelector(selectAdminClasses);
-  const books = useSelector(selectAdminBooks);
-  const chapters = useSelector(selectAdminChapters);
+  const {
+    data: questions = [],
+    isLoading: questionsLoading,
+    isError: questionsError,
+    error: questionsQueryError,
+    refetch: refetchQuestions,
+  } = useGetQuestionsQuery();
+
+  const { data: classes = [], isLoading: classesLoading } = useGetClassesQuery();
+  const { data: books = [], isLoading: booksLoading } = useGetBooksQuery();
+  const { data: rawChapters = [], isLoading: chaptersLoading } = useGetChaptersQuery();
+
+  const [createLongQuestion, { isLoading: creatingLong }] =
+    useCreateLongQuestionMutation();
+  const [createShortQuestion, { isLoading: creatingShort }] =
+    useCreateShortQuestionMutation();
+  const [createMcqQuestion, { isLoading: creatingMcq }] =
+    useCreateMcqQuestionMutation();
+  const [deleteLongQuestion] = useDeleteLongQuestionMutation();
+  const [deleteShortQuestion] = useDeleteShortQuestionMutation();
+  const [deleteMcqQuestion] = useDeleteMcqQuestionMutation();
+
+  const chapters = useMemo(
+    () => rawChapters.map(normalizeChapter),
+    [rawChapters],
+  );
+
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
+
+  const isSaving = creatingLong || creatingShort || creatingMcq;
+  const isLoading = questionsLoading || classesLoading || booksLoading || chaptersLoading;
 
   const classNameById = useMemo(
     () => Object.fromEntries(classes.map((item) => [item.id, item.name])),
@@ -62,6 +95,7 @@ export function QuestionsAdmin() {
     () => books.filter((book) => book.classId === form.classId),
     [books, form.classId],
   );
+
   const chaptersForBook = useMemo(
     () =>
       chapters
@@ -85,30 +119,31 @@ export function QuestionsAdmin() {
       filteredQuestions.map((item) => ({
         ...item,
         onEdit: () => {
-          setEditing(item);
-          setForm({
-            statement: item.statement,
-            type: item.type,
-            classId: item.classId,
-            bookId: item.bookId,
-            chapterId: item.chapterId,
-            difficulty: item.difficulty || "easy",
-            marks: item.marks || 1,
-            optionsText: Array.isArray(item.options)
-              ? item.options.join("\n")
-              : EMPTY.optionsText,
-            correctOptionIndex: item.correctOptionIndex ?? 0,
-            sampleAnswer: item.sampleAnswer || "",
-          });
-          setOpen(true);
+          toast.error("Editing questions via API is not supported yet.");
         },
-        onDelete: () => {
+        onDelete: async () => {
           if (!window.confirm("Delete this question?")) return;
-          dispatch(deleteQuestion(item.id));
-          toast.success("Question deleted");
+
+          try {
+            if (item.type === "long") {
+              await deleteLongQuestion(item.id).unwrap();
+            } else if (item.type === "short") {
+              await deleteShortQuestion(item.id).unwrap();
+            } else {
+              await deleteMcqQuestion(item.id).unwrap();
+            }
+            toast.success("Question deleted");
+          } catch (err) {
+            toast.error(err?.data?.message || err?.error || "Failed to delete question");
+          }
         },
       })),
-    [filteredQuestions, dispatch],
+    [
+      filteredQuestions,
+      deleteLongQuestion,
+      deleteShortQuestion,
+      deleteMcqQuestion,
+    ],
   );
 
   const hasActiveFilters = Boolean(
@@ -121,21 +156,68 @@ export function QuestionsAdmin() {
     setForm(EMPTY);
   };
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault();
+
     if (!form.statement.trim() || !form.classId || !form.bookId || !form.chapterId) {
       toast.error("Statement, class, book, and chapter are required");
       return;
     }
+
     if (editing) {
-      dispatch(updateQuestion({ id: editing.id, ...form }));
-      toast.success("Question updated");
-    } else {
-      dispatch(addQuestion(form));
-      toast.success("Question added");
+      toast.error("Editing questions via API is not supported yet.");
+      return;
     }
-    close();
+
+    const payload = buildCreatePayload(form);
+
+    try {
+      if (form.type === "mcq") {
+        const options = buildMcqOptions(form.options);
+        if (options.length !== 4 || options.some((option) => !option)) {
+          toast.error("All four MCQ options are required");
+          return;
+        }
+
+        await createMcqQuestion({
+          ...payload,
+          options,
+        }).unwrap();
+      } else if (form.type === "short") {
+        await createShortQuestion(payload).unwrap();
+      } else {
+        await createLongQuestion(payload).unwrap();
+      }
+
+      toast.success("Question added");
+      close();
+    } catch (err) {
+      toast.error(err?.data?.message || err?.error || "Failed to add question");
+    }
   };
+
+  const columns = useMemo(
+    () =>
+      buildQuestionColumns({
+        classNameById,
+        bookNameById,
+        chapterNameById,
+      }),
+    [classNameById, bookNameById, chapterNameById],
+  );
+
+  if (isLoading) {
+    return <QuestionsAdminLoading />;
+  }
+
+  if (questionsError) {
+    return (
+      <QuestionsAdminError
+        error={questionsQueryError}
+        onRetry={() => refetchQuestions()}
+      />
+    );
+  }
 
   return (
     <>
@@ -143,11 +225,11 @@ export function QuestionsAdmin() {
         title="Manage Questions"
         description="Maintain MCQs, short, and long questions for each chapter."
         addLabel="Add question"
-        emptyTitle={hasActiveFilters ? "No questions match these filters" : "No items yet"}
+        emptyTitle={hasActiveFilters ? "No questions match these filters" : "No questions yet"}
         emptyDescription={
           hasActiveFilters
             ? "Try clearing or changing filters to see more questions."
-            : "Add your first item to get started."
+            : "The database has no questions yet. Add your first question to get started."
         }
         onAdd={() => {
           const firstClass = classes[0];
@@ -174,39 +256,7 @@ export function QuestionsAdmin() {
             hasActiveFilters={hasActiveFilters}
           />
         }
-        columns={[
-          {
-            key: "type",
-            label: "Type",
-            render: (row) => (
-              <Badge variant="outline">{TYPE_LABEL[row.type] ?? row.type}</Badge>
-            ),
-          },
-          {
-            key: "statement",
-            label: "Statement",
-            render: (row) => (
-              <span className="line-clamp-2 max-w-sm">{row.statement}</span>
-            ),
-          },
-          {
-            key: "classId",
-            label: "Class",
-            render: (row) => classNameById[row.classId] || "—",
-          },
-          {
-            key: "bookId",
-            label: "Book",
-            render: (row) => bookNameById[row.bookId] || "—",
-          },
-          {
-            key: "chapterId",
-            label: "Chapter",
-            render: (row) => chapterNameById[row.chapterId] || "—",
-          },
-          { key: "marks", label: "Marks" },
-          { key: "difficulty", label: "Level" },
-        ]}
+        columns={columns}
         rows={rows}
       />
 
@@ -227,6 +277,7 @@ export function QuestionsAdmin() {
           editing={editing}
           onClose={close}
           onSubmit={submit}
+          isSubmitting={isSaving}
         />
       </AdminModal>
     </>

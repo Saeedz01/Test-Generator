@@ -1,0 +1,40 @@
+---
+description: Do not remove existing commented code when editing files
+alwaysApply: true
+---
+
+# Preserve Commented Code
+
+When making changes in this project, **do not delete existing commented-out code** unless the user explicitly asks to remove it.
+
+## Required behavior
+
+- Keep existing `//`, `/* */`, `{/* */}`, and `#` comments that contain code, notes, or disabled implementations
+- When refactoring or cleaning up, leave commented blocks in place
+- You may add new comments, but do not remove old ones as part of routine edits
+- If commented code blocks a required change, leave the comment and implement the change around it
+
+## Allowed removal (only when the user explicitly requests it)
+
+- The user asks to remove commented code, dead code, or clean up comments
+- The user asks to delete a specific commented block by name or location
+
+## Not allowed during normal edits
+
+- Removing commented code to reduce file size
+- Removing commented code as "cleanup" or "code quality" without being asked
+- Replacing commented code with a note like "removed old implementation"
+
+## Examples
+
+```javascript
+// ❌ Do not delete this during unrelated edits
+// const legacyFetch = () => fetch('/old-endpoint');
+
+// ✅ Leave it; make your change elsewhere
+export function fetchData() {
+  return fetch('/api/data');
+}
+```
+
+If you believe commented code must be removed for correctness, **ask the user first** instead of deleting it.

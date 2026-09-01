@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useDispatch } from "react-redux";
 import { EmptyState, Heading } from "@/components/ui";
 import { ROUTES } from "@/constants";
-import { getBooksByClassId, getClassById } from "@/data/curriculum";
+import { useGetClassesQuery } from "@/services/api/classes.api";
+import { useGetBooksQuery } from "@/services/api/books.api";
 import { selectClass } from "@/store/selectionSlice";
 import { BookCard } from "./BookCard";
 import { BooksSearch } from "./BooksSearch";
@@ -15,9 +16,26 @@ import { BooksSearch } from "./BooksSearch";
  */
 export function BooksGrid({ classId }) {
   const dispatch = useDispatch();
-  const schoolClass = getClassById(classId);
-  const books = getBooksByClassId(classId);
   const [query, setQuery] = useState("");
+  const {
+    data: classes = [],
+    isLoading: classesLoading,
+    isError: classesError,
+    error: classesFetchError,
+    refetch: refetchClasses,
+  } = useGetClassesQuery();
+  const {
+    data: books = [],
+    isLoading: booksLoading,
+    isError: booksError,
+    error: booksFetchError,
+    refetch: refetchBooks,
+  } = useGetBooksQuery(classId);
+
+  const schoolClass = classes.find((item) => item.id === classId);
+  const isLoading = classesLoading || booksLoading;
+  const isError = classesError || booksError;
+  const error = classesFetchError || booksFetchError;
 
   useEffect(() => {
     if (schoolClass) dispatch(selectClass(schoolClass));
@@ -27,11 +45,45 @@ export function BooksGrid({ classId }) {
     const q = query.trim().toLowerCase();
     if (!q) return books;
     return books.filter((book) =>
-      [book.name, book.subject, book.author, book.description]
+      [book.name, book.subject, book.author, book.description, book.edition]
         .filter(Boolean)
         .some((field) => field.toLowerCase().includes(q)),
     );
   }, [books, query]);
+
+  if (isLoading) {
+    return (
+      <EmptyState
+        title="Loading books..."
+        description="Fetching books for this class from the database."
+      />
+    );
+  }
+
+  if (isError) {
+    return (
+      <EmptyState
+        title="Could not load books"
+        description={
+          error?.data?.message ||
+          error?.error ||
+          "Check that the backend is running, then try again."
+        }
+        action={
+          <button
+            type="button"
+            className="text-small font-semibold text-primary-700"
+            onClick={() => {
+              refetchClasses();
+              refetchBooks();
+            }}
+          >
+            Retry
+          </button>
+        }
+      />
+    );
+  }
 
   if (!schoolClass) {
     return (
@@ -66,8 +118,12 @@ export function BooksGrid({ classId }) {
 
       {filtered.length === 0 ? (
         <EmptyState
-          title="No books match your search"
-          description="Try another keyword or clear the search field."
+          title={books.length === 0 ? "No books yet" : "No books match your search"}
+          description={
+            books.length === 0
+              ? "Add books for this class from the admin dashboard."
+              : "Try another keyword or clear the search field."
+          }
         />
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

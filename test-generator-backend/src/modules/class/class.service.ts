@@ -30,12 +30,20 @@ export class ClassService {
   }
 
   async findAll() {
-    return this.schoolClassRepository.find({
-      order: {
-        sortOrder: 'ASC',
-        name: 'ASC',
-      },
-    });
+    const classes = await this.schoolClassRepository
+      .createQueryBuilder('schoolClass')
+      .loadRelationCountAndMap('schoolClass.booksCount', 'schoolClass.books')
+      .orderBy('schoolClass.sortOrder', 'ASC')
+      .addOrderBy('schoolClass.name', 'ASC')
+      .getMany();
+
+    return classes.map((schoolClassRecord) => ({
+      ...schoolClassRecord,
+      booksCount: Number(
+        (schoolClassRecord as schoolClass & { booksCount?: number }).booksCount ??
+          0,
+      ),
+    }));
   }
 
   async findOne(id: string): Promise<schoolClass> {
