@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { Menu } from "lucide-react";
+import { BrandLogo } from "@/components/shared/BrandLogo";
+import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { buttonVariants, Container } from "@/components/ui";
 import { ROUTES } from "@/constants";
 import { useLogoutMutation } from "@/services/api/auth.api";
@@ -10,12 +13,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { clearUser, selectAuthUser } from "@/store/authSlice";
 import { cn } from "@/utils";
 
-const NAV = [
-  { label: "Classes", href: ROUTES.CLASSES },
-  { label: "Admin", href: ROUTES.DASHBOARD },
-];
-
-export default function DashboardHeader() {
+export default function DashboardHeader({ onMenuClick, menuOpen = false }) {
   const router = useRouter();
   const dispatch = useDispatch();
   const user = useSelector(selectAuthUser);
@@ -35,28 +33,50 @@ export default function DashboardHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-neutral-200/80 bg-neutral-0/90 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-neutral-200 bg-neutral-0">
       <Container className="flex h-16 items-center justify-between gap-4">
-        <Link
-          href={ROUTES.HOME}
-          className="text-h5 font-semibold tracking-tight text-neutral-900 transition-opacity duration-150 hover:opacity-80"
-        >
-          Test Generator
-        </Link>
+        <div className="flex min-w-0 items-center gap-2">
+          <button
+            type="button"
+            className="inline-flex size-9 items-center justify-center rounded-[var(--radius-sm)] text-neutral-700 hover:bg-neutral-100 md:hidden"
+            onClick={onMenuClick}
+            aria-label="Open admin menu"
+            aria-expanded={menuOpen}
+            aria-controls="admin-nav-drawer"
+          >
+            <Menu className="size-5" aria-hidden="true" />
+          </button>
+          <Link
+            href={ROUTES.HOME}
+            className="min-w-0 transition-opacity duration-150 hover:opacity-80"
+          >
+            <BrandLogo />
+          </Link>
+        </div>
 
-        <nav aria-label="Primary" className="hidden items-center gap-6 md:flex">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-small font-medium text-neutral-600 transition-colors duration-150 hover:text-neutral-900"
-            >
-              {item.label}
-            </Link>
-          ))}
+        <nav aria-label="Primary" className="flex items-center gap-4 md:gap-6">
+          <Link
+            href={ROUTES.CLASSES}
+            className="text-small font-medium text-neutral-600 transition-colors duration-150 hover:text-neutral-900"
+          >
+            Classes
+          </Link>
+          <Link
+            href={ROUTES.BANNER}
+            className="text-small font-medium text-neutral-600 transition-colors duration-150 hover:text-neutral-900"
+          >
+            Banner Designer
+          </Link>
+          <Link
+            href={ROUTES.DASHBOARD}
+            className="hidden text-small font-medium text-neutral-600 transition-colors duration-150 hover:text-neutral-900 md:inline"
+          >
+            Admin
+          </Link>
         </nav>
 
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           {user ? (
             <>
               <div className="hidden text-right sm:block">

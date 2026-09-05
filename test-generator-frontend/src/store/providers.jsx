@@ -27,7 +27,9 @@ export function StoreProvider({ children }) {
           duration: 2800,
           style: {
             borderRadius: "10px",
-            border: "1px solid #e3e3de",
+            border: "1px solid var(--color-border-default)",
+            background: "var(--color-surface-default)",
+            color: "var(--color-text-primary)",
             fontSize: "14px",
           },
         }}

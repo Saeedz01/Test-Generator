@@ -77,9 +77,9 @@ export function Checkbox({
           )}
         >
           {indeterminate ? (
-            <Minus className="size-3.5 text-neutral-0 opacity-0" strokeWidth={3} />
+            <Minus className="size-3.5 text-white opacity-0" strokeWidth={3} />
           ) : (
-            <Check className="size-3.5 text-neutral-0 opacity-0" strokeWidth={3} />
+            <Check className="size-3.5 text-white opacity-0" strokeWidth={3} />
           )}
         </span>
       </span>

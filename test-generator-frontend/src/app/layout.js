@@ -19,7 +19,10 @@
  */
 
 import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { ThemeProvider } from "@/components/shared/ThemeProvider";
+import { THEME_BOOT_SCRIPT } from "@/components/shared/ThemeProvider/themeBootScript";
 import { StoreProvider } from "@/store/providers";
+import { BRAND_NAME } from "@/constants";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -34,18 +37,28 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Test Generator",
-  description: "Scalable platform for generating and managing academic tests",
+  title: {
+    default: BRAND_NAME,
+    template: `%s · ${BRAND_NAME}`,
+  },
+  description:
+    "Testora helps teachers assemble balanced exam papers from chapter-wise MCQs, short, and long questions.",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${plusJakarta.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body className="flex min-h-full flex-col">
-        <StoreProvider>{children}</StoreProvider>
+        <ThemeProvider>
+          <StoreProvider>{children}</StoreProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

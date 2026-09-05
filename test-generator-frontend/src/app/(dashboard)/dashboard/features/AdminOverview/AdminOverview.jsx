@@ -8,7 +8,7 @@ import {
   MessageSquareText,
 } from "lucide-react";
 import { Card, EmptyState, Heading } from "@/components/ui";
-import { ROUTES } from "@/constants";
+import { BRAND_NAME, ROUTES } from "@/constants";
 import { useGetAdminDashboardStatsQuery } from "@/services/api/admin.api";
 
 const CARDS = [
@@ -87,7 +87,7 @@ export function AdminOverview() {
       <div className="max-w-2xl">
         <Heading level="h1">Admin Dashboard</Heading>
         <p className="mt-2 text-body text-neutral-600">
-          Manage curriculum content for the Test Generator platform. Counts below
+          Manage curriculum content for {BRAND_NAME}. Counts below
           reflect live data from the database.
         </p>
       </div>

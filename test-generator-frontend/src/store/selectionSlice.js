@@ -52,6 +52,20 @@ const selectionSlice = createSlice({
         state.selectedQuestions[question.id] = question;
       }
     },
+    selectQuestions(state, action) {
+      const questions = action.payload ?? [];
+      questions.forEach((question) => {
+        if (question?.id) {
+          state.selectedQuestions[question.id] = question;
+        }
+      });
+    },
+    deselectQuestions(state, action) {
+      const ids = action.payload ?? [];
+      ids.forEach((id) => {
+        delete state.selectedQuestions[id];
+      });
+    },
     clearTest(state) {
       state.selectedQuestions = {};
     },
@@ -66,6 +80,8 @@ export const {
   selectBook,
   selectChapter,
   toggleQuestion,
+  selectQuestions,
+  deselectQuestions,
   clearTest,
   clearSelection,
 } = selectionSlice.actions;
@@ -86,5 +102,13 @@ export const selectTotalMarks = (state) =>
   );
 export const selectIsQuestionSelected = (id) => (state) =>
   Boolean(state.selection.selectedQuestions[id]);
+export const selectSelectedChapterCount = (state) => {
+  const ids = new Set(
+    Object.values(state.selection.selectedQuestions)
+      .map((question) => question.chapterId)
+      .filter(Boolean),
+  );
+  return ids.size;
+};
 
 export default selectionSlice.reducer;

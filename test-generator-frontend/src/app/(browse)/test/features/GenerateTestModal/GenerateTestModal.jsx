@@ -29,6 +29,7 @@ export function GenerateTestModal({
   const [copiesPerPage, setCopiesPerPage] = useState(1);
   const [headingFontSize, setHeadingFontSize] = useState(18);
   const [subtextFontSize, setSubtextFontSize] = useState(12);
+  const [errors, setErrors] = useState({ institute: "", time: "" });
 
   useEffect(() => {
     if (!open) return;
@@ -43,6 +44,7 @@ export function GenerateTestModal({
     setCopiesPerPage(saved.copiesPerPage || 1);
     setHeadingFontSize(saved.headingFontSize);
     setSubtextFontSize(saved.subtextFontSize);
+    setErrors({ institute: "", time: "" });
   }, [open]);
 
   useEffect(() => {
@@ -69,10 +71,12 @@ export function GenerateTestModal({
   const submit = (event) => {
     event.preventDefault();
     const name = instituteName.trim();
-    if (!name) {
-      return;
-    }
-    if (!timeAllowed.trim()) {
+    const nextErrors = {
+      institute: name ? "" : "Enter an institute name.",
+      time: timeAllowed.trim() ? "" : "Enter the time allowed.",
+    };
+    setErrors(nextErrors);
+    if (nextErrors.institute || nextErrors.time) {
       return;
     }
 
@@ -151,6 +155,7 @@ export function GenerateTestModal({
           setLongMarks={setLongMarks}
           counts={counts}
           totalMarks={totalMarks}
+          errors={errors}
           onClose={onClose}
           onSubmit={submit}
         />

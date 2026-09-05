@@ -15,27 +15,47 @@ const TYPE_LABEL = {
 };
 
 /**
- * Single selectable question row.
+ * Single selectable question row — the whole card toggles selection.
  */
 export function QuestionItem({ question }) {
   const dispatch = useDispatch();
   const selected = useSelector(selectIsQuestionSelected(question.id));
+
+  const toggle = () => dispatch(toggleQuestion(question));
 
   return (
     <Card
       padded={false}
       selected={selected}
       className={cn(
-        "p-4 transition-[border-color,background-color,transform] duration-150",
+        "cursor-pointer p-4 transition-[border-color,background-color,transform] duration-150",
         "hover:border-neutral-300",
       )}
+      onClick={toggle}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          toggle();
+        }
+      }}
+      role="checkbox"
+      aria-checked={selected}
+      tabIndex={0}
+      aria-label={`Select question: ${question.statement}`}
     >
       <div className="flex items-start gap-3">
-        <Checkbox
-          checked={selected}
-          onChange={() => dispatch(toggleQuestion(question))}
-          aria-label={`Select question: ${question.statement}`}
-        />
+        <span
+          className="mt-0.5"
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
+          <Checkbox
+            checked={selected}
+            onChange={toggle}
+            aria-hidden="true"
+            tabIndex={-1}
+          />
+        </span>
         <div className="min-w-0 flex-1">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <Badge variant={question.type === "mcq" ? "info" : "default"}>

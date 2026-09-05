@@ -4,6 +4,12 @@ import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useDispatch } from "react-redux";
 import { EmptyState, Heading } from "@/components/ui";
+import {
+  Breadcrumb,
+  ChapterSidebar,
+  ChapterSwitcher,
+  QuestionListSkeleton,
+} from "@/components/shared";
 import { ROUTES } from "@/constants";
 import { groupQuestionsByType } from "@/data/curriculum";
 import { useGetClassesQuery } from "@/services/api/classes.api";
@@ -17,7 +23,6 @@ import {
 } from "@/store/selectionSlice";
 import { QuestionGroup } from "./QuestionGroup";
 import { StickyGenerateBar } from "./StickyGenerateBar";
-import { ChapterSidebar } from "@/components/shared";
 
 /**
  * Questions board — grouped MCQ → Short → Long with sticky generate CTA.
@@ -57,8 +62,16 @@ export function QuestionsBoard({ classId, bookId, chapterId }) {
   const book = books.find((item) => item.id === bookId);
   const chapter = chapters.find((item) => item.id === chapterId);
   const questions = useMemo(
-    () => allQuestions.filter((item) => item.chapterId === chapterId),
-    [allQuestions, chapterId],
+    () =>
+      allQuestions
+        .filter((item) => item.chapterId === chapterId)
+        .map((item) => ({
+          ...item,
+          chapterName: item.chapterName || chapter?.name || "",
+          classId: item.classId || classId,
+          bookId: item.bookId || bookId,
+        })),
+    [allQuestions, chapterId, chapter?.name, classId, bookId],
   );
   const grouped = groupQuestionsByType(questions);
 
@@ -79,12 +92,7 @@ export function QuestionsBoard({ classId, bookId, chapterId }) {
   }, [dispatch, schoolClass, book, chapter]);
 
   if (isLoading) {
-    return (
-      <EmptyState
-        title="Loading questions..."
-        description="Fetching chapter questions from the database."
-      />
-    );
+    return <QuestionListSkeleton />;
   }
 
   if (isError) {
@@ -130,6 +138,15 @@ export function QuestionsBoard({ classId, bookId, chapterId }) {
 
   return (
     <div className="space-y-6 pb-4">
+      <Breadcrumb
+        items={[
+          { label: "Home", href: ROUTES.HOME },
+          { label: "Classes", href: ROUTES.CLASSES },
+          { label: schoolClass.name, href: ROUTES.classBooks(classId) },
+          { label: book.name, href: ROUTES.bookChapters(classId, bookId) },
+          { label: chapter.name },
+        ]}
+      />
       <div className="max-w-3xl">
         <p className="text-caption font-medium tracking-wide text-primary-700 uppercase">
           {schoolClass.name} · {book.name}
@@ -144,6 +161,13 @@ export function QuestionsBoard({ classId, bookId, chapterId }) {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)] xl:grid-cols-[18rem_minmax(0,1fr)]">
+        <ChapterSwitcher
+          classId={classId}
+          bookId={bookId}
+          chapters={chapters}
+          selectedChapterId={chapterId}
+        />
+
         <ChapterSidebar
           classId={classId}
           bookId={bookId}
@@ -156,7 +180,15 @@ export function QuestionsBoard({ classId, bookId, chapterId }) {
           {questions.length === 0 ? (
             <EmptyState
               title="No questions in this chapter"
-              description="Try another chapter from the sidebar."
+              description="Choose another chapter from the list above, or go back to this book’s chapters."
+              action={
+                <Link
+                  href={ROUTES.bookChapters(classId, bookId)}
+                  className="text-small font-semibold text-primary-700"
+                >
+                  Back to chapters
+                </Link>
+              }
             />
           ) : (
             <>

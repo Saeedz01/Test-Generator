@@ -121,6 +121,8 @@ export function ChaptersAdmin() {
         description="Organize chapters under each book for question banks."
         addLabel="Add chapter"
         onAdd={() => {}}
+        hideAdd
+        emptyAction={null}
         columns={[]}
         rows={[]}
         emptyTitle="Loading chapters..."
@@ -136,6 +138,12 @@ export function ChaptersAdmin() {
         description="Organize chapters under each book for question banks."
         addLabel="Add chapter"
         onAdd={() => refetchChapters()}
+        hideAdd
+        emptyAction={
+          <Button type="button" onClick={() => refetchChapters()}>
+            Retry
+          </Button>
+        }
         columns={[]}
         rows={[]}
         emptyTitle="Failed to load chapters"

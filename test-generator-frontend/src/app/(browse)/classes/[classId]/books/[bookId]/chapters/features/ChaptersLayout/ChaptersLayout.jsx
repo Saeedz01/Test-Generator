@@ -4,6 +4,12 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
 import { EmptyState, Heading } from "@/components/ui";
+import {
+  Breadcrumb,
+  ChapterSidebar,
+  ChapterSwitcher,
+  PageHeaderSkeleton,
+} from "@/components/shared";
 import { ROUTES } from "@/constants";
 import { useGetClassesQuery } from "@/services/api/classes.api";
 import { useGetBooksQuery } from "@/services/api/books.api";
@@ -14,7 +20,6 @@ import {
   selectClass,
   selectSelectedChapter,
 } from "@/store/selectionSlice";
-import { ChapterSidebar } from "@/components/shared";
 
 /**
  * Chapters page shell — sidebar + detail panel.
@@ -56,12 +61,7 @@ export function ChaptersLayout({ classId, bookId, children }) {
   }, [dispatch, schoolClass, book]);
 
   if (isLoading) {
-    return (
-      <EmptyState
-        title="Loading chapters..."
-        description="Fetching book and chapter data from the database."
-      />
-    );
+    return <PageHeaderSkeleton />;
   }
 
   if (isError) {
@@ -108,6 +108,14 @@ export function ChaptersLayout({ classId, bookId, children }) {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb
+        items={[
+          { label: "Home", href: ROUTES.HOME },
+          { label: "Classes", href: ROUTES.CLASSES },
+          { label: schoolClass.name, href: ROUTES.classBooks(classId) },
+          { label: book.name },
+        ]}
+      />
       <div className="max-w-2xl">
         <p className="text-caption font-medium tracking-wide text-primary-700 uppercase">
           {schoolClass.name} · {book.subject}
@@ -116,17 +124,24 @@ export function ChaptersLayout({ classId, bookId, children }) {
           {book.name}
         </Heading>
         <p className="mt-2 text-body text-neutral-600">
-          Browse chapters in the sidebar, then open a chapter to select questions.
+          Pick a chapter, then open its questions to build your paper.
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)] xl:grid-cols-[18rem_minmax(0,1fr)]">
+        <ChapterSwitcher
+          classId={classId}
+          bookId={bookId}
+          chapters={chapters}
+          selectedChapterId={activeId}
+        />
+
         <ChapterSidebar
           classId={classId}
           bookId={bookId}
           chapters={chapters}
           selectedChapterId={activeId}
-          className="lg:sticky lg:top-20 lg:self-start"
+          className="hidden lg:block lg:sticky lg:top-20 lg:self-start"
         />
 
         <div className="min-w-0 rounded-[var(--radius-card)] border border-neutral-200 bg-neutral-0 p-5 sm:p-6">
@@ -159,7 +174,7 @@ function ChapterOverview({
     return (
       <EmptyState
         title="No chapters yet"
-        description="Add chapters for this book from the admin dashboard."
+        description="This book does not have chapters yet. Pick another book from the path above."
       />
     );
   }
@@ -171,7 +186,7 @@ function ChapterOverview({
       <Link
         href={ROUTES.chapterQuestions(classId, bookId, chapter.id)}
         onClick={() => onSelect(chapter)}
-        className="inline-flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-primary-600 px-4 text-small font-semibold text-neutral-0 transition-colors duration-150 hover:bg-primary-700"
+        className="inline-flex h-10 items-center justify-center rounded-[var(--radius-button)] bg-primary-600 px-4 text-small font-semibold text-white transition-colors duration-150 hover:bg-primary-700"
       >
         Open questions
       </Link>

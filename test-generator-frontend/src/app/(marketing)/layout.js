@@ -6,7 +6,7 @@ import { Footer, Header } from "@/components/shared";
 
 export default function MarketingLayout({ children }) {
   return (
-    <div className="flex min-h-full flex-1 flex-col">
+    <div className="flex min-h-full flex-1 flex-col bg-neutral-50">
       <Header />
       <div className="flex flex-1 flex-col">{children}</div>
       <Footer />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState } from "react";
 import { deleteWithToast } from "../../../features/deleteWithToast";
 import toast from "react-hot-toast";
 import { Button, EmptyState } from "@/components/ui";
@@ -137,18 +137,6 @@ export function BooksAdmin() {
     }
   };
 
-  const autoOpenedRef = useRef(false);
-
-  useEffect(() => {
-    // If fetch finished and there are no books (including backend 'no book' 404), open modal once
-    const isEmpty = !booksLoading && (books.length === 0 || backendNoBooks);
-    if (isEmpty && !open && !autoOpenedRef.current) {
-      setForm((f) => ({ ...EMPTY, classId: classes[0]?.id || "" }));
-      setOpen(true);
-      autoOpenedRef.current = true;
-    }
-  }, [booksLoading, books, backendNoBooks, classes, open]);
-
   if (booksLoading) {
     return (
       <EmptyState title="Loading books…" description="Fetching books from the API." />
@@ -175,6 +163,8 @@ export function BooksAdmin() {
         title="Manage Books"
         description="Attach books to classes and keep metadata up to date."
         addLabel="Add book"
+        emptyTitle="No books yet"
+        emptyDescription="Add a book and attach it to a class."
         onAdd={() => {
           setEditing(null);
           setForm({

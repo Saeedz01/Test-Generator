@@ -83,6 +83,7 @@ export const platformFeatures = [
       "Drill into any chapter and pull precisely the coverage you need.",
     icon: "layers",
   },
+
   {
     id: "feat-pdf",
     title: "PDF Export",
@@ -115,14 +116,29 @@ export const platformFeatures = [
 
 
 export const homeStats = [
-  { id: "stat-classes", label: "Classes", value: 7 },
-  { id: "stat-books", label: "Books", value: 48 },
-  { id: "stat-chapters", label: "Chapters", value: 320 },
-  { id: "stat-questions", label: "Questions", value: 4500, suffix: "+" },
+  {
+    id: "stat-classes",
+    label: "Classes",
+    value: "Your grades",
+  },
+  {
+    id: "stat-books",
+    label: "Books",
+    value: "Subject banks",
+  },
+  {
+    id: "stat-papers",
+    label: "Papers",
+    value: "Print-ready PDFs",
+  },
+  {
+    id: "stat-library",
+    label: "Library",
+    value: "Grows with you",
+  },
 ];
 
 export const footerNav = [
   { label: "Classes", href: "/classes" },
-  { label: "Admin", href: "/dashboard" },
-  { label: "Sign in", href: "/login" },
+  { label: "Banner Designer", href: "/banner" },
 ];

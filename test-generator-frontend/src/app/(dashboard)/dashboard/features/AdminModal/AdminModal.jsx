@@ -6,7 +6,7 @@ import { cn } from "@/utils";
 
 /**
  * Lightweight modal dialog for admin forms / confirmations.
- * Closes only via the top-right close button — not backdrop or Escape.
+ * Backdrop clicks do not close; Escape and the close button do.
  */
 export function AdminModal({ open, title, onClose, children, className }) {
   useEffect(() => {
@@ -15,10 +15,16 @@ export function AdminModal({ open, title, onClose, children, className }) {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
+    const onKey = (event) => {
+      if (event.key === "Escape") onClose?.();
+    };
+    window.addEventListener("keydown", onKey);
+
     return () => {
       document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [open, onClose]);
 
   if (!open) return null;
 

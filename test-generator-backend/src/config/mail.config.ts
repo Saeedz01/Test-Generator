@@ -23,6 +23,6 @@ export default registerAs('mail', () => {
     secure: parseMailSecure(process.env.MAIL_SECURE, port),
     user: process.env.MAIL_USER,
     password: process.env.MAIL_PASSWORD,
-    from: process.env.MAIL_FROM || 'Test Generator <noreply@localhost>',
+    from: process.env.MAIL_FROM || 'Testora <noreply@localhost>',
   };
 });

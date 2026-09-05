@@ -26,6 +26,7 @@
  * --------------------------------------------------------------------------- */
 /** Color tokens (primary, neutral, semantic, surfaces). */
 :root {
+  color-scheme: light;
 
   --color-primary-50: #f3f7eb;
   --color-primary-100: #e4eed4;
@@ -128,4 +129,59 @@
 
   --color-divider: var(--color-neutral-200);
   --color-divider-subtle: var(--color-neutral-100);
+}
+
+/* ---------------------------------------------------------------------------
+ * Dark theme — html.dark beats :root / @theme so utilities stay opaque hex,
+ * not color-mix-with-transparent. Canvas is near-black; surfaces sit above it.
+ * --------------------------------------------------------------------------- */
+html.dark {
+  color-scheme: dark;
+
+  --color-primary-50: #1a2414;
+  --color-primary-100: #24301c;
+  --color-primary-200: #314226;
+  --color-primary-300: #456030;
+  --color-primary-400: #5a7d38;
+  --color-primary-500: #6f9a35;
+  --color-primary-600: #7aab3c;
+  --color-primary-700: #8fbf4f;
+  --color-primary-800: #587b2a;
+  --color-primary-900: #a8d070;
+
+  --color-neutral-0: #1c1c19;
+  --color-neutral-50: #0c0c0b;
+  --color-neutral-100: #242421;
+  --color-neutral-200: #3a3a34;
+  --color-neutral-300: #4a4a44;
+  --color-neutral-400: #7a7a72;
+  --color-neutral-500: #9c9c94;
+  --color-neutral-600: #b8b8b0;
+  --color-neutral-700: #d0d0c8;
+  --color-neutral-800: #e4e4de;
+  --color-neutral-900: #f3f3ef;
+  --color-neutral-950: #fafaf8;
+
+  --color-success-50: #14241c;
+  --color-success-100: #1c3328;
+  --color-warning-50: #241c10;
+  --color-warning-100: #332814;
+  --color-error-50: #271616;
+  --color-error-100: #3a1e1e;
+  --color-info-50: #121c24;
+  --color-info-100: #1a2833;
+
+  --color-bg-canvas: #0c0c0b;
+  --color-bg-subtle: #161614;
+  --color-bg-muted: #161614;
+  --color-surface-default: #1c1c19;
+  --color-surface-raised: #1c1c19;
+  --color-surface-sunken: #0c0c0b;
+  --color-surface-overlay: #1c1c19;
+
+  --color-text-inverse: #ffffff;
+  --color-text-success: var(--color-success-500);
+  --color-text-warning: var(--color-warning-500);
+  --color-text-error: var(--color-error-500);
+  --color-text-link: var(--color-info-500);
 }

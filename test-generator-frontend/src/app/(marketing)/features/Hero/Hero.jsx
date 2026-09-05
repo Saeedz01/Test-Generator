@@ -1,27 +1,29 @@
 import Link from "next/link";
 import { buttonVariants, Container, Typography } from "@/components/ui";
-import { ROUTES } from "@/constants";
+import { BRAND_NAME, ROUTES } from "@/constants";
 import { homeQuote } from "@/data/home";
 import { cn } from "@/utils";
 import { HeroArtwork } from "./HeroArtwork";
 import { HeroDivider } from "./HeroDivider";
 
 /**
- * Full-bleed interactive hero — capped to one viewport (below sticky header)
- * so the asymmetrical bottom curve is visible without scrolling.
+ * Full-bleed interactive hero. Height fills the viewport on large screens so
+ * the bottom curve stays in view; smaller breakpoints grow with the copy so
+ * the CTAs are never clipped.
  */
 export function Hero() {
   return (
     <section
       className={cn(
         "relative isolate flex flex-col overflow-hidden",
-        "h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)]",
-        "bg-gradient-to-br from-primary-50 via-neutral-0 to-info-50",
+        "min-h-[calc(100dvh-4rem)] lg:h-[calc(100dvh-4rem)] lg:max-h-[calc(100dvh-4rem)]",
+        "bg-neutral-50 bg-gradient-to-br from-primary-50 via-neutral-0 to-info-50",
+        "dark:bg-neutral-50 dark:bg-none",
       )}
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 overflow-hidden"
+        className="pointer-events-none absolute inset-0 overflow-hidden dark:hidden"
       >
         <div className="absolute -top-24 -left-16 size-72 rounded-full bg-primary-200/40 blur-3xl" />
         <div className="absolute top-1/3 -right-20 size-80 rounded-full bg-info-100/60 blur-3xl" />
@@ -39,11 +41,11 @@ export function Hero() {
           "lg:grid-cols-2 lg:gap-12 lg:py-12 lg:pb-28",
         )}
       >
-        <div className="max-w-xl">
+        <div className="flex max-w-xl min-h-0 flex-col justify-center">
           <Typography
             variant="caption"
             as="p"
-            className="mb-4 inline-flex max-w-md items-start gap-2 rounded-[var(--radius-md)] border border-primary-200/80 bg-neutral-0/70 px-3 py-2 leading-relaxed text-primary-800 shadow-xs backdrop-blur-sm"
+            className="mb-4 inline-flex max-w-md items-start gap-2 rounded-[var(--radius-md)] border border-primary-200 bg-neutral-0 px-3 py-2 leading-relaxed text-primary-800 shadow-xs"
           >
             <span className="mt-0.5 text-primary-500" aria-hidden="true">
               ❝
@@ -61,7 +63,7 @@ export function Hero() {
             as="p"
             className="mb-2 font-semibold tracking-[0.08em] text-primary-700 uppercase"
           >
-            Test Generator
+            {BRAND_NAME}
           </Typography>
 
           <Typography variant="display" className="max-w-lg sm:text-display">
@@ -77,21 +79,21 @@ export function Hero() {
             from chapter-wise MCQs, short, and long questions.
           </Typography>
 
-          <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:items-center">
+          <div className="relative z-20 mt-6 flex shrink-0 flex-col gap-3 sm:mt-8 sm:flex-row sm:items-center">
             <Link
-              href={ROUTES.CLASSES}
+              href={`${ROUTES.CLASSES}?start=1`}
               className={cn(
                 buttonVariants({ variant: "primary", size: "lg" }),
-                "sm:min-w-[10.5rem]",
+                "w-full shadow-xs sm:w-auto sm:min-w-[10.5rem]",
               )}
             >
               Generate Test
             </Link>
             <Link
-              href={ROUTES.CLASSES}
+              href="#featured-classes"
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
-                "border-neutral-300 bg-neutral-0/80 sm:min-w-[10.5rem]",
+                "w-full border-2 border-primary-700 bg-neutral-0 text-primary-800 shadow-xs sm:w-auto sm:min-w-[10.5rem]",
               )}
             >
               Explore Classes
@@ -99,7 +101,7 @@ export function Hero() {
           </div>
         </div>
 
-        <div className="relative mx-auto hidden w-full max-w-md min-[480px]:block lg:max-w-none">
+        <div className="relative mx-auto hidden w-full max-w-md lg:block lg:max-w-none">
           <div className="mx-auto flex h-[min(42vh,22rem)] w-full items-center justify-center lg:h-[min(52vh,28rem)]">
             <HeroArtwork />
           </div>

@@ -7,7 +7,7 @@ export function HeroArtwork() {
     <div className="relative mx-auto aspect-square h-full max-h-full w-full max-w-lg lg:ml-auto">
       <div
         aria-hidden="true"
-        className="absolute inset-6 rounded-[var(--radius-2xl)] border border-neutral-200/80 bg-neutral-0/80 shadow-sm backdrop-blur-sm"
+        className="absolute inset-6 rounded-[var(--radius-2xl)] border border-neutral-200 bg-neutral-0 shadow-sm"
       />
 
       <svg

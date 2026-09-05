@@ -24,6 +24,7 @@ export function GenerateTestModalForm({
   setLongMarks,
   counts,
   totalMarks,
+  errors = { institute: "", time: "" },
   onClose,
   onSubmit,
 }) {
@@ -39,8 +40,13 @@ export function GenerateTestModalForm({
           onChange={(e) => setInstituteName(e.target.value)}
           placeholder="e.g. Crescent Public School"
           className={fieldClass}
-          required
+          aria-invalid={Boolean(errors.institute) || undefined}
         />
+        {errors.institute ? (
+          <p className="mt-1.5 text-caption text-error-600" role="alert">
+            {errors.institute}
+          </p>
+        ) : null}
         <datalist id="institute-history">
           {institutes.map((name) => (
             <option key={name} value={name} />
@@ -75,8 +81,13 @@ export function GenerateTestModalForm({
           onChange={(e) => setTimeAllowed(e.target.value)}
           placeholder="e.g. 2 hours"
           className={fieldClass}
-          required
+          aria-invalid={Boolean(errors.time) || undefined}
         />
+        {errors.time ? (
+          <p className="mt-1.5 text-caption text-error-600" role="alert">
+            {errors.time}
+          </p>
+        ) : null}
       </label>
 
       <label className="block">
@@ -206,7 +217,7 @@ export function GenerateTestModalForm({
         <Button type="button" variant="outline" onClick={onClose}>
           Cancel
         </Button>
-        <Button type="submit">Generate PDF</Button>
+        <Button type="submit">Preview paper</Button>
       </div>
     </form>
   );

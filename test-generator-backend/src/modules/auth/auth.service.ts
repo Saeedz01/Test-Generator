@@ -130,7 +130,7 @@ export class AuthService {
 
     await this.mailerService.sendMail({
       to: user.email,
-      subject: 'Your temporary password - Test Generator',
+      subject: 'Your temporary password - Testora',
       template: 'forgot-password',
       context: {
         name: user.name ?? 'User',
@@ -288,7 +288,7 @@ export class AuthService {
 
     await this.mailerService.sendMail({
       to: user.email,
-      subject: 'Your login OTP - Test Generator',
+      subject: 'Your login OTP - Testora',
       template: 'otp',
       context: {
         name: user.name ?? 'User',

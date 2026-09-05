@@ -5,15 +5,15 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { Button, Heading } from "@/components/ui";
-import { ROUTES } from "@/constants";
+import { BRAND_NAME, ROUTES } from "@/constants";
 import { useLoginMutation } from "@/services/api/auth.api";
 import { setUser } from "@/store/authSlice";
 
 export function LoginForm() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const [email, setEmail] = useState("admin@gmail.com");
-  const [password, setPassword] = useState("1122");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [login, { isLoading }] = useLoginMutation();
 
   const onSubmit = async (event) => {
@@ -48,8 +48,8 @@ export function LoginForm() {
     <div className="rounded-[var(--radius-card)] border border-neutral-200 bg-neutral-0 p-8 shadow-xs">
       <Heading level="h2">Sign in</Heading>
       <p className="mt-2 text-small text-neutral-600">
-        Access the admin dashboard to manage classes, books, chapters, and
-        questions.
+        Access the {BRAND_NAME} admin dashboard to manage classes, books,
+        chapters, and questions.
       </p>
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit}>

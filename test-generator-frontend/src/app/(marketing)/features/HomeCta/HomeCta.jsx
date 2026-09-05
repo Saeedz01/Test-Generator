@@ -18,7 +18,7 @@ export function HomeCta() {
       </div>
 
       <Container className="relative text-center">
-        <Heading level="h2" className="text-neutral-0">
+        <Heading level="h2" className="text-white">
           Ready to generate your next test?
         </Heading>
         <p className="mx-auto mt-4 max-w-xl text-body text-primary-100">
@@ -30,7 +30,7 @@ export function HomeCta() {
             href={ROUTES.CLASSES}
             className={cn(
               buttonVariants({ variant: "secondary", size: "lg" }),
-              "border-transparent bg-neutral-0 text-primary-800 hover:bg-primary-50",
+              "border-transparent bg-white text-primary-800 hover:bg-primary-50",
             )}
           >
             Start Generating

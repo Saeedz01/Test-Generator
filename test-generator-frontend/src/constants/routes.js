@@ -8,6 +8,8 @@ export const ROUTES = {
 
   // Public / teacher browse + test builder
   CLASSES: "/classes",
+  BANNER: "/banner",
+  BANNER_STUDIO: "/banner/studio",
   TEST_SUMMARY: "/test",
   classBooks: (classId) => `/classes/${classId}/books`,
   bookChapters: (classId, bookId) =>

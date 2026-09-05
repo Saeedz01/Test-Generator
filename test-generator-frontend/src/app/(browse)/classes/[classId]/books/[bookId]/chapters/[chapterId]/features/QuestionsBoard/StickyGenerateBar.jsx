@@ -5,6 +5,7 @@ import { buttonVariants } from "@/components/ui";
 import { ROUTES } from "@/constants";
 import { useSelector } from "react-redux";
 import {
+  selectSelectedChapterCount,
   selectSelectedQuestionCount,
   selectTotalMarks,
 } from "@/store/selectionSlice";
@@ -16,17 +17,24 @@ import { cn } from "@/utils";
 export function StickyGenerateBar() {
   const count = useSelector(selectSelectedQuestionCount);
   const marks = useSelector(selectTotalMarks);
+  const chapterCount = useSelector(selectSelectedChapterCount);
   const disabled = count === 0;
+  const mixedChapters = chapterCount > 1;
 
   return (
-    <div className="sticky bottom-0 z-20 -mx-4 mt-8 border-t border-neutral-200 bg-neutral-0/95 px-4 py-3 backdrop-blur-md sm:-mx-6 sm:px-6 lg:mx-0 lg:rounded-t-[var(--radius-card)] lg:border lg:border-b-0 lg:border-neutral-200">
+    <div className="sticky bottom-0 z-20 -mx-4 mt-8 border-t border-neutral-200 bg-neutral-0 px-4 py-3 sm:-mx-6 sm:px-6 lg:mx-0 lg:rounded-t-[var(--radius-card)] lg:border lg:border-b-0 lg:border-neutral-200">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-small font-semibold text-neutral-900">
-            {count} selected · {marks} marks
+            {count} selected · {marks} bank marks
+            {mixedChapters ? ` · ${chapterCount} chapters` : ""}
           </p>
           <p className="text-caption text-neutral-500">
-            Review your paper, then generate a printable PDF.
+            {disabled
+              ? "Select at least one question to generate a paper."
+              : mixedChapters
+                ? "This paper mixes questions from more than one chapter."
+                : "Review your paper, then generate a printable PDF."}
           </p>
         </div>
         {disabled ? (
@@ -36,6 +44,7 @@ export function StickyGenerateBar() {
               "opacity-45",
             )}
             aria-disabled="true"
+            title="Select at least one question"
           >
             Generate Test
           </span>

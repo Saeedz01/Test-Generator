@@ -1,11 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useDispatch } from "react-redux";
-import { deleteWithToast } from "../../../features/deleteWithToast";
 import toast from "react-hot-toast";
 import { Button, EmptyState } from "@/components/ui";
-import { deleteClass, updateClass } from "@/store/adminContentSlice";
 import { AdminCrudPage } from "../../../features/AdminCrudPage";
 import { AdminModal } from "../../../features/AdminModal";
 import { Field, TextInput, TextTextarea } from "../../../features/AdminFormFields";
@@ -22,7 +19,6 @@ const EMPTY = {
 
 export function ClassesAdmin() {
   const [addClassMutation, { isLoading }] = useAddClassMutation();
-  const dispatch = useDispatch();
   const {
     data: classes = [],
     isLoading: classesLoading,
@@ -32,38 +28,12 @@ export function ClassesAdmin() {
   } = useGetClassesQuery();
 
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
 
-  const rows = useMemo(
-    () =>
-      classes.map((item) => ({
-        ...item,
-        onEdit: () => {
-          setEditing(item);
-          setForm({
-            name: item.name || "",
-            code: item.code || "",
-            description: item.description || "",
-          });
-          setOpen(true);
-        },
-        onDelete: () =>
-          deleteWithToast({
-            entityLabel: "Class",
-            entityName: item.name,
-            confirmMessage: `Delete class "${item.name}" and all related content? This cannot be undone.`,
-            onDelete: async () => {
-              dispatch(deleteClass(item.id));
-            },
-          }),
-      })),
-    [classes, dispatch],
-  );
+  const rows = useMemo(() => classes.map((item) => ({ ...item })), [classes]);
 
   const close = () => {
     setOpen(false);
-    setEditing(null);
     setForm(EMPTY);
   };
 
@@ -75,13 +45,6 @@ export function ClassesAdmin() {
     }
     if (!form.code.trim()) {
       toast.error("Code is required");
-      return;
-    }
-
-    if (editing) {
-      dispatch(updateClass({ id: editing.id, ...form }));
-      toast.success("Class updated");
-      close();
       return;
     }
 
@@ -131,10 +94,11 @@ export function ClassesAdmin() {
     <>
       <AdminCrudPage
         title="Manage Classes"
-        description="Create, update, or remove academic classes."
+        description="Create academic classes. Editing and deleting will appear here when those APIs are wired."
         addLabel="Add class"
+        emptyTitle="No classes yet"
+        emptyDescription="Add your first class to start the library."
         onAdd={() => {
-          setEditing(null);
           setForm(EMPTY);
           setOpen(true);
         }}
@@ -154,11 +118,7 @@ export function ClassesAdmin() {
         rows={rows}
       />
 
-      <AdminModal
-        open={open}
-        title={editing ? "Edit class" : "Add class"}
-        onClose={close}
-      >
+      <AdminModal open={open} title="Add class" onClose={close}>
         <form className="space-y-4" onSubmit={submit}>
           <Field label="Name">
             <TextInput
@@ -196,7 +156,7 @@ export function ClassesAdmin() {
               Cancel
             </Button>
             <Button type="submit" loading={isLoading}>
-              {editing ? "Save changes" : "Create"}
+              Create
             </Button>
           </div>
         </form>

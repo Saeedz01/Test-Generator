@@ -110,6 +110,11 @@ export function AdminsAdmin() {
           <EmptyState
             title="No admins yet"
             description="Add your first admin account to delegate dashboard access."
+            action={
+              <Button type="button" onClick={() => setOpen(true)}>
+                Add admin
+              </Button>
+            }
           />
         ) : (
           <Card padded={false} className="overflow-hidden">

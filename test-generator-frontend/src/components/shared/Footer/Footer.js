@@ -4,7 +4,8 @@
 import Link from "next/link";
 import { Globe, MessageCircle, Share2 } from "lucide-react";
 import { Container } from "@/components/ui";
-import { ROUTES } from "@/constants";
+import { BrandLogo } from "@/components/shared/BrandLogo";
+import { BRAND_NAME, ROUTES } from "@/constants";
 import { footerNav } from "@/data/home";
 
 const SOCIAL = [
@@ -23,9 +24,9 @@ export default function Footer() {
           <div className="max-w-xs">
             <Link
               href={ROUTES.HOME}
-              className="text-h5 font-semibold tracking-tight text-neutral-900"
+              className="inline-flex transition-opacity duration-150 hover:opacity-80"
             >
-              Test Generator
+              <BrandLogo />
             </Link>
             <p className="mt-3 text-small text-neutral-600">
               A premium workspace for teachers to craft clear, balanced exams
@@ -71,8 +72,16 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-neutral-200 pt-6 text-center text-caption text-neutral-500 sm:text-left">
-          © {year} Test Generator. All rights reserved.
+        <div className="mt-10 flex flex-col gap-3 border-t border-neutral-200 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-center text-caption text-neutral-500 sm:text-left">
+            © {year} {BRAND_NAME}. All rights reserved.
+          </p>
+          <Link
+            href={ROUTES.LOGIN}
+            className="text-center text-caption text-neutral-400 transition-colors duration-150 hover:text-neutral-600 sm:text-right"
+          >
+            Staff
+          </Link>
         </div>
       </Container>
     </footer>

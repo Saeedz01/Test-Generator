@@ -6,7 +6,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { FileDown, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
-  Badge,
   Button,
   Card,
   EmptyState,
@@ -18,6 +17,7 @@ import {
   clearTest,
   selectSelectedBook,
   selectSelectedChapter,
+  selectSelectedChapterCount,
   selectSelectedClass,
   selectSelectedQuestionCount,
   selectSelectedQuestionsList,
@@ -25,15 +25,13 @@ import {
   toggleQuestion,
 } from "@/store/selectionSlice";
 import { cn } from "@/utils";
+import { buildTestPaperHtml } from "../utils/buildTestPaperHtml";
 import { generatePdf } from "../utils/generatePdf";
 import { applyMarksConfig } from "../utils/testSettingsStorage";
+import { saveGeneratedPaper } from "../utils/savedPapersStorage";
 import { GenerateTestModal } from "../GenerateTestModal";
-
-const TYPE_LABEL = {
-  mcq: "MCQ",
-  short: "Short",
-  long: "Long",
-};
+import { TestPaperPreview } from "./TestPaperPreview";
+import { TestSummaryList } from "./TestSummaryList";
 
 /**
  * Test summary — selected questions, totals, and PDF generation.
@@ -46,7 +44,15 @@ export function TestSummary() {
   const questions = useSelector(selectSelectedQuestionsList);
   const count = useSelector(selectSelectedQuestionCount);
   const marks = useSelector(selectTotalMarks);
+  const chapterCount = useSelector(selectSelectedChapterCount);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState("");
+  const [printMeta, setPrintMeta] = useState(null);
+
+  const questionsHref =
+    schoolClass && book && chapter
+      ? ROUTES.chapterQuestions(schoolClass.id, book.id, chapter.id)
+      : ROUTES.CLASSES;
 
   const ordered = [...questions].sort((a, b) => {
     const order = { mcq: 0, short: 1, long: 2 };
@@ -55,31 +61,39 @@ export function TestSummary() {
 
   const handleConfirmSettings = (settings) => {
     const { scored, totalMarks } = applyMarksConfig(ordered, settings);
+    const meta = {
+      instituteName: settings.lastInstitute,
+      className: schoolClass?.name,
+      bookName: book?.name,
+      chapterName:
+        chapterCount > 1
+          ? `${chapterCount} chapters`
+          : chapter?.name,
+      timeAllowed: settings.timeAllowed,
+      totalMarks,
+      copiesPerPage: settings.copiesPerPage || 1,
+      headingFontSize: settings.headingFontSize,
+      subtextFontSize: settings.subtextFontSize,
+    };
 
-    const result = generatePdf(
-      {
-        instituteName: settings.lastInstitute,
-        className: schoolClass?.name,
-        bookName: book?.name,
-        chapterName: chapter?.name,
-        timeAllowed: settings.timeAllowed,
-        totalMarks,
-        copiesPerPage: settings.copiesPerPage || 1,
-        headingFontSize: settings.headingFontSize,
-        subtextFontSize: settings.subtextFontSize,
-      },
-      scored,
-    );
-
+    setPrintMeta({ meta, questions: scored });
+    setPreviewHtml(buildTestPaperHtml(meta, scored, { autoPrint: false }));
     setSettingsOpen(false);
+    saveGeneratedPaper({ meta, questions: scored });
+    toast.success("Paper saved on this device.");
+  };
 
+  const handlePrint = () => {
+    if (!printMeta) return;
+    const result = generatePdf(printMeta.meta, printMeta.questions);
     if (!result.ok) {
       toast.error(result.error || "Could not generate PDF.");
       return;
     }
     toast.success(
       "Print dialog opened — turn off “Headers and footers” to hide date/URL, then Save as PDF.",
-    );  };
+    );
+  };
 
   if (count === 0) {
     return (
@@ -88,10 +102,12 @@ export function TestSummary() {
         description="Go back to a chapter and select questions to build your paper."
         action={
           <Link
-            href={ROUTES.CLASSES}
+            href={questionsHref}
             className={cn(buttonVariants({ variant: "primary", size: "md" }))}
           >
-            Browse classes
+            {schoolClass && book && chapter
+              ? "Back to questions"
+              : "Browse classes"}
           </Link>
         }
       />
@@ -125,49 +141,40 @@ export function TestSummary() {
         </Card>
       </div>
 
-      {(book || chapter) && (
+      {(book || chapter || chapterCount > 1) && (
         <p className="text-small text-neutral-600">
           {book?.name}
-          {chapter ? ` · ${chapter.name}` : ""}
+          {chapterCount > 1
+            ? ` · ${chapterCount} chapters`
+            : chapter
+              ? ` · ${chapter.name}`
+              : ""}
         </p>
       )}
 
-      <Card padded={false} className="overflow-hidden">
-        <ul className="divide-y divide-neutral-100">
-          {ordered.map((question, index) => (
-            <li
-              key={question.id}
-              className="flex items-start justify-between gap-3 px-4 py-3 sm:px-5"
-            >
-              <div className="min-w-0">
-                <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <span className="text-caption font-semibold text-neutral-400">
-                    {index + 1}.
-                  </span>
-                  <Badge variant="outline">{TYPE_LABEL[question.type]}</Badge>
-                  <span className="text-caption font-medium text-primary-700">
-                    {question.marks} marks
-                  </span>
-                </div>
-                <p className="text-small text-neutral-800">{question.statement}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => dispatch(toggleQuestion(question))}
-                className="shrink-0 text-caption font-medium text-neutral-500 transition-colors duration-150 hover:text-error-600"
-              >
-                Remove
-              </button>
-            </li>
-          ))}
-        </ul>
-      </Card>
+      <TestSummaryList
+        questions={ordered}
+        onRemove={(question) => dispatch(toggleQuestion(question))}
+      />
+
+      {previewHtml ? (
+        <TestPaperPreview
+          html={previewHtml}
+          onPrint={handlePrint}
+          onDismiss={() => {
+            setPreviewHtml("");
+            setPrintMeta(null);
+          }}
+        />
+      ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Button
           variant="ghost"
           onClick={() => {
             dispatch(clearTest());
+            setPreviewHtml("");
+            setPrintMeta(null);
             toast.success("Selection cleared.");
           }}
         >
@@ -177,18 +184,14 @@ export function TestSummary() {
 
         <div className="flex flex-col gap-2 sm:flex-row">
           <Link
-            href={
-              schoolClass && book && chapter
-                ? ROUTES.chapterQuestions(schoolClass.id, book.id, chapter.id)
-                : ROUTES.CLASSES
-            }
+            href={questionsHref}
             className={cn(buttonVariants({ variant: "outline", size: "md" }))}
           >
             Back to questions
           </Link>
           <Button variant="primary" onClick={() => setSettingsOpen(true)}>
             <FileDown className="size-4" aria-hidden="true" />
-            Generate PDF
+            {previewHtml ? "Update preview" : "Preview paper"}
           </Button>
         </div>
       </div>

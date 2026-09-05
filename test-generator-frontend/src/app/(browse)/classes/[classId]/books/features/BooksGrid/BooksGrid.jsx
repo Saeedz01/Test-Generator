@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useDispatch } from "react-redux";
 import { EmptyState, Heading } from "@/components/ui";
+import { Breadcrumb, PageHeaderSkeleton } from "@/components/shared";
 import { ROUTES } from "@/constants";
 import { useGetClassesQuery } from "@/services/api/classes.api";
 import { useGetBooksQuery } from "@/services/api/books.api";
@@ -52,12 +53,7 @@ export function BooksGrid({ classId }) {
   }, [books, query]);
 
   if (isLoading) {
-    return (
-      <EmptyState
-        title="Loading books..."
-        description="Fetching books for this class from the database."
-      />
-    );
+    return <PageHeaderSkeleton />;
   }
 
   if (isError) {
@@ -101,6 +97,13 @@ export function BooksGrid({ classId }) {
 
   return (
     <div className="space-y-8">
+      <Breadcrumb
+        items={[
+          { label: "Home", href: ROUTES.HOME },
+          { label: "Classes", href: ROUTES.CLASSES },
+          { label: schoolClass.name },
+        ]}
+      />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-2xl">
           <p className="text-caption font-medium tracking-wide text-primary-700 uppercase">
@@ -121,7 +124,7 @@ export function BooksGrid({ classId }) {
           title={books.length === 0 ? "No books yet" : "No books match your search"}
           description={
             books.length === 0
-              ? "Add books for this class from the admin dashboard."
+              ? "No books are listed for this class yet. Try another class from the path above."
               : "Try another keyword or clear the search field."
           }
         />

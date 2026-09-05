@@ -20,7 +20,7 @@ export function Typography({
   children,
   variant = "body",
   as,
-  align = "left",
+  align,
   muted = false,
   className,
   ...props
@@ -32,7 +32,7 @@ export function Typography({
     <Comp
       className={cn(
         variantClass,
-        ALIGN_CLASSES[align],
+        align && ALIGN_CLASSES[align],
         muted && "text-neutral-600",
         className,
       )}

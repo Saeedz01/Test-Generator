@@ -16,7 +16,13 @@ export function AdminCrudPage({
   toolbar,
   emptyTitle = "No items yet",
   emptyDescription = "Add your first item to get started.",
+  emptyAction,
+  hideAdd = false,
 }) {
+  const showActions = rows.some(
+    (row) => typeof row.onEdit === "function" || typeof row.onDelete === "function",
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -26,16 +32,31 @@ export function AdminCrudPage({
             <p className="mt-2 text-body text-neutral-600">{description}</p>
           ) : null}
         </div>
-        <Button type="button" onClick={onAdd}>
-          <Plus className="size-4" aria-hidden="true" />
-          {addLabel}
-        </Button>
+        {hideAdd ? null : (
+          <Button type="button" onClick={onAdd}>
+            <Plus className="size-4" aria-hidden="true" />
+            {addLabel}
+          </Button>
+        )}
       </div>
 
       {toolbar ? <div>{toolbar}</div> : null}
 
       {rows.length === 0 ? (
-        <EmptyState title={emptyTitle} description={emptyDescription} />
+        <EmptyState
+          title={emptyTitle}
+          description={emptyDescription}
+          action={
+            emptyAction === null
+              ? undefined
+              : (emptyAction ?? (
+                  <Button type="button" onClick={onAdd}>
+                    <Plus className="size-4" aria-hidden="true" />
+                    {addLabel}
+                  </Button>
+                ))
+          }
+        />
       ) : (
         <Card padded={false} className="overflow-hidden">
           <div className="overflow-x-auto">
@@ -47,12 +68,19 @@ export function AdminCrudPage({
                       {column.label}
                     </th>
                   ))}
-                  <th className="px-4 py-3 text-right font-semibold">Actions</th>
+                  {showActions ? (
+                    <th className="px-4 py-3 text-right font-semibold">
+                      Actions
+                    </th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
                 {rows.map((row) => (
-                  <tr key={row.id} className="align-top transition-colors hover:bg-neutral-50/80">
+                  <tr
+                    key={row.id}
+                    className="align-top transition-colors hover:bg-neutral-50/80"
+                  >
                     {columns.map((column) => (
                       <td key={column.key} className="px-4 py-3 text-neutral-800">
                         {column.render
@@ -60,26 +88,32 @@ export function AdminCrudPage({
                           : row[column.key] ?? "—"}
                       </td>
                     ))}
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => row.onEdit?.(row)}
-                          className="inline-flex size-8 items-center justify-center rounded-[var(--radius-sm)] text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-primary-700"
-                          aria-label={`Edit ${row.id}`}
-                        >
-                          <Pencil className="size-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => row.onDelete?.(row)}
-                          className="inline-flex size-8 items-center justify-center rounded-[var(--radius-sm)] text-neutral-600 transition-colors hover:bg-error-50 hover:text-error-700"
-                          aria-label={`Delete ${row.id}`}
-                        >
-                          <Trash2 className="size-4" />
-                        </button>
-                      </div>
-                    </td>
+                    {showActions ? (
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-2">
+                          {typeof row.onEdit === "function" ? (
+                            <button
+                              type="button"
+                              onClick={() => row.onEdit(row)}
+                              className="inline-flex size-8 items-center justify-center rounded-[var(--radius-sm)] text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-primary-700"
+                              aria-label={`Edit ${row.id}`}
+                            >
+                              <Pencil className="size-4" />
+                            </button>
+                          ) : null}
+                          {typeof row.onDelete === "function" ? (
+                            <button
+                              type="button"
+                              onClick={() => row.onDelete(row)}
+                              className="inline-flex size-8 items-center justify-center rounded-[var(--radius-sm)] text-neutral-600 transition-colors hover:bg-error-50 hover:text-error-700"
+                              aria-label={`Delete ${row.id}`}
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
               </tbody>

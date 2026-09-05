@@ -20,7 +20,7 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "bg-primary-600 text-neutral-0 hover:bg-primary-700 active:bg-primary-800",
+          "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800",
         secondary:
           "border border-neutral-200 bg-neutral-100 text-neutral-900 hover:bg-neutral-200 active:bg-neutral-300",
         outline:
@@ -28,7 +28,7 @@ export const buttonVariants = cva(
         ghost:
           "bg-transparent text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 active:bg-neutral-200",
         destructive:
-          "bg-error-600 text-neutral-0 hover:bg-error-700 active:bg-error-700 focus-visible:ring-error-500",
+          "bg-error-600 text-white hover:bg-error-700 active:bg-error-700 focus-visible:ring-error-500",
       },
       size: {
         sm: "h-8 px-3 text-caption",
