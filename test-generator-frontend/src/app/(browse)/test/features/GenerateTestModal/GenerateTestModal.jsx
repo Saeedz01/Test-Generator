@@ -104,7 +104,7 @@ export function GenerateTestModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
       <button
         type="button"
         aria-label="Close dialog"
@@ -115,7 +115,7 @@ export function GenerateTestModal({
         role="dialog"
         aria-modal="true"
         aria-label="Test settings"
-        className="relative z-10 max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[var(--radius-card)] border border-neutral-200 bg-neutral-0 p-5 shadow-md sm:p-6"
+        className="relative z-10 max-h-[90dvh] w-full max-w-xl overflow-y-auto rounded-t-[var(--radius-card)] border border-neutral-200 bg-neutral-0 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-md sm:rounded-[var(--radius-card)] sm:p-6"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>

@@ -7,7 +7,7 @@ import { cn } from "@/utils";
 export function PreviewModal({ doc, onClose, onExport }) {
   return (
     <div className="fixed inset-0 z-[60] flex flex-col bg-neutral-950/90">
-      <div className="flex items-center justify-end gap-2 p-3">
+      <div className="flex flex-wrap items-center justify-end gap-2 p-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <button
           type="button"
           className={cn(buttonVariants({ variant: "outline", size: "sm" }))}

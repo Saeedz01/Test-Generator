@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import { TeacherMenu } from "@/components/shared/Header/TeacherMenu";
-import { buttonVariants, Typography } from "@/components/ui";
+import { buttonVariants } from "@/components/ui";
 import { ROUTES } from "@/constants";
 import { cn } from "@/utils";
 
@@ -93,7 +93,7 @@ export function MobileNav({
         </nav>
 
         <div className="border-t border-neutral-100 pt-4">
-          <TeacherMenu />
+          <TeacherMenu layout="stack" />
         </div>
 
         {isStaff ? (

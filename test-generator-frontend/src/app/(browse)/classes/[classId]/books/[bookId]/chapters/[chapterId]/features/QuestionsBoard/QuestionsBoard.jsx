@@ -148,10 +148,10 @@ export function QuestionsBoard({ classId, bookId, chapterId }) {
         ]}
       />
       <div className="max-w-3xl">
-        <p className="text-caption font-medium tracking-wide text-primary-700 uppercase">
+        <p className="text-caption font-medium tracking-wide break-words text-primary-700 uppercase">
           {schoolClass.name} · {book.name}
         </p>
-        <Heading level="h1" className="mt-1">
+        <Heading level="h1" className="mt-1 break-words">
           {chapter.name}
         </Heading>
         <p className="mt-2 text-body text-neutral-600">

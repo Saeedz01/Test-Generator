@@ -22,13 +22,14 @@ import { cn } from "@/utils";
 /**
  * Teacher menu: resume, new test, and locally saved generated papers.
  */
-export function TeacherMenu() {
+export function TeacherMenu({ layout = "dropdown" }) {
   const router = useRouter();
   const dispatch = useDispatch();
   const selectedCount = useSelector(selectSelectedQuestionCount);
   const [open, setOpen] = useState(false);
   const [papers, setPapers] = useState([]);
   const rootRef = useRef(null);
+  const isStack = layout === "stack";
 
   const refresh = () => setPapers(loadSavedPapers());
 
@@ -65,10 +66,13 @@ export function TeacherMenu() {
   };
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className={cn("relative", isStack && "w-full")}>
       <button
         type="button"
-        className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+        className={cn(
+          buttonVariants({ variant: "outline", size: "sm" }),
+          isStack && "w-full justify-between",
+        )}
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((value) => !value)}
@@ -83,7 +87,12 @@ export function TeacherMenu() {
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-[min(100vw-2rem,20rem)] overflow-hidden rounded-[var(--radius-card)] border border-neutral-200 bg-neutral-0 shadow-md"
+          className={cn(
+            "overflow-hidden rounded-[var(--radius-card)] border border-neutral-200 bg-neutral-0 shadow-md",
+            isStack
+              ? "relative mt-2 w-full"
+              : "absolute right-0 z-50 mt-2 w-[min(100vw-2rem,20rem)]",
+          )}
         >
           <div className="border-b border-neutral-100 p-1.5">
             {selectedCount > 0 ? (

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Menu } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { BrandLogo } from "@/components/shared/BrandLogo";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { buttonVariants, Container } from "@/components/ui";
@@ -34,8 +34,8 @@ export default function DashboardHeader({ onMenuClick, menuOpen = false }) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-200 bg-neutral-0">
-      <Container className="flex h-16 items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-2">
+      <Container className="flex h-16 items-center justify-between gap-2 sm:gap-4">
+        <div className="flex min-w-0 items-center gap-1 sm:gap-2">
           <button
             type="button"
             className="inline-flex size-10 items-center justify-center rounded-[var(--radius-sm)] text-neutral-700 hover:bg-neutral-100 lg:hidden"
@@ -75,23 +75,27 @@ export default function DashboardHeader({ onMenuClick, menuOpen = false }) {
           </Link>
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-3">
           <ThemeToggle />
           {user ? (
             <>
-              <div className="hidden text-right sm:block">
+              <div className="hidden text-right lg:block">
                 <p className="text-caption font-semibold text-neutral-900">
                   {user.name}
                 </p>
-                <p className="text-caption text-neutral-500">{user.email}</p>
+                <p className="max-w-[12rem] truncate text-caption text-neutral-500">
+                  {user.email}
+                </p>
               </div>
               <button
                 type="button"
                 className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
                 onClick={onLogout}
                 disabled={isLoading}
+                aria-label="Sign out"
               >
-                Sign out
+                <LogOut className="size-4 sm:hidden" aria-hidden="true" />
+                <span className="hidden sm:inline">Sign out</span>
               </button>
             </>
           ) : (

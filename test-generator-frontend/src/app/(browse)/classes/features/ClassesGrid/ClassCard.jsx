@@ -28,18 +28,20 @@ export function ClassCard({ schoolClass, className }) {
         hoverable
         className="h-full border-neutral-200 transition-[border-color,transform,box-shadow] duration-200 group-hover:-translate-y-px group-hover:border-primary-300"
       >
-        <div className="mb-4 flex items-center gap-3">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
           <div className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-lg)] bg-primary-50 text-primary-700 transition-colors duration-200 group-hover:bg-primary-100">
             <GraduationCap className="size-5" aria-hidden="true" />
           </div>
           <Typography
             variant="h4"
             as="h3"
-            className="min-w-0 flex-1 truncate"
+            className="min-w-0 flex-1 break-words"
           >
             {schoolClass.name}
           </Typography>
-          <Badge variant="primary">{schoolClass.code}</Badge>
+          <Badge variant="primary" className="max-w-full shrink-0">
+            {schoolClass.code}
+          </Badge>
         </div>
         <p className="mt-2 line-clamp-2 text-small text-neutral-600">
           {schoolClass.description}
