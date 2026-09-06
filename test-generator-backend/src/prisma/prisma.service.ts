@@ -2,17 +2,11 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 function buildDatabaseUrl(): string {
-  if (process.env.DATABASE_URL) {
-    return process.env.DATABASE_URL;
+  const url = process.env.DATABASE_URL?.trim();
+  if (!url) {
+    throw new Error('DATABASE_URL is required');
   }
-
-  const host = process.env.DB_HOST ?? 'localhost';
-  const port = process.env.DB_PORT ?? '5432';
-  const username = encodeURIComponent(process.env.DB_USERNAME ?? 'postgres');
-  const password = encodeURIComponent(process.env.DB_PASSWORD ?? '1122');
-  const database = process.env.DB_NAME ?? 'test-generator';
-
-  return `postgresql://${username}:${password}@${host}:${port}/${database}`;
+  return url;
 }
 
 @Injectable()
@@ -27,6 +21,10 @@ export class PrismaService
           url: buildDatabaseUrl(),
         },
       },
+      log:
+        process.env.NODE_ENV === 'production'
+          ? ['error']
+          : ['error', 'warn'],
     });
   }
 

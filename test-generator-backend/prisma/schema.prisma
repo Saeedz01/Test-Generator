@@ -106,15 +106,16 @@ model McqQuestion {
 }
 
 model User {
-  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name         String    @db.VarChar(255)
-  email        String    @unique @db.VarChar(255)
-  password     String    @db.VarChar(255)
-  otp          String?   @db.VarChar(255)
-  otpExpiresAt DateTime? @db.Timestamptz(6)
-  roleId       String?   @db.Uuid
-  isSuspended  Boolean   @default(false)
-  role_id      UserRole? @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name             String    @db.VarChar(255)
+  email            String    @unique @db.VarChar(255)
+  password         String    @db.VarChar(255)
+  otp              String?   @db.VarChar(255)
+  otpExpiresAt     DateTime? @db.Timestamptz(6)
+  refreshTokenHash String?   @db.VarChar(64)
+  roleId           String?   @db.Uuid
+  isSuspended      Boolean   @default(false)
+  role_id          UserRole? @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@map("user")
 }

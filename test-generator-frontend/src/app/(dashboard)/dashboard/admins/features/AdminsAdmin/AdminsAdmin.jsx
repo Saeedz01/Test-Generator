@@ -77,6 +77,10 @@ export function AdminsAdmin() {
       toast.error("Email and password are required");
       return;
     }
+    if (form.password.trim().length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
 
     try {
       await createAdmin({
@@ -213,6 +217,7 @@ export function AdminsAdmin() {
                 setForm((prev) => ({ ...prev, password: e.target.value }))
               }
               required
+              minLength={8}
             />
           </Field>
           <div className="flex justify-end gap-2 pt-2">

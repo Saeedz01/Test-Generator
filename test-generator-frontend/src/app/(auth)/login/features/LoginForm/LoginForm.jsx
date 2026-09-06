@@ -14,6 +14,8 @@ export function LoginForm() {
   const dispatch = useDispatch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [needsOtp, setNeedsOtp] = useState(false);
   const [login, { isLoading }] = useLoginMutation();
 
   const onSubmit = async (event) => {
@@ -22,17 +24,29 @@ export function LoginForm() {
       toast.error("Email and password are required");
       return;
     }
+    if (needsOtp && otp.trim().length !== 6) {
+      toast.error("Enter the 6-digit code from your email");
+      return;
+    }
 
     try {
-      const user = await login({
+      const result = await login({
         email: email.trim(),
         password: password.trim(),
+        ...(needsOtp ? { otp: otp.trim() } : {}),
       }).unwrap();
 
-      dispatch(setUser(user));
-      toast.success(`Signed in as ${user.name || user.email}`);
+      if (result?.requiresOtp) {
+        setNeedsOtp(true);
+        setOtp("");
+        toast.success("Enter the 6-digit code sent to your email");
+        return;
+      }
 
-      if (user.role === "super_admin") {
+      dispatch(setUser(result));
+      toast.success(`Signed in as ${result.name || result.email}`);
+
+      if (result.role === "super_admin") {
         router.push(ROUTES.ADMIN_ADMINS);
       } else {
         router.push(ROUTES.DASHBOARD);
@@ -62,6 +76,7 @@ export function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             className="mt-1.5 h-11 w-full rounded-[var(--radius-input)] border border-neutral-300 bg-neutral-0 px-3 text-small outline-none focus-visible:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500/30"
             required
+            readOnly={needsOtp}
           />
         </label>
 
@@ -76,11 +91,31 @@ export function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             className="mt-1.5 h-11 w-full rounded-[var(--radius-input)] border border-neutral-300 bg-neutral-0 px-3 text-small outline-none focus-visible:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500/30"
             required
+            readOnly={needsOtp}
           />
         </label>
 
+        {needsOtp ? (
+          <label className="block">
+            <span className="text-caption font-medium text-neutral-600">
+              Email code
+            </span>
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              className="mt-1.5 h-11 w-full rounded-[var(--radius-input)] border border-neutral-300 bg-neutral-0 px-3 text-small tracking-[0.3em] outline-none focus-visible:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500/30"
+              required
+              minLength={6}
+              maxLength={6}
+            />
+          </label>
+        ) : null}
+
         <Button type="submit" fullWidth loading={isLoading}>
-          Sign in
+          {needsOtp ? "Verify code" : "Sign in"}
         </Button>
       </form>
     </div>

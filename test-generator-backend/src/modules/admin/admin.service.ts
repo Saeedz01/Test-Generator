@@ -39,8 +39,10 @@ export class AdminService {
     return await this.prisma.schoolClass.create({
       data: {
         name: dto.name,
-        description: dto.description,
-        code: dto.code,
+        description: dto.description ?? null,
+        code:
+          dto.code?.trim() ||
+          dto.name.trim().toLowerCase().replace(/\s+/g, '-').slice(0, 50),
         sortOrder: 0,
       },
     }) as unknown as schoolClass;

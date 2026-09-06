@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LayoutTemplate, Square } from "lucide-react";
+import { FolderOpen, LayoutTemplate, Square } from "lucide-react";
 import { Card, Container, Typography, buttonVariants } from "@/components/ui";
 import { ROUTES } from "@/constants";
 import { cn } from "@/utils";
@@ -10,6 +10,7 @@ import { SavedBanners } from "./SavedBanners";
 import { BANNER_FORMATS } from "../bannerFormats";
 import { BANNER_TEMPLATES } from "../bannerTemplates";
 import { TemplatePreview } from "../TemplatePreview";
+import { loadBannerDrafts, subscribeBannerDrafts } from "../bannerStorage";
 
 function studioHref(template, formatId) {
   const params = new URLSearchParams({
@@ -21,16 +22,43 @@ function studioHref(template, formatId) {
 
 export function BannerStart() {
   const [formatId, setFormatId] = useState("ig-post");
+  const [drafts, setDrafts] = useState([]);
+
+  useEffect(() => {
+    const refresh = () => setDrafts(loadBannerDrafts());
+    refresh();
+    return subscribeBannerDrafts(refresh);
+  }, []);
 
   return (
     <div className="flex-1 overflow-y-auto">
       <Container className="py-10 sm:py-14">
-        <Typography variant="h1">Banner Designer</Typography>
-        <Typography variant="body" className="mt-3 max-w-2xl text-neutral-600">
-          Create promotional and achievement banners for your academy. Start
-          from a Testora template or a blank canvas — every element stays
-          editable.
-        </Typography>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <Typography variant="h1">Banner Designer</Typography>
+            <Typography variant="body" className="mt-3 max-w-2xl text-neutral-600">
+              Create promotional and achievement banners for your academy. Start
+              from a Testora template or a blank canvas — every element stays
+              editable.
+            </Typography>
+          </div>
+          <a
+            href="#saved-banners"
+            className={cn(
+              buttonVariants({ variant: "outline", size: "md" }),
+              "shrink-0",
+            )}
+          >
+            <FolderOpen className="size-4 shrink-0" aria-hidden="true" />
+            <span className="hidden sm:inline">Saved banners</span>
+            <span className="sm:hidden">Saved</span>
+            {drafts.length ? (
+              <span className="rounded-full bg-primary-50 px-1.5 text-caption font-semibold text-primary-800">
+                {drafts.length}
+              </span>
+            ) : null}
+          </a>
+        </div>
 
         <section className="mt-12">
           <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -98,7 +126,7 @@ export function BannerStart() {
           </ul>
         </section>
 
-        <SavedBanners />
+        <SavedBanners drafts={drafts} />
 
         <section className="mt-14">
           <div className="mb-5 flex items-center gap-2">

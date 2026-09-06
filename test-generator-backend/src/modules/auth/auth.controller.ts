@@ -18,42 +18,36 @@ import { LoginDto } from './dto/login.dto';
 import { SendOtpDto } from './dto/send-otp.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ConfirmResetPasswordDto } from './dto/confirm-reset-password.dto';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { Roles } from 'src/common/decorator/roles.decorator';
 import { RolesGuard } from 'src/common/guards/role.guard';
 import { Role } from '../user/entities/user.entity';
+import {
+  clearAuthCookies,
+  setAuthCookies,
+} from 'src/common/utils/auth-cookies';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { user, tokens } = await this.authService.login(loginDto);
-    const isProduction = process.env.NODE_ENV === 'production';
+    const result = await this.authService.login(loginDto);
+    if ('requiresOtp' in result) {
+      return result;
+    }
 
-    res.cookie('access_token', tokens.accessToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax',
-      maxAge: tokens.expiresIn * 1000,
-    });
-
-    res.cookie('refresh_token', tokens.refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'lax',
-      maxAge: tokens.refreshExpiresIn * 1000,
-    });
-
-    return { user };
+    setAuthCookies(res, result.tokens);
+    return { user: result.user };
   }
 
   @Get('me')
@@ -76,6 +70,13 @@ export class AuthController {
     return this.authService.forgotPassword(dto);
   }
 
+  @Post('confirm-reset-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  confirmResetPassword(@Body() dto: ConfirmResetPasswordDto) {
+    return this.authService.confirmResetPassword(dto);
+  }
+
   @Post('reset-password')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
@@ -90,10 +91,27 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
-  async logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token');
+  async logout(
+    @Req() req: Request & { user: { id: string } },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.authService.logout(req.user.id);
+    clearAuthCookies(res);
     return { message: 'Logged out successfully' };
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const tokens = await this.authService.refreshToken(
+      req.cookies?.refresh_token,
+    );
+    setAuthCookies(res, tokens);
+    return { ok: true };
   }
 
   @Get('admins')

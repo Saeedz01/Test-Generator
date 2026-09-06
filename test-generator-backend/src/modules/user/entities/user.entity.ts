@@ -18,6 +18,8 @@ export class User {
 
   otpExpiresAt?: Date | null;
 
+  refreshTokenHash?: string | null;
+
   isSuspended!: boolean;
 
   // @Column({ type: 'varchar', length: 255 })

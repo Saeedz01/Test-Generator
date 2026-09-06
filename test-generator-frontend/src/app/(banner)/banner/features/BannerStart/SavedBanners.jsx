@@ -1,17 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { FolderOpen } from "lucide-react";
-import { Card, Typography, buttonVariants } from "@/components/ui";
+import { Card, EmptyState, Typography, buttonVariants } from "@/components/ui";
 import { ROUTES } from "@/constants";
 import { cn } from "@/utils";
 import { getBannerFormat } from "../bannerFormats";
-import {
-  deleteBannerDraft,
-  loadBannerDrafts,
-  subscribeBannerDrafts,
-} from "../bannerStorage";
+import { deleteBannerDraft } from "../bannerStorage";
 
 function draftHref(id) {
   return `${ROUTES.BANNER_STUDIO}?draft=${encodeURIComponent(id)}`;
@@ -27,19 +22,9 @@ function label(draft) {
     .join(" · ");
 }
 
-export function SavedBanners() {
-  const [drafts, setDrafts] = useState([]);
-
-  useEffect(() => {
-    const refresh = () => setDrafts(loadBannerDrafts());
-    refresh();
-    return subscribeBannerDrafts(refresh);
-  }, []);
-
-  if (!drafts.length) return null;
-
+export function SavedBanners({ drafts = [] }) {
   return (
-    <section className="mt-14">
+    <section id="saved-banners" className="mt-14 scroll-mt-24">
       <div className="mb-5 flex items-center gap-2">
         <FolderOpen className="size-5 text-primary-700" aria-hidden="true" />
         <Typography variant="h3">Saved on this device</Typography>
@@ -49,6 +34,13 @@ export function SavedBanners() {
         photos. Open one to keep editing, or apply last settings from the
         studio.
       </Typography>
+      {drafts.length === 0 ? (
+        <EmptyState
+          icon={<FolderOpen className="size-5" aria-hidden="true" />}
+          title="No saved banners yet"
+          description="Save a banner from the studio to reopen it here later. Drafts stay in this browser only."
+        />
+      ) : (
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {drafts.map((draft) => (
           <li key={draft.id}>
@@ -83,6 +75,7 @@ export function SavedBanners() {
           </li>
         ))}
       </ul>
+      )}
     </section>
   );
 }

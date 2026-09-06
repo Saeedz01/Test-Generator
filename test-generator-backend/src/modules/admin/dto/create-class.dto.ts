@@ -1,8 +1,14 @@
-import { IsString, } from 'class-validator';
+import { IsEmail, IsOptional, IsString } from 'class-validator';
 
 export class CreateSchoolClassDto {
   @IsString()
-  name !: string;
-  code !: string;
-  description !: string;
+  name!: string;
+
+  @IsOptional()
+  @IsString()
+  code?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
 }

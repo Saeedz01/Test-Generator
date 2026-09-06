@@ -1,3 +1,6 @@
-import { SendOtpDto } from './send-otp.dto';
+import { IsEmail } from 'class-validator';
 
-export class ForgotPasswordDto extends SendOtpDto {}
+export class ForgotPasswordDto {
+  @IsEmail()
+  email: string;
+}

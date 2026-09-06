@@ -4,6 +4,7 @@ import { CreatelngQuestionDto } from './dto/create-lng-question.dto';
 import { CreateShortQuestionDto } from './dto/create-short-question.dto';
 import { CreateMcqQuestionDto } from './dto/create-mcq-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
+import { AdminOnly } from 'src/common/decorator/admin-only.decorator';
 
 @Controller('questions')
 export class QuestionsController {
@@ -46,22 +47,26 @@ export class QuestionsController {
     return this.questionsService.findOne(+id);
   }
 
+  @AdminOnly()
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateQuestionDto: UpdateQuestionDto) {
     return this.questionsService.update(+id, updateQuestionDto);
   }
 
   // Delete Endpoints
+  @AdminOnly()
   @Delete('delLng/:id')
   remove(@Param('id') id: string) {
     return this.questionsService.removeLngQ(id);
   }
-  
+
+  @AdminOnly()
   @Delete('delShort/:id')
   removeShort(@Param('id') id: string) {
     return this.questionsService.removeShortQ(id);
   }
-  
+
+  @AdminOnly()
   @Delete('delMcq/:id')
   removeMcq(@Param('id') id: string) {
     return this.questionsService.removeMcqQ(id);

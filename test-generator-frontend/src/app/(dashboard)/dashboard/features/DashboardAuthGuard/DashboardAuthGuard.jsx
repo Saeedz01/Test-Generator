@@ -4,9 +4,13 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { EmptyState } from "@/components/ui";
-import { ROUTES } from "@/constants";
+import { ROLES, ROUTES } from "@/constants";
 import { useGetMeQuery } from "@/services/api/auth.api";
 import { clearUser, setUser } from "@/store/authSlice";
+
+function isStaffRole(role) {
+  return role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN;
+}
 
 export function DashboardAuthGuard({ children }) {
   const router = useRouter();
@@ -20,11 +24,11 @@ export function DashboardAuthGuard({ children }) {
   }, [data, dispatch]);
 
   useEffect(() => {
-    if (!isLoading && !isFetching && isError) {
+    if (!isLoading && !isFetching && (isError || (data && !isStaffRole(data.role)))) {
       dispatch(clearUser());
       router.replace(ROUTES.LOGIN);
     }
-  }, [dispatch, isError, isFetching, isLoading, router]);
+  }, [data, dispatch, isError, isFetching, isLoading, router]);
 
   if (isLoading || isFetching) {
     return (
@@ -35,7 +39,7 @@ export function DashboardAuthGuard({ children }) {
     );
   }
 
-  if (isError || !data) {
+  if (isError || !data || !isStaffRole(data.role)) {
     return null;
   }
 

@@ -31,7 +31,10 @@ export const authApi = SplitApiSettings.injectEndpoints({
         method: "POST",
         body: payload,
       }),
-      transformResponse: (response) => normalizeUser(response?.user ?? response),
+      transformResponse: (response) => {
+        if (response?.requiresOtp) return response;
+        return normalizeUser(response?.user ?? response);
+      },
       invalidatesTags: [{ type: "Auth", id: "ME" }],
     }),
 
