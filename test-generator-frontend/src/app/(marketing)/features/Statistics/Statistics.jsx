@@ -15,7 +15,7 @@ export function Statistics() {
             see in the library is what you can put on a paper.
           </Typography>
         </div>
-        <ul className="grid grid-cols-2 gap-8 lg:grid-cols-4 lg:gap-4">
+        <ul className="grid grid-cols-2 gap-4 sm:gap-8 lg:grid-cols-4 lg:gap-4">
           {homeStats.map((stat) => (
             <li key={stat.id} className="text-center">
               <Typography

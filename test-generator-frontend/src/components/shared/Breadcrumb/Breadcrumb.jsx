@@ -27,13 +27,13 @@ export function Breadcrumb({ items }) {
               {item.href && !isLast ? (
                 <Link
                   href={item.href}
-                  className="truncate font-medium text-neutral-600 transition-colors duration-150 hover:text-primary-700"
+                  className="break-words font-medium text-neutral-600 transition-colors duration-150 hover:text-primary-700"
                 >
                   {item.label}
                 </Link>
               ) : (
                 <span
-                  className="truncate font-semibold text-neutral-900"
+                  className="break-words font-semibold text-neutral-900"
                   aria-current={isLast ? "page" : undefined}
                 >
                   {item.label}

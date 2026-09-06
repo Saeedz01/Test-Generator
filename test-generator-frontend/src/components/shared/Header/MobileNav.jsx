@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import { TeacherMenu } from "@/components/shared/Header/TeacherMenu";
-import { buttonVariants } from "@/components/ui";
+import { buttonVariants, Typography } from "@/components/ui";
 import { ROUTES } from "@/constants";
 import { cn } from "@/utils";
 

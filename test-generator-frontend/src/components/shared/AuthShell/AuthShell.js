@@ -8,7 +8,7 @@ import { ROUTES } from "@/constants";
 
 export default function AuthShell({ children }) {
   return (
-    <div className="flex min-h-full flex-1 flex-col items-center justify-center bg-neutral-50 px-4 py-12">
+    <div className="flex min-h-full flex-1 flex-col items-center justify-center bg-neutral-50 px-4 py-12 pb-[max(3rem,env(safe-area-inset-bottom))]">
       <Link
         href={ROUTES.HOME}
         className="mb-8 transition-opacity duration-150 hover:opacity-80"

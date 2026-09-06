@@ -63,7 +63,7 @@ export function TestSummaryList({ questions, onRemove }) {
                         {question.marks} marks
                       </span>
                     </div>
-                    <p className="text-small text-neutral-800">
+                    <p className="text-small break-words text-neutral-800">
                       {question.statement}
                     </p>
                   </div>

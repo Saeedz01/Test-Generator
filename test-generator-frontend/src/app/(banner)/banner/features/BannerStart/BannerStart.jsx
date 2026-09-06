@@ -130,7 +130,7 @@ export function BannerStart() {
               href={studioHref("blank", formatId)}
               className={cn(
                 buttonVariants({ variant: "outline", size: "md" }),
-                "mt-5 inline-flex",
+                "mt-5 inline-flex w-full sm:w-auto",
               )}
             >
               Open blank canvas

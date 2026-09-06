@@ -80,7 +80,7 @@ export function FeaturedClasses() {
                         <Typography
                           variant="h4"
                           as="h3"
-                          className="min-w-0 flex-1 truncate"
+                          className="min-w-0 flex-1 break-words"
                         >
                           {item.name}
                         </Typography>

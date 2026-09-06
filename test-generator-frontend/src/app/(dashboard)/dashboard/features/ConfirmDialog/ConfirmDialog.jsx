@@ -68,7 +68,7 @@ export function ConfirmHost() {
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-desc"
-        className="relative z-10 w-full max-w-md rounded-[var(--radius-card)] border border-neutral-200 bg-neutral-0 p-5 shadow-md"
+        className="relative z-10 w-full max-w-md rounded-t-[var(--radius-card)] border border-neutral-200 bg-neutral-0 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-md sm:rounded-[var(--radius-card)]"
       >
         <h2
           id="confirm-dialog-title"

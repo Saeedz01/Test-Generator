@@ -34,7 +34,9 @@ export function BookCard({ book, classId, className }) {
         <div className="mb-2">
           <Badge variant="outline">{book.subject}</Badge>
         </div>
-        <h3 className="text-h5 font-semibold text-neutral-900">{book.name}</h3>
+        <h3 className="text-h5 font-semibold break-words text-neutral-900">
+          {book.name}
+        </h3>
         <p className="mt-1 text-caption text-neutral-500">{book.author}</p>
         <p className="mt-3 line-clamp-2 text-small text-neutral-600">
           {book.description}

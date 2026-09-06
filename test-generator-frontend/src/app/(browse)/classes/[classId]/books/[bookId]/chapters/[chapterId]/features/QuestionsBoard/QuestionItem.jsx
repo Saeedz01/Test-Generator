@@ -70,7 +70,7 @@ export function QuestionItem({ question }) {
               </span>
             ) : null}
           </div>
-          <p className="text-small leading-relaxed text-neutral-900 sm:text-body">
+          <p className="text-small leading-relaxed break-words text-neutral-900 sm:text-body">
             {question.statement}
           </p>
           {question.type === "mcq" && Array.isArray(question.options) ? (

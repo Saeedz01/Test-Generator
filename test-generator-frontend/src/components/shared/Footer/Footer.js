@@ -19,7 +19,7 @@ export default function Footer() {
 
   return (
     <footer className="border-t border-neutral-200 bg-neutral-50">
-      <Container className="py-12 sm:py-14">
+      <Container className="py-12 pb-[max(3rem,env(safe-area-inset-bottom))] sm:py-14 sm:pb-[max(3.5rem,env(safe-area-inset-bottom))]">
         <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
           <div className="max-w-xs">
             <Link
