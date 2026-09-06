@@ -80,13 +80,13 @@ export function AboutIntro() {
               Generate Test
             </Link>
             <Link
-              href={ROUTES.CLASSES}
+              href={ROUTES.BANNER}
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
                 "w-full border-2 border-primary-700 bg-neutral-0 text-primary-800 shadow-xs sm:w-auto sm:min-w-[10.5rem]",
               )}
             >
-              Explore Classes
+              Banner Designer
             </Link>
           </div>
         </div>

@@ -3,7 +3,7 @@ import { AboutCta, AboutHighlights, AboutIntro, AboutStory } from "./features";
 export const metadata = {
   title: "About",
   description:
-    "Testora is a calm workspace for teachers to assemble balanced, print-ready exam papers from chapter-wise MCQs, short, and long questions.",
+    "Testora helps teachers assemble balanced exam papers and design academy banners — from chapter-wise questions to print-ready PDFs and editable templates.",
 };
 
 export default function AboutPage() {

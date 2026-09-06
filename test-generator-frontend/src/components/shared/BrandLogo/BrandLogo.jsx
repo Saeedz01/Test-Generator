@@ -1,55 +1,58 @@
+import Image from "next/image";
 import { cn } from "@/utils";
 import { BRAND_NAME } from "@/constants";
 
-/**
- * Testora tessera mark — three tiles assembled as a T.
- * badge: olive rounded square, white tiles (header / favicon).
- * plain: tiles only, inherits currentColor (mono / print).
- */
-export function BrandMark({ className, variant = "badge", title }) {
-  const isBadge = variant === "badge";
-  const tile = isBadge ? "#ffffff" : "currentColor";
+const LOGO = {
+  src: "/images/brand/testora-logo.png",
+  width: 882,
+  height: 224,
+};
 
+const MARK = {
+  src: "/images/brand/testora-mark.png",
+  width: 249,
+  height: 220,
+};
+
+/**
+ * Testora T + document mark (icon-only).
+ */
+export function BrandMark({ className, title }) {
   return (
-    <svg
-      viewBox="0 0 32 32"
-      className={cn("size-8 shrink-0", className)}
-      role={title ? "img" : undefined}
+    <Image
+      src={MARK.src}
+      alt={title ?? ""}
+      width={MARK.width}
+      height={MARK.height}
+      className={cn("size-8 object-contain", className)}
       aria-hidden={title ? undefined : true}
-      aria-label={title}
-    >
-      {isBadge ? (
-        <rect
-          x="1"
-          y="1"
-          width="30"
-          height="30"
-          rx="8"
-          fill="var(--color-primary-600)"
-        />
-      ) : null}
-      <rect x="6" y="7.5" width="9" height="6" rx="1.75" fill={tile} />
-      <rect x="17" y="7.5" width="9" height="6" rx="1.75" fill={tile} />
-      <rect x="12.5" y="15.5" width="7" height="10" rx="1.75" fill={tile} />
-    </svg>
+    />
   );
 }
 
 /**
- * Header / footer lockup: mark + Testora wordmark.
+ * Header / footer lockup: full Testora logo.
  */
-export function BrandLogo({ className, showWordmark = true, markClassName }) {
+export function BrandLogo({
+  className,
+  showWordmark = true,
+  markClassName,
+  priority = false,
+}) {
+  if (!showWordmark) {
+    return (
+      <BrandMark title={BRAND_NAME} className={cn(markClassName, className)} />
+    );
+  }
+
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <BrandMark
-        title={showWordmark ? undefined : BRAND_NAME}
-        className={markClassName}
-      />
-      {showWordmark ? (
-        <span className="text-h5 font-semibold tracking-[-0.03em] text-neutral-900">
-          {BRAND_NAME}
-        </span>
-      ) : null}
-    </span>
+    <Image
+      src={LOGO.src}
+      alt={BRAND_NAME}
+      width={LOGO.width}
+      height={LOGO.height}
+      className={cn("h-9 w-auto sm:h-10", className)}
+      priority={priority}
+    />
   );
 }

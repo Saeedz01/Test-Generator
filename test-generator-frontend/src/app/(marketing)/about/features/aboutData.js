@@ -4,8 +4,8 @@
 
 export const aboutIntro = {
   eyebrow: "About Testora",
-  headline: "A calm workspace for building better exams",
-  body: "Testora helps teachers assemble balanced, print-ready papers from chapter-wise MCQs, short, and long questions — instead of stitching papers by hand.",
+  headline: "A calm workspace for exams and academy banners",
+  body: "Testora helps teachers assemble balanced, print-ready papers from chapter-wise MCQs, short, and long questions — and design promotional or achievement banners from a template or a blank canvas.",
 };
 
 export const aboutQuestionTypes = [
@@ -33,19 +33,26 @@ export const aboutHighlights = [
     id: "print",
     step: "03",
     title: "Print-ready PDFs",
-    body: "Review, set institute and time, then export a clean paper. Banner Designer is there when you need academy visuals.",
+    body: "Review, set institute and time, then export a clean paper ready to print.",
     icon: "file",
+  },
+  {
+    id: "banners",
+    step: "04",
+    title: "Banner Designer",
+    body: "Create promotional and achievement banners for your academy. Start from a Testora template or a blank canvas — every element stays editable.",
+    icon: "layout",
   },
 ];
 
 export const aboutStory = {
   eyebrow: "Why it exists",
   headline: "Exam papers should take minutes, not a whole evening",
-  body: "Most of the work already lives in your chapter banks. Testora is the quiet path from those questions to a paper you can print.",
+  body: "Most of the work already lives in your chapter banks. Testora is the quiet path from those questions to a paper you can print — and a studio for the banners that announce results, admissions, and achievements.",
   points: [
     "One flow from class list to PDF",
     "Mix question types without reformatting",
-    "Keep your selection as you switch chapters",
+    "Design academy banners from templates or a blank canvas",
   ],
 };
 

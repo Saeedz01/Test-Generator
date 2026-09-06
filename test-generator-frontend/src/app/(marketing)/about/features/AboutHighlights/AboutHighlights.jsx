@@ -1,4 +1,4 @@
-import { BookOpen, FileDown, Layers } from "lucide-react";
+import { BookOpen, FileDown, Layers, LayoutTemplate } from "lucide-react";
 import { Card, Container, Typography } from "@/components/ui";
 import { aboutHighlights } from "../aboutData";
 
@@ -6,6 +6,7 @@ const ICON_MAP = {
   book: BookOpen,
   layers: Layers,
   file: FileDown,
+  layout: LayoutTemplate,
 };
 
 /**
@@ -25,11 +26,11 @@ export function AboutHighlights() {
           </Typography>
           <Typography variant="h2">What Testora is for</Typography>
           <Typography variant="body" className="mt-3 text-neutral-600">
-            A focused workspace from your class list to a paper you can print.
+            A focused workspace for print-ready papers and academy banners.
           </Typography>
         </div>
 
-        <ul className="grid gap-4 md:grid-cols-3">
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {aboutHighlights.map((item) => {
             const Icon = ICON_MAP[item.icon] ?? BookOpen;
 

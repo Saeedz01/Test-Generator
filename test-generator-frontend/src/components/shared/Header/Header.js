@@ -63,7 +63,7 @@ export default function Header() {
           href={ROUTES.HOME}
           className="min-w-0 shrink-0 transition-opacity duration-150 hover:opacity-80"
         >
-          <BrandLogo />
+          <BrandLogo priority />
         </Link>
 
         <nav aria-label="Primary" className="hidden items-center gap-5 lg:flex">

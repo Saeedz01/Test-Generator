@@ -50,7 +50,7 @@ export default function DashboardHeader({ onMenuClick, menuOpen = false }) {
             href={ROUTES.HOME}
             className="min-w-0 transition-opacity duration-150 hover:opacity-80"
           >
-            <BrandLogo />
+            <BrandLogo priority />
           </Link>
         </div>
 
