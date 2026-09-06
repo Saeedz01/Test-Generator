@@ -1,6 +1,27 @@
-import { box, baseDocument, push, squareBox } from "./templateHelpers";
+import { baseDocument, push, squareBox } from "./templateHelpers";
+import { rect, txt, photo } from "./templateDraw";
+import { academyLogoSrc, classroomPhotoSrc } from "./templatePhotos";
 
-export function createAdmissionFlyerTemplate(formatId, paletteId = "royal") {
+const MAROON = "#6b1d2a";
+const GOLD = "#c5a028";
+const CREAM = "#fbf6ea";
+const WHITE = "#ffffff";
+const INK = "#3b1418";
+
+const CLASSES = [
+  ["9th", "Matric"],
+  ["10th", "Matric"],
+  ["1st Year", "F.Sc / I.Com"],
+  ["2nd Year", "F.Sc / I.Com"],
+];
+const POINTS = [
+  "روزانہ ٹیسٹ اور نوٹس",
+  "تجربہ کار اساتذہ",
+  "بورڈ پیپر پیٹرن",
+  "حد محدود سیٹیں",
+];
+
+export function createAdmissionFlyerTemplate(formatId, paletteId = "college") {
   const doc = baseDocument({
     formatId,
     paletteId,
@@ -9,152 +30,94 @@ export function createAdmissionFlyerTemplate(formatId, paletteId = "royal") {
   });
   const f = { width: doc.width, height: doc.height };
 
+  rect(doc, f, CREAM, 0, 0, 1, 1);
+  rect(doc, f, MAROON, 0, 0, 1, 0.2);
   push(doc, {
     type: "image",
-    src: "",
-    objectFit: "cover",
-    placeholderLabel: "Class photo",
-    ...box(f, 0, 0, 1, 0.28),
-  });
-  push(doc, {
-    type: "shape",
-    shape: "rect",
-    fillRole: "surface",
-    ...box(f, 0, 0.28, 0.55, 0.6),
-  });
-  push(doc, {
-    type: "shape",
-    shape: "rect",
-    fillRole: "accent",
-    ...box(f, 0.55, 0.28, 0.45, 0.6),
-  });
-  push(doc, {
-    type: "text",
-    content: "SCHOOL ADMISSION",
-    fontId: "jakarta",
-    fontSize: 36,
-    fontWeight: 800,
-    align: "left",
-    colorRole: "accentText",
-    ...box(f, 0.04, 0.31, 0.48, 0.07),
-  });
-  push(doc, {
-    type: "text",
-    content: "OPEN FOR 2026",
-    fontId: "jakarta",
-    fontSize: 22,
-    fontWeight: 600,
-    align: "left",
-    colorRole: "accent",
-    ...box(f, 0.04, 0.38, 0.48, 0.045),
-  });
-  push(doc, {
-    type: "shape",
-    shape: "rect",
-    fillRole: "accent",
-    radius: 8,
-    ...box(f, 0.04, 0.45, 0.28, 0.045),
-  });
-  push(doc, {
-    type: "text",
-    content: "FOCUS SKILL",
-    fontId: "jakarta",
-    fontSize: 16,
-    fontWeight: 700,
-    align: "center",
-    colorRole: "accentText",
-    ...box(f, 0.04, 0.45, 0.28, 0.045),
-  });
-  push(doc, {
-    type: "text",
-    content:
-      "•  Board prep & design\n•  Concept classes\n•  Weekly tests\n•  Result coaching",
-    fontId: "jakarta",
-    fontSize: 20,
-    fontWeight: 500,
-    align: "left",
-    colorRole: "accentText",
-    lineHeight: 1.45,
-    ...box(f, 0.04, 0.51, 0.46, 0.2),
-  });
-  push(doc, {
-    type: "shape",
-    shape: "rect",
-    fillRole: "surface",
-    ...box(f, 0.6, 0.32, 0.35, 0.1),
-  });
-  push(doc, {
-    type: "text",
-    content: "50% OFF\nbefore 1 Sept",
-    fontId: "jakarta",
-    fontSize: 26,
-    fontWeight: 800,
-    align: "center",
-    colorRole: "accentText",
-    lineHeight: 1.15,
-    ...box(f, 0.6, 0.32, 0.35, 0.1),
-  });
-  push(doc, {
-    type: "text",
-    content: "SCHOOL REWARD",
-    fontId: "jakarta",
-    fontSize: 18,
-    fontWeight: 700,
-    align: "center",
-    colorRole: "accentText",
-    ...box(f, 0.58, 0.45, 0.38, 0.04),
-  });
-  push(doc, {
-    type: "text",
-    content: "• Best teaching 2025\n• High board results\n• Focused classrooms",
-    fontId: "jakarta",
-    fontSize: 18,
-    fontWeight: 500,
-    align: "left",
-    colorRole: "accentText",
-    lineHeight: 1.4,
-    ...box(f, 0.58, 0.5, 0.38, 0.14),
-  });
-  push(doc, {
-    type: "image",
-    src: "",
+    src: academyLogoSrc(),
     clip: "circle",
     objectFit: "cover",
-    placeholderLabel: "Photo",
-    ...squareBox(f, 0.48, 0.62, 0.16),
+    ...squareBox(f, 0.035, 0.035, 0.13),
   });
-  push(doc, {
-    type: "shape",
-    shape: "rect",
-    fill: "#c62128",
-    radius: 12,
-    ...box(f, 0.18, 0.78, 0.64, 0.08),
-  });
-  push(doc, {
-    type: "text",
-    content: "REGISTER NOW",
-    fontId: "jakarta",
-    fontSize: 28,
+  txt(doc, f, "علم سائنس اکیڈمی", 0.18, 0.028, 0.78, 0.08, {
+    fontId: "arabic",
+    fontSize: 44,
     fontWeight: 800,
-    align: "center",
-    colorRole: "accentText",
-    ...box(f, 0.18, 0.78, 0.64, 0.08),
+    dir: "rtl",
+    align: "right",
   });
-  push(doc, {
-    type: "shape",
-    shape: "rect",
-    fill: "#c62128",
-    ...box(f, 0, 0.88, 1, 0.12),
+  txt(doc, f, "YOUR ACADEMY  ·  PUNJAB", 0.18, 0.11, 0.5, 0.055, {
+    fontSize: 18,
+    fontWeight: 600,
+    color: GOLD,
+    align: "left",
   });
-  push(doc, {
-    type: "text",
-    content: "YOUR ACADEMY     0300-1234567     hello@academy.com",
-    fontId: "jakarta",
+
+  rect(doc, f, GOLD, 0, 0.2, 1, 0.065);
+  txt(doc, f, "داخلہ جاری ہے  ·  ADMISSIONS OPEN 2026", 0, 0.2, 1, 0.065, {
+    fontId: "urdu",
+    fontSize: 22,
+    fontWeight: 700,
+    color: MAROON,
+    dir: "rtl",
+  });
+
+  photo(doc, f, classroomPhotoSrc(), 0.04, 0.29, 0.92, 0.22, {
+    radius: 12,
+    strokeWidth: 4,
+    stroke: GOLD,
+  });
+
+  txt(doc, f, "CLASSES", 0.05, 0.53, 0.42, 0.04, {
+    fontSize: 14,
+    fontWeight: 800,
+    color: GOLD,
+    align: "left",
+  });
+  CLASSES.forEach((item, index) => {
+    const y = 0.575 + index * 0.055;
+    rect(doc, f, WHITE, 0.05, y, 0.42, 0.048, {
+      radius: 8,
+      strokeWidth: 1,
+      stroke: GOLD,
+    });
+    txt(doc, f, `${item[0]}   ${item[1]}`, 0.05, y, 0.42, 0.048, {
+      fontSize: 18,
+      fontWeight: 700,
+      color: INK,
+      align: "left",
+    });
+  });
+
+  txt(doc, f, "WHY JOIN", 0.53, 0.53, 0.42, 0.04, {
+    fontSize: 14,
+    fontWeight: 800,
+    color: GOLD,
+    align: "left",
+  });
+  POINTS.forEach((line, index) => {
+    const y = 0.575 + index * 0.055;
+    rect(doc, f, MAROON, 0.53, y, 0.42, 0.048, { radius: 8 });
+    txt(doc, f, line, 0.53, y, 0.42, 0.048, {
+      fontId: "urdu",
+      fontSize: 16,
+      fontWeight: 600,
+      dir: "rtl",
+    });
+  });
+
+  rect(doc, f, MAROON, 0.18, 0.81, 0.64, 0.07, { radius: 10 });
+  txt(doc, f, "ابھی داخلہ لیں  ·  REGISTER NOW", 0.18, 0.81, 0.64, 0.07, {
+    fontId: "urdu",
+    fontSize: 20,
+    fontWeight: 700,
+    dir: "rtl",
+  });
+
+  rect(doc, f, MAROON, 0, 0.9, 1, 0.1);
+  txt(doc, f, "0300-1234567   ·   City Campus, Punjab", 0.04, 0.91, 0.92, 0.08, {
     fontSize: 18,
     fontWeight: 700,
-    align: "center",
-    colorRole: "accentText",
-    ...box(f, 0.04, 0.91, 0.92, 0.07),
   });
   return doc;
 }

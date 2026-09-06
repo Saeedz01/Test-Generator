@@ -28,11 +28,22 @@ export function TestPaperPreview({ html, onPrint, onDismiss }) {
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-h5 font-semibold text-neutral-900">Paper preview</h2>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={onDismiss}>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full sm:w-auto"
+            onClick={onDismiss}
+          >
             Hide preview
           </Button>
-          <Button type="button" size="sm" onClick={onPrint}>
+          <Button
+            type="button"
+            size="sm"
+            className="w-full sm:w-auto"
+            onClick={onPrint}
+          >
             Print PDF
           </Button>
         </div>

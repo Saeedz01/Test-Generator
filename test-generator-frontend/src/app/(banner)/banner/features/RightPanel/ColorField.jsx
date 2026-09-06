@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Check, Copy } from "lucide-react";
 import { getBannerPalette } from "../bannerPalettes";
 
 const TEXT_ROLES = [
@@ -10,7 +11,22 @@ const TEXT_ROLES = [
   { id: "accentText", label: "On accent" },
 ];
 
-const PRESETS = ["#ffffff", "#000000", "#1a1a18", "#c4a24a", "#7aab3c"];
+const FILL_ROLES = [
+  { id: "canvas", label: "Canvas" },
+  { id: "surface", label: "Surface" },
+  { id: "accent", label: "Accent" },
+];
+
+const PRESETS = [
+  "#ffffff",
+  "#000000",
+  "#6b1d2a",
+  "#0d4a2c",
+  "#0a2e8c",
+  "#e10600",
+  "#c5a028",
+  "#ffe000",
+];
 
 function toHex(value) {
   const hex = String(value || "").trim();
@@ -21,19 +37,52 @@ function toHex(value) {
   return "#ffffff";
 }
 
-export function ColorField({ label, value, paletteId, role, onPick }) {
+function colorPatch(mode, hex, role) {
+  if (mode === "fill") {
+    return hex ? { fill: hex, fillRole: null } : { fill: null, fillRole: role };
+  }
+  if (mode === "stroke") {
+    return hex
+      ? { stroke: hex, strokeRole: null }
+      : { stroke: null, strokeRole: role };
+  }
+  return hex ? { color: hex, colorRole: null } : { color: null, colorRole: role };
+}
+
+export function ColorField({
+  label,
+  value,
+  paletteId,
+  role,
+  onPick,
+  fill = false,
+  mode,
+}) {
+  const kind = mode || (fill ? "fill" : "text");
   const palette = getBannerPalette(paletteId);
   const hex = toHex(value);
   const [draft, setDraft] = useState(hex);
   useEffect(() => {
     setDraft(hex);
   }, [hex]);
+  const chips = kind === "text" ? TEXT_ROLES : FILL_ROLES;
+  const [copied, setCopied] = useState(false);
+
+  const copyHex = async () => {
+    try {
+      await navigator.clipboard.writeText(hex);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch {
+      setCopied(false);
+    }
+  };
 
   return (
     <div>
       <span className="text-caption font-medium text-neutral-600">{label}</span>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
-        {TEXT_ROLES.map((item) => {
+        {chips.map((item) => {
           const color = palette.roles[item.id];
           const active = role === item.id;
           return (
@@ -48,7 +97,7 @@ export function ColorField({ label, value, paletteId, role, onPick }) {
                   : "border-neutral-300"
               }`}
               style={{ background: color }}
-              onClick={() => onPick({ color: null, colorRole: item.id })}
+              onClick={() => onPick(colorPatch(kind, null, item.id))}
             />
           );
         })}
@@ -64,7 +113,7 @@ export function ColorField({ label, value, paletteId, role, onPick }) {
                 : "border-neutral-300"
             }`}
             style={{ background: color }}
-            onClick={() => onPick({ color, colorRole: null })}
+            onClick={() => onPick(colorPatch(kind, color))}
           />
         ))}
       </div>
@@ -74,9 +123,7 @@ export function ColorField({ label, value, paletteId, role, onPick }) {
           aria-label={label}
           className="h-9 w-11 shrink-0 cursor-pointer rounded-[var(--radius-input)] border border-neutral-300 bg-neutral-0"
           value={hex}
-          onChange={(event) =>
-            onPick({ color: event.target.value, colorRole: null })
-          }
+          onChange={(event) => onPick(colorPatch(kind, event.target.value))}
         />
         <input
           type="text"
@@ -88,11 +135,25 @@ export function ColorField({ label, value, paletteId, role, onPick }) {
             const next = event.target.value.trim();
             setDraft(next);
             if (/^#[0-9a-fA-F]{6}$/.test(next)) {
-              onPick({ color: next.toLowerCase(), colorRole: null });
+              onPick(colorPatch(kind, next.toLowerCase()));
             }
           }}
           onBlur={() => setDraft(hex)}
+          onFocus={(event) => event.target.select()}
         />
+        <button
+          type="button"
+          title={copied ? "Copied" : "Copy color code"}
+          aria-label={copied ? "Copied" : `Copy ${hex}`}
+          className="inline-flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-input)] border border-neutral-300 text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+          onClick={copyHex}
+        >
+          {copied ? (
+            <Check className="size-4 text-primary-700" aria-hidden="true" />
+          ) : (
+            <Copy className="size-4" aria-hidden="true" />
+          )}
+        </button>
       </div>
     </div>
   );

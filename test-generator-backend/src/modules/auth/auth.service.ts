@@ -2,10 +2,8 @@ import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/c
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { MailerService } from '@nestjs-modules/mailer';
-import { InjectRepository } from '@nestjs/typeorm';
 import { randomInt } from 'crypto';
 import * as bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
 import { ERROR_MESSAGES } from 'src/common/constant/error-messages';
 import { User } from '../user/entities/user.entity';
 import { Role } from '../user/entities/user.entity';
@@ -20,12 +18,12 @@ import {
   OtpPendingResult,
   TokenPayload,
 } from './interfaces/auth.interface';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private readonly prisma: PrismaService,
 
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -35,9 +33,8 @@ export class AuthService {
 
 
   async login(loginDto: LoginDto): Promise<LoginResult> {
-    const user = await this.userRepository.findOne({
+    const user = await this.prisma.user.findUnique({
       where: { email: loginDto.email },
-      relations: ['role_id'],
       select: {
         id: true,
         email: true,
@@ -48,7 +45,9 @@ export class AuthService {
         isSuspended: true,
         // role: true,
         role_id: {
-          role_name: true,
+          select: {
+            role_name: true,
+          },
         },
       },
     });
@@ -61,11 +60,11 @@ export class AuthService {
       throw new ForbiddenException(ERROR_MESSAGES.ACCOUNT_SUSPENDED);
     }
 
-    const role = user.role_id?.role_name;
+    const role = user.role_id?.role_name as string;
     const isPanelUser = role === Role.ADMIN || role === Role.SUPER_ADMIN;
 
     if (loginDto.otp) {
-      await this.verifyOtp(user, loginDto.otp);
+      await this.verifyOtp(user as User, loginDto.otp);
     } else if (!isPanelUser) {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
     }
@@ -92,7 +91,7 @@ export class AuthService {
   }
 
   async sendOtp(sendOtpDto: SendOtpDto): Promise<OtpPendingResult> {
-    const user = await this.userRepository.findOne({
+    const user = await this.prisma.user.findUnique({
       where: { email: sendOtpDto.email },
       select: {
         id: true,
@@ -105,11 +104,11 @@ export class AuthService {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
-    return this.sendLoginOtp(user);
+    return this.sendLoginOtp(user as User);
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
-    const user = await this.userRepository.findOne({
+    const user = await this.prisma.user.findUnique({
       where: { email: forgotPasswordDto.email },
       select: {
         id: true,
@@ -124,8 +123,11 @@ export class AuthService {
     const temporaryPassword = this.generateOtp();
     const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
 
-    await this.userRepository.update(user.id, {
-      password: hashedPassword,
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+      },
     });
 
     await this.mailerService.sendMail({
@@ -143,7 +145,7 @@ export class AuthService {
   }
 
   async resetPassword(userId: string, resetPasswordDto: ResetPasswordDto) {
-    const user = await this.userRepository.findOne({
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -160,8 +162,11 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, 10);
 
-    await this.userRepository.update(user.id, {
-      password: hashedPassword,
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+      },
     });
 
     return { message: 'Password updated successfully' };
@@ -184,16 +189,17 @@ export class AuthService {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_TOKEN);
     }
 
-    const user = await this.userRepository.findOne({
+    const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
-      relations: ['role_id'],
       select: {
         id: true,
         email: true,
         name: true,
         isSuspended: true,
         role_id: {
-          role_name: true,
+          select: {
+            role_name: true,
+          },
         },
       },
     });
@@ -210,7 +216,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       name: user.name,
-      role: user.role_id?.role_name,
+      role: user.role_id?.role_name as string,
     });
   }
 
@@ -228,16 +234,17 @@ export class AuthService {
   }
 
   async getProfile(userId: string) {
-    const user = await this.userRepository.findOne({
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      relations: ['role_id'],
       select: {
         id: true,
         email: true,
         name: true,
         isSuspended: true,
         role_id: {
-          role_name: true,
+          select: {
+            role_name: true,
+          },
         },
       },
     });
@@ -281,9 +288,12 @@ export class AuthService {
     const hashedOtp = await bcrypt.hash(otp, 10);
     const otpExpiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
 
-    await this.userRepository.update(user.id, {
-      otp: hashedOtp,
-      otpExpiresAt,
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        otp: hashedOtp,
+        otpExpiresAt,
+      },
     });
 
     await this.mailerService.sendMail({
@@ -331,9 +341,12 @@ export class AuthService {
   }
 
   private async clearOtp(userId: string): Promise<void> {
-    await this.userRepository.update(userId, {
-      otp: null,
-      otpExpiresAt: null,
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        otp: null,
+        otpExpiresAt: null,
+      },
     });
   }
 

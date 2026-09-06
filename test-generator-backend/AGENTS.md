@@ -6,7 +6,7 @@ These rules are mandatory for every change in `test-generator-backend`.
 
 - NestJS
 - TypeScript
-- TypeORM + PostgreSQL
+- Prisma + PostgreSQL
 - Config via `.env` (`ConfigModule`)
 
 ## Preserve Commented Code

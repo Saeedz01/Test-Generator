@@ -45,6 +45,12 @@ export const metadata = {
     "Testora helps teachers assemble balanced exam papers from chapter-wise MCQs, short, and long questions.",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({ children }) {
   return (
     <html
@@ -55,7 +61,7 @@ export default function RootLayout({ children }) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
-      <body className="flex min-h-full flex-col">
+      <body className="flex min-h-full min-w-0 flex-col overflow-x-clip">
         <ThemeProvider>
           <StoreProvider>{children}</StoreProvider>
         </ThemeProvider>

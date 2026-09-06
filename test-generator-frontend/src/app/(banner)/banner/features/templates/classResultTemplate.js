@@ -1,25 +1,26 @@
-import { box, baseDocument, push, squareBox } from "./templateHelpers";
+import { baseDocument, push, squareBox } from "./templateHelpers";
+import { rect, txt, photo } from "./templateDraw";
+import { academyLogoSrc, studentPhotoForName } from "./templatePhotos";
 
-const COLS = 4;
-const ROWS = 4;
+const GREEN = "#0d4a2c";
+const GOLD = "#c5a028";
+const CREAM = "#f7f3e8";
+const WHITE = "#ffffff";
+const INK = "#14301f";
 
 const STUDENTS = [
-  ["Rohit Sukla", "99%"],
-  ["Ayesha Khan", "98%"],
-  ["Ali Raza", "97%"],
-  ["Sara Ahmed", "96%"],
-  ["Hassan Ali", "95%"],
-  ["Zainab Fatima", "94%"],
-  ["Omar Sheikh", "93%"],
-  ["Hira Malik", "92%"],
-  ["Bilal Ahmed", "91%"],
-  ["Noor Jahan", "90%"],
-  ["Usman Tariq", "89%"],
-  ["Fatima Noor", "88%"],
-  ["Hamza Iqbal", "87%"],
-  ["Maryam Ali", "86%"],
-  ["Saad Rehman", "84%"],
-  ["Iqra Shah", "82%"],
+  ["علی رضا", "528"],
+  ["حسن علی", "521"],
+  ["عائشہ خان", "519"],
+  ["عمر شیخ", "514"],
+  ["زینب فاطمہ", "510"],
+  ["بلال احمد", "506"],
+  ["حرا ملک", "501"],
+  ["عثمان طارق", "498"],
+  ["مریم علی", "492"],
+  ["حمزہ اقبال", "488"],
+  ["اقراء شاہ", "481"],
+  ["سعد رحمان", "476"],
 ];
 
 export function createClassResultTemplate(formatId, paletteId = "cream") {
@@ -31,105 +32,90 @@ export function createClassResultTemplate(formatId, paletteId = "cream") {
   });
   const f = { width: doc.width, height: doc.height };
 
+  rect(doc, f, CREAM, 0, 0, 1, 1);
+  rect(doc, f, GREEN, 0, 0, 1, 0.16);
   push(doc, {
-    type: "shape",
-    shape: "rect",
-    fillRole: "accent",
-    radius: 16,
-    ...squareBox(f, 0.05, 0.035, 0.07),
+    type: "image",
+    src: academyLogoSrc(),
+    clip: "circle",
+    objectFit: "cover",
+    ...squareBox(f, 0.03, 0.025, 0.11),
   });
-  push(doc, {
-    type: "text",
-    content: "Your Academy",
-    fontId: "jakarta",
-    fontSize: 28,
-    fontWeight: 700,
-    align: "left",
-    colorRole: "accent",
-    ...box(f, 0.14, 0.04, 0.45, 0.055),
-  });
-  push(doc, {
-    type: "text",
-    content: "+91 0300-1234567",
-    fontId: "jakarta",
-    fontSize: 22,
-    fontWeight: 600,
+  txt(doc, f, "علم سائنس اکیڈمی", 0.16, 0.02, 0.8, 0.07, {
+    fontId: "arabic",
+    fontSize: 40,
+    fontWeight: 800,
+    dir: "rtl",
     align: "right",
-    colorRole: "text",
-    ...box(f, 0.55, 0.045, 0.4, 0.045),
   });
-  push(doc, {
-    type: "text",
-    content: "Board Exam Result 2026",
-    fontId: "jakarta",
-    fontSize: 24,
-    fontWeight: 500,
-    align: "center",
-    colorRole: "muted",
-    ...box(f, 0.1, 0.11, 0.8, 0.04),
+  txt(doc, f, "YOUR ACADEMY  ·  0300-1234567", 0.16, 0.09, 0.8, 0.045, {
+    fontSize: 16,
+    fontWeight: 600,
+    color: GOLD,
+    align: "left",
   });
-  push(doc, {
-    type: "text",
-    content: "Our Toppers",
-    fontId: "jakarta",
-    fontSize: 48,
+
+  rect(doc, f, GOLD, 0.08, 0.175, 0.84, 0.055, { radius: 8 });
+  txt(doc, f, "ہمارے ٹاپرز  ·  CLASS 9TH RESULT 2026", 0.08, 0.175, 0.84, 0.055, {
+    fontId: "urdu",
+    fontSize: 20,
     fontWeight: 700,
-    align: "center",
-    colorRole: "text",
-    ...box(f, 0.1, 0.145, 0.8, 0.06),
+    color: GREEN,
+    dir: "rtl",
   });
 
+  const cols = 4;
+  const rows = 3;
   const gridX = 0.05;
-  const gridY = 0.22;
+  const gridY = 0.255;
   const gridW = 0.9;
-  const gridH = 0.62;
-  const cellW = gridW / COLS;
-  const cellH = gridH / ROWS;
-  const photoPx = Math.round(
-    Math.min(cellW * doc.width, cellH * doc.height * 0.58) * 0.82,
-  );
-  const photoW = photoPx / doc.width;
-  const photoH = photoPx / doc.height;
+  const gridH = 0.58;
+  const cellW = gridW / cols;
+  const cellH = gridH / rows;
 
-  STUDENTS.forEach(([name, marks], index) => {
-    const col = index % COLS;
-    const row = Math.floor(index / COLS);
-    const cellX = gridX + col * cellW;
-    const cellY = gridY + row * cellH;
-    const photoX = cellX + (cellW - photoW) / 2;
-    const photoY = cellY + 0.01;
+  STUDENTS.forEach((student, index) => {
+    const col = index % cols;
+    const row = Math.floor(index / cols);
+    const x = gridX + col * cellW;
+    const y = gridY + row * cellH;
+    const photoSize = Math.min(cellW * 0.72, cellH * 0.55);
+    const px = x + (cellW - photoSize) / 2;
+    const py = y + 0.012;
 
-    push(doc, {
-      type: "image",
-      src: "",
-      clip: "circle",
-      objectFit: "cover",
-      aspectLocked: true,
-      placeholderLabel: "",
-      ...box(f, photoX, photoY, photoW, photoH),
+    rect(doc, f, WHITE, x + 0.012, y + 0.008, cellW - 0.024, cellH - 0.016, {
+      radius: 14,
     });
-    push(doc, {
-      type: "text",
-      content: `${marks}  ${name}`,
-      fontId: "jakarta",
-      fontSize: 16,
+    photo(doc, f, studentPhotoForName(student[0], index), px, py, photoSize, photoSize, {
+      clip: "circle",
+      strokeWidth: 5,
+      stroke: GOLD,
+      aspectLocked: true,
+    });
+    txt(doc, f, student[0], x, py + photoSize + 0.008, cellW, 0.032, {
+      fontId: "urdu",
+      fontSize: 15,
       fontWeight: 700,
-      align: "center",
-      valign: "middle",
-      colorRole: "text",
-      ...box(f, cellX + 0.01, photoY + photoH + 0.004, cellW - 0.02, 0.032),
+      color: INK,
+      dir: "rtl",
+    });
+    txt(doc, f, student[1], x, py + photoSize + 0.038, cellW, 0.03, {
+      fontSize: 18,
+      fontWeight: 800,
+      color: GREEN,
     });
   });
 
-  push(doc, {
-    type: "text",
-    content: "Congratulations",
-    fontId: "script",
-    fontSize: 64,
-    fontWeight: 400,
-    align: "center",
-    colorRole: "text",
-    ...box(f, 0.08, 0.86, 0.84, 0.1),
+  rect(doc, f, GREEN, 0, 0.86, 1, 0.14);
+  txt(doc, f, "مبارک ہو  ·  Congratulations to all position holders", 0.04, 0.875, 0.92, 0.05, {
+    fontId: "urdu",
+    fontSize: 20,
+    fontWeight: 700,
+    dir: "rtl",
+  });
+  txt(doc, f, "City Campus, Punjab  ·  0300-1234567", 0.04, 0.93, 0.92, 0.045, {
+    fontSize: 16,
+    fontWeight: 600,
+    color: GOLD,
   });
   return doc;
 }

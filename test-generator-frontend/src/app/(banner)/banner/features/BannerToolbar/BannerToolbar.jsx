@@ -31,13 +31,13 @@ export function BannerToolbar({
   onOpenRight,
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 bg-neutral-0 px-3 py-2">
+    <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 bg-neutral-0 px-2 py-2 sm:px-3">
       <Link
         href={ROUTES.BANNER}
         className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
       >
-        <ArrowLeft className="size-4" aria-hidden="true" />
-        Templates
+        <ArrowLeft className="size-4 shrink-0" aria-hidden="true" />
+        <span className="hidden sm:inline">Templates</span>
       </Link>
       <button
         type="button"
@@ -57,10 +57,11 @@ export function BannerToolbar({
       >
         <Redo2 className="size-4" aria-hidden="true" />
       </button>
-      <label className="hidden items-center gap-2 text-caption text-neutral-600 sm:flex">
-        Size
+      <label className="flex min-w-0 flex-1 items-center gap-2 text-caption text-neutral-600 sm:max-w-56 sm:flex-none">
+        <span className="hidden sm:inline">Size</span>
         <select
-          className="h-8 rounded-[var(--radius-input)] border border-neutral-300 bg-neutral-0 px-2 text-caption text-neutral-900"
+          aria-label="Banner size"
+          className="h-8 min-w-0 flex-1 rounded-[var(--radius-input)] border border-neutral-300 bg-neutral-0 px-2 text-caption text-neutral-900"
           value={formatId}
           onChange={(event) => onFormat(event.target.value)}
         >
@@ -71,7 +72,7 @@ export function BannerToolbar({
           ))}
         </select>
       </label>
-      <div className="ml-auto flex flex-wrap items-center gap-2">
+      <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:ml-auto sm:w-auto">
         <button
           type="button"
           className={cn(
@@ -98,15 +99,16 @@ export function BannerToolbar({
           onClick={onApplyLastStyle}
           disabled={!canApplyLastStyle}
         >
-          <FolderClock className="size-4" aria-hidden="true" />
-          Last settings
+          <FolderClock className="size-4 shrink-0" aria-hidden="true" />
+          <span className="hidden sm:inline">Last settings</span>
+          <span className="sm:hidden">Last</span>
         </button>
         <button
           type="button"
           className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
           onClick={onPreview}
         >
-          <Eye className="size-4" aria-hidden="true" />
+          <Eye className="size-4 shrink-0" aria-hidden="true" />
           Preview
         </button>
         <button

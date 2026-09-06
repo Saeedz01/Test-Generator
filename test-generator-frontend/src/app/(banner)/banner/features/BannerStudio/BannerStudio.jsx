@@ -289,7 +289,7 @@ function Drawer({ side, onClose, children }) {
         onClick={onClose}
       />
       <div
-        className={`absolute top-0 h-full shadow-md ${
+        className={`absolute top-0 flex h-full w-[min(100%,20rem)] shadow-md ${
           side === "left" ? "left-0" : "right-0"
         }`}
       >

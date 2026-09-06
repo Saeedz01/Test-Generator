@@ -3,6 +3,7 @@
 import { BANNER_PALETTES } from "../bannerPalettes";
 import { backgroundFill } from "../bannerColors";
 import { Field } from "./PropFields";
+import { ColorField } from "./ColorField";
 
 export function CanvasProps({ doc, onPalette, onBackground }) {
   return (
@@ -29,14 +30,14 @@ export function CanvasProps({ doc, onPalette, onBackground }) {
           ))}
         </div>
       </Field>
-      <Field label="Background">
-        <input
-          type="color"
-          className="mt-1.5 h-9 w-full min-w-0 cursor-pointer rounded-[var(--radius-input)] border border-neutral-300"
-          value={backgroundFill(doc)}
-          onChange={(event) => onBackground(event.target.value)}
-        />
-      </Field>
+      <ColorField
+        label="Background"
+        fill
+        value={backgroundFill(doc)}
+        paletteId={doc.paletteId}
+        role={doc.background?.fill ? null : doc.background?.fillRole}
+        onPick={onBackground}
+      />
     </div>
   );
 }

@@ -19,6 +19,16 @@ export const BANNER_FONTS = [
     label: "Great Vibes",
     value: 'var(--font-script), "Great Vibes", cursive',
   },
+  {
+    id: "arabic",
+    label: "Cairo Arabic",
+    value: 'var(--font-arabic), Cairo, sans-serif',
+  },
+  {
+    id: "urdu",
+    label: "Noto Nastaliq Urdu",
+    value: 'var(--font-urdu), "Noto Nastaliq Urdu", serif',
+  },
 ];
 
 export function getBannerFont(id) {

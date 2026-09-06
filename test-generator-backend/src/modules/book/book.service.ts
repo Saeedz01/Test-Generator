@@ -1,11 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { ERROR_MESSAGES } from 'src/common/constant/error-messages';
-import { Book } from './entities/book.entity';
-import { schoolClass } from 'src/modules/class/entities/class.entity';  
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class BookService {
@@ -18,16 +15,12 @@ export class BookService {
   // and sees that it requires a Book repository via @InjectRepository(Book).
   // The container then retrieves the pre-created Book repository and injects it into this variable(bookRepository),
   // making bookRepository capable of performing direct database operations like find, save, update, and delete.
-    @InjectRepository(Book) 
-    private readonly bookRepository: Repository<Book>,
-
-    @InjectRepository(schoolClass)
-    private readonly classRepository: Repository<schoolClass>
+    private readonly prisma: PrismaService,
   ) {}
   
   // book service methods
   async createBook(createBookDto: CreateBookDto) {
-    const schoolClassRecord = await this.classRepository.findOne({
+    const schoolClassRecord = await this.prisma.schoolClass.findFirst({
       where: {
         name: createBookDto.class_name,
       },
@@ -37,28 +30,28 @@ export class BookService {
       throw new NotFoundException(ERROR_MESSAGES.CLASS_NOT_FOUND);
     }
 
-    const book = this.bookRepository.create({
-      book_name: createBookDto.book_name,
-      description: createBookDto.description,
-      edition: createBookDto.edition,
-      class: schoolClassRecord,
+    return await this.prisma.book.create({
+      data: {
+        book_name: createBookDto.book_name,
+        description: createBookDto.description,
+        edition: createBookDto.edition,
+        classId: schoolClassRecord.id,
+      },
+      include: { class: true },
     });
-
-    return await this.bookRepository.save(book);
   }
 
   async findAll(classId?: string) {
-    const query = this.bookRepository
-      .createQueryBuilder('book')
-      .leftJoinAndSelect('book.class', 'class')
-      .loadRelationCountAndMap('book.chaptersCount', 'book.chapters')
-      .orderBy('book.book_name', 'ASC');
-
-    if (classId) {
-      query.andWhere('class.id = :classId', { classId });
-    }
-
-    const books = await query.getMany();
+    const books = await this.prisma.book.findMany({
+      where: classId ? { classId } : undefined,
+      include: {
+        class: true,
+        _count: {
+          select: { chapters: true },
+        },
+      },
+      orderBy: { book_name: 'asc' },
+    });
 
     if (!books.length) {
       // return empty array instead of 404 so clients can handle empty lists gracefully
@@ -66,20 +59,21 @@ export class BookService {
     }
 
     // map to include convenient fields expected by frontend (classId and class_name)
-    return books.map((book) => ({
-      ...book,
-      classId: book.class?.id,
-      class_name: book.class?.name,
-      chaptersCount: Number(
-        (book as Book & { chaptersCount?: number }).chaptersCount ?? 0,
-      ),
-    }));
+    return books.map((book) => {
+      const { _count, ...rest } = book;
+      return {
+        ...rest,
+        classId: book.class?.id,
+        class_name: book.class?.name,
+        chaptersCount: Number(_count.chapters ?? 0),
+      };
+    });
   }
 
   async findOne(id: string) {
-  const book = await this.bookRepository.findOne({
+  const book = await this.prisma.book.findUnique({
     where: { id },
-    relations: { class: true },
+    include: { class: true },
     // relations: {
     //   chapters: true,
     //   questions: true,
@@ -98,29 +92,36 @@ export class BookService {
 }
 
   async update(id: string, updateBookDto: UpdateBookDto) {
-    const book = await this.bookRepository.findOne({
+    const book = await this.prisma.book.findUnique({
       where: { id },
-      relations: { class: true },
+      include: { class: true },
     });
 
     if (!book) {
       throw new NotFoundException(ERROR_MESSAGES.BOOK_NOT_FOUND);
     }
 
+    const data: {
+      book_name?: string;
+      description?: string | null;
+      edition?: string | null;
+      classId?: string;
+    } = {};
+
     if (updateBookDto.book_name !== undefined) {
-      book.book_name = updateBookDto.book_name;
+      data.book_name = updateBookDto.book_name;
     }
 
     if (updateBookDto.description !== undefined) {
-      book.description = updateBookDto.description;
+      data.description = updateBookDto.description;
     }
 
     if (updateBookDto.edition !== undefined) {
-      book.edition = updateBookDto.edition;
+      data.edition = updateBookDto.edition;
     }
 
     if (updateBookDto.classId) {
-      const schoolClassRecord = await this.classRepository.findOne({
+      const schoolClassRecord = await this.prisma.schoolClass.findUnique({
         where: { id: updateBookDto.classId },
       });
 
@@ -128,9 +129,9 @@ export class BookService {
         throw new NotFoundException(ERROR_MESSAGES.CLASS_NOT_FOUND);
       }
 
-      book.class = schoolClassRecord;
+      data.classId = schoolClassRecord.id;
     } else if (updateBookDto.class_name) {
-      const schoolClassRecord = await this.classRepository.findOne({
+      const schoolClassRecord = await this.prisma.schoolClass.findFirst({
         where: { name: updateBookDto.class_name },
       });
 
@@ -138,16 +139,22 @@ export class BookService {
         throw new NotFoundException(ERROR_MESSAGES.CLASS_NOT_FOUND);
       }
 
-      book.class = schoolClassRecord;
+      data.classId = schoolClassRecord.id;
     }
 
-    return this.bookRepository.save(book);
+    return this.prisma.book.update({
+      where: { id },
+      data,
+      include: { class: true },
+    });
   }
 
   async remove(id: string): Promise<void> {
-  const result = await this.bookRepository.delete(id);
+  const result = await this.prisma.book.deleteMany({
+    where: { id },
+  });
 
-  if (result.affected === 0) {
+  if (result.count === 0) {
     throw new NotFoundException(ERROR_MESSAGES.BOOK_NOT_FOUND);
   }
 }

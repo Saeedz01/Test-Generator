@@ -38,7 +38,7 @@ export default function DashboardHeader({ onMenuClick, menuOpen = false }) {
         <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"
-            className="inline-flex size-9 items-center justify-center rounded-[var(--radius-sm)] text-neutral-700 hover:bg-neutral-100 md:hidden"
+            className="inline-flex size-10 items-center justify-center rounded-[var(--radius-sm)] text-neutral-700 hover:bg-neutral-100 lg:hidden"
             onClick={onMenuClick}
             aria-label="Open admin menu"
             aria-expanded={menuOpen}
@@ -54,7 +54,7 @@ export default function DashboardHeader({ onMenuClick, menuOpen = false }) {
           </Link>
         </div>
 
-        <nav aria-label="Primary" className="flex items-center gap-4 md:gap-6">
+        <nav aria-label="Primary" className="hidden items-center gap-4 lg:flex lg:gap-6">
           <Link
             href={ROUTES.CLASSES}
             className="text-small font-medium text-neutral-600 transition-colors duration-150 hover:text-neutral-900"
@@ -69,7 +69,7 @@ export default function DashboardHeader({ onMenuClick, menuOpen = false }) {
           </Link>
           <Link
             href={ROUTES.DASHBOARD}
-            className="hidden text-small font-medium text-neutral-600 transition-colors duration-150 hover:text-neutral-900 md:inline"
+            className="hidden text-small font-medium text-neutral-600 transition-colors duration-150 hover:text-neutral-900 lg:inline"
           >
             Admin
           </Link>

@@ -79,13 +79,20 @@ export function ConfirmHost() {
         <p id="confirm-dialog-desc" className="mt-2 text-small text-neutral-600">
           {config.message}
         </p>
-        <div className="mt-5 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={close} disabled={busy}>
+        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={close}
+            disabled={busy}
+          >
             Cancel
           </Button>
           <Button
             type="button"
             variant="destructive"
+            className="w-full sm:w-auto"
             onClick={confirm}
             loading={busy}
           >

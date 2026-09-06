@@ -213,11 +213,18 @@ export function GenerateTestModalForm({
         </p>
       </div>
 
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onClose}>
+      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full sm:w-auto"
+          onClick={onClose}
+        >
           Cancel
         </Button>
-        <Button type="submit">Preview paper</Button>
+        <Button type="submit" className="w-full sm:w-auto">
+          Preview paper
+        </Button>
       </div>
     </form>
   );

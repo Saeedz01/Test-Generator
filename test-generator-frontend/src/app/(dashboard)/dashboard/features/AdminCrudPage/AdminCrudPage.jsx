@@ -33,7 +33,7 @@ export function AdminCrudPage({
           ) : null}
         </div>
         {hideAdd ? null : (
-          <Button type="button" onClick={onAdd}>
+          <Button type="button" onClick={onAdd} className="w-full sm:w-auto">
             <Plus className="size-4" aria-hidden="true" />
             {addLabel}
           </Button>
@@ -64,12 +64,15 @@ export function AdminCrudPage({
               <thead className="border-b border-neutral-200 bg-neutral-50 text-caption font-semibold tracking-wide text-neutral-500 uppercase">
                 <tr>
                   {columns.map((column) => (
-                    <th key={column.key} className="px-4 py-3 font-semibold">
+                    <th
+                      key={column.key}
+                      className="whitespace-nowrap px-3 py-3 font-semibold sm:px-4"
+                    >
                       {column.label}
                     </th>
                   ))}
                   {showActions ? (
-                    <th className="px-4 py-3 text-right font-semibold">
+                    <th className="px-3 py-3 text-right font-semibold sm:px-4">
                       Actions
                     </th>
                   ) : null}
@@ -82,14 +85,17 @@ export function AdminCrudPage({
                     className="align-top transition-colors hover:bg-neutral-50/80"
                   >
                     {columns.map((column) => (
-                      <td key={column.key} className="px-4 py-3 text-neutral-800">
+                      <td
+                        key={column.key}
+                        className="max-w-[12rem] px-3 py-3 break-words text-neutral-800 sm:max-w-none sm:px-4"
+                      >
                         {column.render
                           ? column.render(row)
                           : row[column.key] ?? "—"}
                       </td>
                     ))}
                     {showActions ? (
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-3 sm:px-4">
                         <div className="flex justify-end gap-2">
                           {typeof row.onEdit === "function" ? (
                             <button

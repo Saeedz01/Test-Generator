@@ -1,16 +1,14 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ERROR_MESSAGES } from 'src/common/constant/error-messages';
 import { User, Role } from './entities/user.entity';
 import { UserRole } from './entities/user.role.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 export interface AdminUserResponse {
   id: string;
@@ -24,25 +22,21 @@ export interface AdminUserResponse {
 @Injectable()
 export class UserService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-
-    @InjectRepository(UserRole)
-    private readonly userRoleRepository: Repository<UserRole>,
+    private readonly prisma: PrismaService,
   ) {}
 
   async ensureRole(roleName: string): Promise<UserRole> {
-    let role = await this.userRoleRepository.findOne({
+    let role = await this.prisma.userRole.findFirst({
       where: { role_name: roleName },
     });
 
     if (!role) {
-      role = await this.userRoleRepository.save(
-        this.userRoleRepository.create({ role_name: roleName }),
-      );
+      role = await this.prisma.userRole.create({
+        data: { role_name: roleName },
+      });
     }
 
-    return role;
+    return role as unknown as UserRole;
   }
 
   async createWithRole(
@@ -51,7 +45,7 @@ export class UserService {
     roleName: string,
     name?: string,
   ): Promise<User> {
-    const existingUser = await this.userRepository.findOne({
+    const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
     if (existingUser) {
@@ -61,15 +55,16 @@ export class UserService {
     const userRole = await this.ensureRole(roleName);
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = this.userRepository.create({
-      name: name?.trim() || email.split('@')[0],
-      email,
-      password: hashedPassword,
-      role_id: userRole,
-      isSuspended: false,
-    });
-
-    return this.userRepository.save(user);
+    return (await this.prisma.user.create({
+      data: {
+        name: name?.trim() || email.split('@')[0],
+        email,
+        password: hashedPassword,
+        roleId: userRole.id,
+        isSuspended: false,
+      },
+      include: { role_id: true },
+    })) as unknown as User;
   }
 
   async create(createUserDto: CreateUserDto) {
@@ -82,14 +77,17 @@ export class UserService {
   }
 
   async findAllAdmins(): Promise<AdminUserResponse[]> {
-    const admins = await this.userRepository
-      .createQueryBuilder('user')
-      .leftJoinAndSelect('user.role_id', 'role')
-      .where('role.role_name = :roleName', { roleName: Role.ADMIN })
-      .orderBy('user.email', 'ASC')
-      .getMany();
+    const admins = await this.prisma.user.findMany({
+      where: {
+        role_id: {
+          role_name: Role.ADMIN,
+        },
+      },
+      include: { role_id: true },
+      orderBy: { email: 'asc' },
+    });
 
-    return admins.map((user) => this.mapAdminResponse(user));
+    return admins.map((user) => this.mapAdminResponse(user as unknown as User));
   }
 
   async createAdmin(email: string, password: string, name?: string) {
@@ -99,36 +97,43 @@ export class UserService {
 
   async toggleSuspendAdmin(id: string) {
     const user = await this.findAdminById(id);
-    user.isSuspended = !user.isSuspended;
-    const savedUser = await this.userRepository.save(user);
-    return this.mapAdminResponse(savedUser);
+    const savedUser = await this.prisma.user.update({
+      where: { id: user.id },
+      data: { isSuspended: !user.isSuspended },
+      include: { role_id: true },
+    });
+    return this.mapAdminResponse(savedUser as unknown as User);
   }
 
   async removeAdmin(id: string) {
     const user = await this.findAdminById(id);
-    await this.userRepository.delete(user.id);
+    await this.prisma.user.delete({
+      where: { id: user.id },
+    });
     return { message: 'Admin deleted successfully' };
   }
 
   async remove(id: string) {
-    const user = await this.userRepository.delete(id);
-    if (user.affected === 0) {
+    const user = await this.prisma.user.deleteMany({
+      where: { id },
+    });
+    if (user.count === 0) {
       throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
     }
-    return user;
+    return { raw: [], affected: user.count };
   }
 
   private async findAdminById(id: string): Promise<User> {
-    const user = await this.userRepository.findOne({
+    const user = await this.prisma.user.findUnique({
       where: { id },
-      relations: ['role_id'],
+      include: { role_id: true },
     });
 
     if (!user || user.role_id?.role_name !== Role.ADMIN) {
       throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
     }
 
-    return user;
+    return user as unknown as User;
   }
 
   private mapAdminResponse(user: User): AdminUserResponse {

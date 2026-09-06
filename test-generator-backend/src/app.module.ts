@@ -9,11 +9,11 @@ import { UserModule } from './modules/user/user.module';
 import { ChapterModule } from './modules/chapter/chapter.module';
 import { ClassModule } from './modules/class/class.module';
 import { BookModule } from './modules/book/book.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import appConfig from './config/app.config';
 import mailConfig from './config/mail.config';
 import { MailModule } from './modules/mail/mail.module';
+import { PrismaModule } from './prisma/prisma.module';
 import path from 'path';
 @Module({
   imports: [
@@ -28,16 +28,7 @@ import path from 'path';
         limit: 30,
       },
     ]),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST ?? 'localhost',
-      port: Number(process.env.DB_PORT ?? 5432),
-      username: process.env.DB_USERNAME ?? 'postgres',
-      password: process.env.DB_PASSWORD ?? '1122',
-      database: process.env.DB_NAME ?? 'test-generator',
-      autoLoadEntities: true,
-      synchronize: process.env.NODE_ENV !== 'production',
-    }),
+    PrismaModule,
     MailModule,
     BookModule,
     ClassModule,

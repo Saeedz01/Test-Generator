@@ -138,3 +138,12 @@
   --shadow-focus-brand: 0 0 0 3px
     color-mix(in srgb, var(--color-primary-500) 30%, transparent);
 }
+
+@media (max-width: 639px) {
+  :root {
+    --text-display-size: 2rem;
+    --text-h1-size: 1.75rem;
+    --text-h2-size: 1.5rem;
+    --space-section: var(--space-12);
+  }
+}

@@ -24,7 +24,7 @@ export function RightPanel({
   onRemoveImage,
 }) {
   return (
-    <aside className="flex h-full w-64 max-w-64 min-w-64 shrink-0 flex-col overflow-hidden border-l border-neutral-200 bg-neutral-0">
+    <aside className="flex h-full w-full min-w-0 shrink-0 flex-col overflow-hidden border-l border-neutral-200 bg-neutral-0 lg:w-64 lg:max-w-64 lg:min-w-64">
       <p className="border-b border-neutral-200 px-3 py-2.5 text-caption font-semibold text-neutral-700">
         {selected ? "Element" : "Banner"}
       </p>

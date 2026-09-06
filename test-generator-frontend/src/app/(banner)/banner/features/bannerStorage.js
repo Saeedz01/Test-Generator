@@ -66,7 +66,7 @@ function createSaveId() {
 }
 
 function isFreshTemplateId(id) {
-  return typeof id === "string" && /^banner-(blank|result|class-result|admission|toppers|advertise|exam-news|admission-flyer)-/.test(id);
+  return typeof id === "string" && /^banner-(blank|result|class-result|admission|toppers|advertise|exam-news|admission-flyer|photo-board|dual-result)-/.test(id);
 }
 
 function withoutPhotos(doc) {

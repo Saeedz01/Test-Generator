@@ -85,3 +85,26 @@ export function sortElements(elements) {
 export function nextZ(elements) {
   return elements.reduce((max, el) => Math.max(max, el.z ?? 0), 0) + 1;
 }
+
+export function findTextBackdrop(doc, text) {
+  if (!doc || !text || text.type !== "text") return null;
+  const textArea = Math.max(1, text.width * text.height);
+  let best = null;
+  let bestArea = Infinity;
+  for (const el of doc.elements) {
+    if (el.type !== "shape" || el.shape === "line") continue;
+    const inside =
+      text.x + 2 >= el.x &&
+      text.y + 2 >= el.y &&
+      text.x + text.width - 2 <= el.x + el.width &&
+      text.y + text.height - 2 <= el.y + el.height;
+    if (!inside) continue;
+    const area = el.width * el.height;
+    if (area > textArea * 8) continue;
+    if (area < bestArea) {
+      best = el;
+      bestArea = area;
+    }
+  }
+  return best;
+}

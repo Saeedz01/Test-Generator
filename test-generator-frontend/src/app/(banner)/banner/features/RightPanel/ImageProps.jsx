@@ -1,8 +1,12 @@
 "use client";
 
-import { Field } from "./PropFields";
+import { Field, NumberField } from "./PropFields";
+import { ColorField } from "./ColorField";
+import { elementStroke } from "../bannerColors";
 
-export function ImageProps({ el, onChange, onReplace, onRemoveSrc }) {
+export function ImageProps({ el, paletteId, onChange, onReplace, onRemoveSrc }) {
+  const stroke = elementStroke(el, paletteId);
+
   return (
     <div className="space-y-3">
       <Field label="Fit">
@@ -46,6 +50,26 @@ export function ImageProps({ el, onChange, onReplace, onRemoveSrc }) {
         />
         Round photo
       </label>
+      <ColorField
+        label="Circle color"
+        mode="stroke"
+        value={stroke}
+        paletteId={paletteId}
+        role={el.stroke ? null : el.strokeRole}
+        onPick={(patch) =>
+          onChange({
+            ...patch,
+            strokeWidth: el.strokeWidth || 10,
+          })
+        }
+      />
+      <NumberField
+        label="Circle width"
+        value={el.strokeWidth || 0}
+        min={0}
+        max={40}
+        onChange={(strokeWidth) => onChange({ strokeWidth })}
+      />
       <label className="flex h-9 cursor-pointer items-center justify-center rounded-[var(--radius-button)] border border-neutral-300 text-caption font-semibold hover:bg-neutral-50">
         {el.src ? "Replace image" : "Upload image"}
         <input

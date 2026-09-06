@@ -1,4 +1,5 @@
 import { box, baseDocument, push, squareBox } from "./templateHelpers";
+import { campusPhotoSrc } from "./templatePhotos";
 
 const OFFERS = [
   "Board exam preparation",
@@ -35,7 +36,7 @@ export function createAdmissionTemplate(formatId, paletteId = "royal") {
   });
   push(doc, {
     type: "image",
-    src: "",
+    src: campusPhotoSrc(),
     clip: "circle",
     objectFit: "cover",
     placeholderLabel: "Campus photo",

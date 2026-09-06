@@ -19,6 +19,7 @@ const IMAGE_KEYS = [
   "aspectLocked",
   "radius",
   "stroke",
+  "strokeRole",
   "strokeWidth",
 ];
 

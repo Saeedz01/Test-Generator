@@ -11,6 +11,8 @@
 html,
 body {
   background-color: var(--color-bg-canvas);
+  overflow-x: clip;
+  min-width: 0;
 }
 
 html.dark,

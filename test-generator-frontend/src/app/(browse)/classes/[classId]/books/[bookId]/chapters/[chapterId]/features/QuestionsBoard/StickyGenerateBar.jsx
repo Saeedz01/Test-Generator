@@ -22,7 +22,7 @@ export function StickyGenerateBar() {
   const mixedChapters = chapterCount > 1;
 
   return (
-    <div className="sticky bottom-0 z-20 -mx-4 mt-8 border-t border-neutral-200 bg-neutral-0 px-4 py-3 sm:-mx-6 sm:px-6 lg:mx-0 lg:rounded-t-[var(--radius-card)] lg:border lg:border-b-0 lg:border-neutral-200">
+    <div className="sticky bottom-0 z-20 -mx-4 mt-8 border-t border-neutral-200 bg-neutral-0 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:-mx-6 sm:px-6 lg:mx-0 lg:rounded-t-[var(--radius-card)] lg:border lg:border-b-0 lg:border-neutral-200">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-small font-semibold text-neutral-900">
@@ -41,7 +41,7 @@ export function StickyGenerateBar() {
           <span
             className={cn(
               buttonVariants({ variant: "primary", size: "md" }),
-              "opacity-45",
+              "w-full opacity-45 sm:w-auto",
             )}
             aria-disabled="true"
             title="Select at least one question"
@@ -51,7 +51,7 @@ export function StickyGenerateBar() {
         ) : (
           <Link
             href={ROUTES.TEST_SUMMARY}
-            className={cn(buttonVariants({ variant: "primary", size: "md" }))}
+            className={cn(buttonVariants({ variant: "primary", size: "md" }), "w-full sm:w-auto")}
           >
             Generate Test
           </Link>

@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, FindOptionsWhere, Repository } from 'typeorm';
+import { Prisma } from '@prisma/client';
 import { CreatelngQuestionDto } from './dto/create-lng-question.dto';
 import { CreateShortQuestionDto } from './dto/create-short-question.dto';
 import { CreateMcqQuestionDto } from './dto/create-mcq-question.dto';
@@ -13,8 +12,10 @@ import { McqQuestion } from './entities/question.mcqs';
 import { schoolClass } from '../class/entities/class.entity';
 import { Book } from '../book/entities/book.entity';
 import { Chapter } from '../chapter/entities/chapter.entity';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 type QuestionEntity = LongQuestion | ShortQuestion | McqQuestion;
+type QuestionKind = 'long' | 'short' | 'mcq';
 
 interface QuestionRelations {
   schoolClass: schoolClass;
@@ -22,63 +23,69 @@ interface QuestionRelations {
   chapter: Chapter;
 }
 
+const questionInclude = {
+  class: true,
+  book: true,
+  chapter: true,
+} as const;
+
 @Injectable()
 export class QuestionsService {
 
   constructor(
-    @InjectRepository(LongQuestion)
-    private readonly longQuestionRepository: Repository<LongQuestion>,
-
-    @InjectRepository(ShortQuestion)
-    private readonly shortQuestionRepository: Repository<ShortQuestion>,
-
-    @InjectRepository(McqQuestion)
-    private readonly mcqQuestionRepository: Repository<McqQuestion>,
-
-    @InjectRepository(Book)
-    private readonly bookRepository: Repository<Book>,
-
-    @InjectRepository(Chapter)
-    private readonly chapterRepository: Repository<Chapter>,
-
-    @InjectRepository(schoolClass)
-    private readonly classRepository: Repository<schoolClass>
+    private readonly prisma: PrismaService,
   ) { }
+
+  private questionDelegate(kind: QuestionKind): {
+    findFirst: (args: unknown) => Promise<{ id: string } | null>;
+    findMany: (args: unknown) => Promise<QuestionEntity[]>;
+    findUnique: (args: unknown) => Promise<QuestionEntity | null>;
+    deleteMany: (args: unknown) => Promise<{ count: number }>;
+    update: (args: unknown) => Promise<QuestionEntity>;
+  } {
+    if (kind === 'long') {
+      return this.prisma.longQuestion as never;
+    }
+    if (kind === 'short') {
+      return this.prisma.shortQuestion as never;
+    }
+    return this.prisma.mcqQuestion as never;
+  }
 
   // common functions
   private async resolveQuestionRelations(classId: string, bookId: string, chapterId: string): Promise<QuestionRelations> {
-    const [schoolClass, book, chapter] = await Promise.all([
-      this.classRepository.findOne({ where: { id: classId } }),
-      this.bookRepository.findOne({ where: { id: bookId }, relations: { class: true } }),
-      this.chapterRepository.findOne({where: { id: chapterId },relations: { class: true, book: true } }),
+    const [schoolClassRecord, book, chapter] = await Promise.all([
+      this.prisma.schoolClass.findUnique({ where: { id: classId } }),
+      this.prisma.book.findUnique({ where: { id: bookId }, include: { class: true } }),
+      this.prisma.chapter.findUnique({where: { id: chapterId },include: { class: true, book: true } }),
     ]);
 
-    if (!schoolClass) throw new NotFoundException('Class not found');
+    if (!schoolClassRecord) throw new NotFoundException('Class not found');
     if (!book) throw new NotFoundException('Book not found');
     if (!chapter) throw new NotFoundException('Chapter not found');
 
-    if (book.class.id !== classId) {
+    if (book.class!.id !== classId) {
       throw new BadRequestException('Book does not belong to the specified class');
     }
 
-    if (chapter.class.id !== classId) {
+    if (chapter.class!.id !== classId) {
       throw new BadRequestException('Chapter does not belong to the specified class');
     }
 
-    if (chapter.book.id !== bookId) {
+    if (chapter.book!.id !== bookId) {
       throw new BadRequestException('Chapter does not belong to the specified book');
     }
 
-    return { schoolClass, book, chapter };
+    return { schoolClass: schoolClassRecord as unknown as schoolClass, book: book as unknown as Book, chapter: chapter as unknown as Chapter };
   }
 
-  private async assertUniqueStatement<T extends QuestionEntity>(
-    repository: Repository<T>,
+  private async assertUniqueStatement(
+    kind: QuestionKind,
     statement: string,
     excludeId?: string,
   ): Promise<void> {
-    const existing = await repository.findOne({
-      where: { question_text: statement } as FindOptionsWhere<T>,
+    const existing = await this.questionDelegate(kind).findFirst({
+      where: { question_text: statement },
     });
 
     if (existing && existing.id !== excludeId) {
@@ -86,24 +93,41 @@ export class QuestionsService {
     }
   }
 
-  private async createQuestion<T extends QuestionEntity>(
-    repository: Repository<T>,
+  private async createQuestion(
+    kind: QuestionKind,
     { statement, classId, bookId, chapterId }: CreateQuestionBaseDto,
-    extra?: DeepPartial<T>,
-  ): Promise<T> {
-    await this.assertUniqueStatement(repository, statement);
+    extra?: { options?: string[] },
+  ) {
+    await this.assertUniqueStatement(kind, statement);
 
-    const { schoolClass, book, chapter } = await this.resolveQuestionRelations(classId, bookId, chapterId);
+    const { schoolClass: schoolClassRecord, book, chapter } = await this.resolveQuestionRelations(classId, bookId, chapterId);
 
-    const question = repository.create({
+    const data = {
       question_text: statement,
-      class: schoolClass,
-      book,
-      chapter,
-      ...extra,
-    } as DeepPartial<T>);
+      classId: schoolClassRecord.id,
+      bookId: book.id,
+      chapterId: chapter.id,
+      ...(extra?.options !== undefined ? { options: extra.options as Prisma.InputJsonValue } : {}),
+    };
 
-    return repository.save(question);
+    if (kind === 'mcq') {
+      return this.prisma.mcqQuestion.create({
+        data: data as Prisma.McqQuestionUncheckedCreateInput,
+        include: questionInclude,
+      });
+    }
+
+    if (kind === 'short') {
+      return this.prisma.shortQuestion.create({
+        data,
+        include: questionInclude,
+      });
+    }
+
+    return this.prisma.longQuestion.create({
+      data,
+      include: questionInclude,
+    });
   }
 
   private mapQuestionResponse(question: QuestionEntity, type: 'long' | 'short' | 'mcq') {
@@ -128,28 +152,30 @@ export class QuestionsService {
     return response;
   }
 
-  private async findAllFromRepository<T extends QuestionEntity>(
-    repository: Repository<T>,
+  private async findAllFromRepository(
+    kind: QuestionKind,
     type: 'long' | 'short' | 'mcq',
   ) {
-    const questions = await repository.find({
-      relations: ['class', 'book', 'chapter'],
+    const questions = await this.questionDelegate(kind).findMany({
+      include: questionInclude,
     });
 
     if (questions.length === 0) {
       throw new NotFoundException('No questions found');
     }
 
-    return questions.map((question) => this.mapQuestionResponse(question, type));
+    return questions.map((question) => this.mapQuestionResponse(question as unknown as QuestionEntity, type));
   }
 
-  private async removeFromRepository<T extends QuestionEntity>(
-    repository: Repository<T>,
+  private async removeFromRepository(
+    kind: QuestionKind,
     id: string,
   ): Promise<string> {
-    const result = await repository.delete(id);
+    const result = await this.questionDelegate(kind).deleteMany({
+      where: { id },
+    });
 
-    if (result.affected === 0) {
+    if (result.count === 0) {
       throw new NotFoundException('Question not found');
     }
 
@@ -158,86 +184,98 @@ export class QuestionsService {
 
   // question creation functions
   async createLongQuestion(dto: CreatelngQuestionDto) {
-    return this.createQuestion(this.longQuestionRepository, dto);
+    return this.createQuestion('long', dto);
   }
 
   async createShortQuestion(dto: CreateShortQuestionDto) {
-    return this.createQuestion(this.shortQuestionRepository, dto);
+    return this.createQuestion('short', dto);
   }
 
   async createMcqQuestion(dto: CreateMcqQuestionDto) {
     const { options, ...baseDto } = dto;
-    return this.createQuestion(this.mcqQuestionRepository, baseDto, { options });
+    return this.createQuestion('mcq', baseDto, { options });
   }
 
   // question retrieval functions
   async findAlllngQuestions() {
-    return this.findAllFromRepository(this.longQuestionRepository, 'long');
+    return this.findAllFromRepository('long', 'long');
   }
 
   async findAllmcqQuestions() {
-    return this.findAllFromRepository(this.mcqQuestionRepository, 'mcq');
+    return this.findAllFromRepository('mcq', 'mcq');
   }
 
   async findAllshortQuestions() {
-    return this.findAllFromRepository(this.shortQuestionRepository, 'short');
+    return this.findAllFromRepository('short', 'short');
   }
 
-  private async updateQuestion<T extends QuestionEntity>(
-    repository: Repository<T>,
+  private async updateQuestion(
+    kind: QuestionKind,
     id: string,
     dto: Partial<CreateQuestionBaseDto> & { options?: string[] },
     type: 'long' | 'short' | 'mcq',
   ) {
-    const question = await repository.findOne({
-      where: { id } as FindOptionsWhere<T>,
-      relations: ['class', 'book', 'chapter'],
+    const question = await this.questionDelegate(kind).findUnique({
+      where: { id },
+      include: questionInclude,
     });
 
     if (!question) {
       throw new NotFoundException('Question not found');
     }
 
-    const classId = dto.classId ?? question.class.id;
-    const bookId = dto.bookId ?? question.book.id;
-    const chapterId = dto.chapterId ?? question.chapter.id;
+    const classId = dto.classId ?? question.class!.id;
+    const bookId = dto.bookId ?? question.book!.id;
+    const chapterId = dto.chapterId ?? question.chapter!.id;
     const statement = dto.statement ?? question.question_text;
 
     if (statement !== question.question_text) {
-      await this.assertUniqueStatement(repository, statement, id);
+      await this.assertUniqueStatement(kind, statement, id);
     }
 
-    const { schoolClass, book, chapter } = await this.resolveQuestionRelations(
+    const { schoolClass: schoolClassRecord, book, chapter } = await this.resolveQuestionRelations(
       classId,
       bookId,
       chapterId,
     );
 
-    question.question_text = statement;
-    question.class = schoolClass;
-    question.book = book;
-    question.chapter = chapter;
+    const data: {
+      question_text: string;
+      classId: string;
+      bookId: string;
+      chapterId: string;
+      options?: Prisma.InputJsonValue;
+    } = {
+      question_text: statement,
+      classId: schoolClassRecord.id,
+      bookId: book.id,
+      chapterId: chapter.id,
+    };
 
     if (type === 'mcq' && dto.options) {
-      (question as McqQuestion).options = dto.options;
+      data.options = dto.options as Prisma.InputJsonValue;
     }
 
-    const savedQuestion = await repository.save(question);
-    return this.mapQuestionResponse(savedQuestion, type);
+    const savedQuestion = await this.questionDelegate(kind).update({
+      where: { id },
+      data,
+      include: questionInclude,
+    });
+    return this.mapQuestionResponse(savedQuestion as unknown as QuestionEntity, type);
   }
 
   async updateLongQuestion(id: string, dto: UpdateQuestionDto) {
-    return this.updateQuestion(this.longQuestionRepository, id, dto, 'long');
+    return this.updateQuestion('long', id, dto, 'long');
   }
 
   async updateShortQuestion(id: string, dto: UpdateQuestionDto) {
-    return this.updateQuestion(this.shortQuestionRepository, id, dto, 'short');
+    return this.updateQuestion('short', id, dto, 'short');
   }
 
   async updateMcqQuestion(id: string, dto: UpdateMcqQuestionDto) {
     const { options, ...baseDto } = dto;
     return this.updateQuestion(
-      this.mcqQuestionRepository,
+      'mcq',
       id,
       { ...baseDto, options },
       'mcq',
@@ -254,14 +292,14 @@ export class QuestionsService {
 
   // question deletion functions
   async removeLngQ(id: string) {
-    return this.removeFromRepository(this.longQuestionRepository, id);
+    return this.removeFromRepository('long', id);
   }
 
   async removeShortQ(id: string) {
-    return this.removeFromRepository(this.shortQuestionRepository, id);
+    return this.removeFromRepository('short', id);
   }
 
   async removeMcqQ(id: string) {
-    return this.removeFromRepository(this.mcqQuestionRepository, id);
+    return this.removeFromRepository('mcq', id);
   }
 }

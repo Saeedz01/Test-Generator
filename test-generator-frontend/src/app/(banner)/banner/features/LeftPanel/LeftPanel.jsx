@@ -16,7 +16,7 @@ export function LeftPanel({ onAdd, onUpload, onApplyTemplate }) {
   const [tab, setTab] = useState("elements");
 
   return (
-    <aside className="flex h-full w-64 max-w-64 min-w-64 shrink-0 flex-col overflow-hidden border-r border-neutral-200 bg-neutral-0">
+    <aside className="flex h-full w-full min-w-0 shrink-0 flex-col overflow-hidden border-r border-neutral-200 bg-neutral-0 lg:w-64 lg:max-w-64 lg:min-w-64">
       <div className="flex border-b border-neutral-200">
         {TABS.map((item) => (
           <button

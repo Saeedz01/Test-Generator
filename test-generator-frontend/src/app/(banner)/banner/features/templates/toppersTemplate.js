@@ -1,4 +1,5 @@
 import { box, baseDocument, push, squareBox } from "./templateHelpers";
+import { academyLogoSrc, studentPhotoForName } from "./templatePhotos";
 
 const SCIENCE = [
   ["Fatima Nisar", "494/500"],
@@ -11,10 +12,10 @@ const COMMERCE = [
   ["Omar Sheikh", "465/500"],
 ];
 
-function pushStudent(doc, f, slot, name, marks) {
+function pushStudent(doc, f, slot, name, marks, photoIndex) {
   push(doc, {
     type: "image",
-    src: "",
+    src: studentPhotoForName(name, photoIndex),
     clip: "circle",
     objectFit: "cover",
     aspectLocked: true,
@@ -60,7 +61,7 @@ export function createToppersTemplate(formatId, paletteId = "institute") {
   });
   push(doc, {
     type: "image",
-    src: "",
+    src: academyLogoSrc(),
     clip: "circle",
     objectFit: "cover",
     placeholderLabel: "Logo",
@@ -120,7 +121,7 @@ export function createToppersTemplate(formatId, paletteId = "institute") {
     ...box(f, 0.08, 0.26, 0.84, 0.05),
   });
   SCIENCE.forEach((student, index) => {
-    pushStudent(doc, f, { x: 0.1 + index * 0.28, y: 0.33 }, student[0], student[1]);
+    pushStudent(doc, f, { x: 0.1 + index * 0.28, y: 0.33 }, student[0], student[1], index);
   });
   push(doc, {
     type: "shape",
@@ -140,7 +141,7 @@ export function createToppersTemplate(formatId, paletteId = "institute") {
     ...box(f, 0.08, 0.58, 0.84, 0.05),
   });
   COMMERCE.forEach((student, index) => {
-    pushStudent(doc, f, { x: 0.1 + index * 0.28, y: 0.65 }, student[0], student[1]);
+    pushStudent(doc, f, { x: 0.1 + index * 0.28, y: 0.65 }, student[0], student[1], index + 3);
   });
   push(doc, {
     type: "shape",

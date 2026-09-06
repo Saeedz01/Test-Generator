@@ -30,7 +30,7 @@ export function HomeCta() {
             href={ROUTES.CLASSES}
             className={cn(
               buttonVariants({ variant: "secondary", size: "lg" }),
-              "border-transparent bg-white text-primary-800 hover:bg-primary-50",
+              "w-full border-transparent bg-white text-primary-800 hover:bg-primary-50 sm:w-auto",
             )}
           >
             Start Generating

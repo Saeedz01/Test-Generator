@@ -17,7 +17,7 @@ export const TYPOGRAPHY_VARIANTS = {
   bodySmall: "text-small font-normal leading-[1.5] text-neutral-600",
   caption: "text-caption font-medium leading-[1.4] tracking-[0.02em] text-neutral-500",
   label: "text-caption font-medium text-neutral-600",
-  navigation: "text-small font-medium text-neutral-600",
+  navigation: "text-small font-semibold text-primary-700",
   buttonText: "text-small font-semibold",
 };
 

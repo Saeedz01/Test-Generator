@@ -1,4 +1,5 @@
 import { box, baseDocument, push, squareBox } from "./templateHelpers";
+import { studentPhotoSrc } from "./templatePhotos";
 
 export function createResultTemplate(formatId, paletteId = "festive") {
   const doc = baseDocument({
@@ -69,7 +70,7 @@ export function createResultTemplate(formatId, paletteId = "festive") {
   });
   push(doc, {
     type: "text",
-    content: "Ayesha Khan",
+    content: "Ali Raza",
     fontId: "jakarta",
     fontSize: 34,
     fontWeight: 700,
@@ -79,7 +80,7 @@ export function createResultTemplate(formatId, paletteId = "festive") {
   });
   push(doc, {
     type: "image",
-    src: "",
+    src: studentPhotoSrc(1),
     clip: "circle",
     strokeWidth: 10,
     stroke: "#d01224",

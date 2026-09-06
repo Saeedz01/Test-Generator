@@ -7,6 +7,7 @@ export const ROUTES = {
   LOGIN: "/login",
 
   // Public / teacher browse + test builder
+  ABOUT: "/about",
   CLASSES: "/classes",
   BANNER: "/banner",
   BANNER_STUDIO: "/banner/studio",

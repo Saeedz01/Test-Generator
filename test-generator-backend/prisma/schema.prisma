@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SchoolClass {
+  id             String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name           String          @unique @db.VarChar(255)
+  code           String          @unique @db.VarChar(50)
+  description    String?
+  sortOrder      Int             @default(0)
+  createdAt      DateTime        @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime        @default(now()) @updatedAt @db.Timestamp(6)
+  books          Book[]
+  chapters       Chapter[]
+  questions      LongQuestion[]
+  shortQuestions ShortQuestion[]
+  mcqQuestions   McqQuestion[]
+
+  @@map("classes")
+}
+
+model Book {
+  id             String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  book_name      String          @db.VarChar(255)
+  description    String?
+  edition        String?         @db.VarChar(100)
+  created_At     DateTime        @default(now()) @db.Timestamp(6)
+  updated_At     DateTime        @default(now()) @updatedAt @db.Timestamp(6)
+  classId        String?         @db.Uuid
+  class          SchoolClass?    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  chapters       Chapter[]
+  questions      LongQuestion[]
+  shortQuestions ShortQuestion[]
+  mcqQuestions   McqQuestion[]
+
+  @@map("books")
+}
+
+model Chapter {
+  id             String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  chapter_name   String          @db.VarChar(255)
+  order          Int
+  description    String?
+  createdAt      DateTime        @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime        @default(now()) @updatedAt @db.Timestamp(6)
+  classId        String?         @db.Uuid
+  bookId         String?         @db.Uuid
+  class          SchoolClass?    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  book           Book?           @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  questions      LongQuestion[]
+  shortQuestions ShortQuestion[]
+  mcqQuestions   McqQuestion[]
+
+  @@map("chapters")
+}
+
+model LongQuestion {
+  id            String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  question_text String       @db.VarChar(255)
+  createdAt     DateTime     @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime     @default(now()) @updatedAt @db.Timestamp(6)
+  classId       String?      @db.Uuid
+  bookId        String?      @db.Uuid
+  chapterId     String?      @db.Uuid
+  class         SchoolClass? @relation(fields: [classId], references: [id], onDelete: Cascade)
+  book          Book?        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  chapter       Chapter?     @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@map("long_questions")
+}
+
+model ShortQuestion {
+  id            String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  question_text String       @db.VarChar(255)
+  createdAt     DateTime     @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime     @default(now()) @updatedAt @db.Timestamp(6)
+  classId       String?      @db.Uuid
+  bookId        String?      @db.Uuid
+  chapterId     String?      @db.Uuid
+  class         SchoolClass? @relation(fields: [classId], references: [id], onDelete: Cascade)
+  book          Book?        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  chapter       Chapter?     @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@map("short_questions")
+}
+
+model McqQuestion {
+  id            String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  question_text String       @db.VarChar(255)
+  options       Json
+  createdAt     DateTime     @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime     @default(now()) @updatedAt @db.Timestamp(6)
+  classId       String?      @db.Uuid
+  bookId        String?      @db.Uuid
+  chapterId     String?      @db.Uuid
+  class         SchoolClass? @relation(fields: [classId], references: [id], onDelete: Cascade)
+  book          Book?        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  chapter       Chapter?     @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@map("mcq_questions")
+}
+
+model User {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name         String    @db.VarChar(255)
+  email        String    @unique @db.VarChar(255)
+  password     String    @db.VarChar(255)
+  otp          String?   @db.VarChar(255)
+  otpExpiresAt DateTime? @db.Timestamptz(6)
+  roleId       String?   @db.Uuid
+  isSuspended  Boolean   @default(false)
+  role_id      UserRole? @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@map("user")
+}
+
+model UserRole {
+  id        String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  role_name String @db.VarChar(255)
+  users     User[]
+
+  @@map("user_role")
+}

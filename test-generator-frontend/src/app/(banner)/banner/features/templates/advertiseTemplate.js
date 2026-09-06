@@ -1,4 +1,5 @@
 import { box, baseDocument, push, squareBox } from "./templateHelpers";
+import { studentPhotoSrc } from "./templatePhotos";
 
 const FEATURES = [
   "Online Registration",
@@ -45,7 +46,7 @@ export function createAdvertiseTemplate(formatId, paletteId = "institute") {
   });
   push(doc, {
     type: "image",
-    src: "",
+    src: studentPhotoSrc(0),
     clip: "circle",
     objectFit: "cover",
     placeholderLabel: "Student",

@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import {
   BookOpen,
   GraduationCap,
+  Image,
   LayoutDashboard,
   ListTree,
   MessageSquareText,
@@ -15,6 +16,11 @@ import {
 import { ROUTES } from "@/constants";
 import { selectAuthUser } from "@/store/authSlice";
 import { cn } from "@/utils";
+
+const SITE_LINKS = [
+  { href: ROUTES.CLASSES, label: "Browse classes", Icon: GraduationCap },
+  { href: ROUTES.BANNER, label: "Banner Designer", Icon: Image },
+];
 
 const BASE_LINKS = [
   { href: ROUTES.DASHBOARD, label: "Overview", Icon: LayoutDashboard, exact: true },
@@ -66,15 +72,19 @@ export default function AdminSidebar({ open = false, onClose }) {
 
   return (
     <>
-      <aside className="hidden w-56 shrink-0 border-r border-neutral-200 bg-neutral-0 p-4 md:block">
+      <aside className="hidden w-56 shrink-0 border-r border-neutral-200 bg-neutral-0 p-4 lg:block">
         <p className="mb-3 px-2 text-caption font-semibold tracking-wide text-neutral-400 uppercase">
+          Site
+        </p>
+        <AdminNav pathname={pathname} links={SITE_LINKS} />
+        <p className="mt-6 mb-3 px-2 text-caption font-semibold tracking-wide text-neutral-400 uppercase">
           Admin
         </p>
         <AdminNav pathname={pathname} links={links} />
       </aside>
 
       {open ? (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden">
           <button
             type="button"
             aria-label="Close menu"
@@ -83,11 +93,11 @@ export default function AdminSidebar({ open = false, onClose }) {
           />
           <aside
             id="admin-nav-drawer"
-            className="relative z-10 flex h-full w-64 flex-col border-r border-neutral-200 bg-neutral-0 p-4 shadow-md"
+            className="relative z-10 flex h-full w-[min(100%,16rem)] flex-col overflow-y-auto border-r border-neutral-200 bg-neutral-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-md"
           >
             <div className="mb-3 flex items-center justify-between px-2">
               <p className="text-caption font-semibold tracking-wide text-neutral-400 uppercase">
-                Admin
+                Menu
               </p>
               <button
                 type="button"
@@ -98,6 +108,13 @@ export default function AdminSidebar({ open = false, onClose }) {
                 <X className="size-4" aria-hidden="true" />
               </button>
             </div>
+            <p className="mb-3 px-2 text-caption font-semibold tracking-wide text-neutral-400 uppercase">
+              Site
+            </p>
+            <AdminNav pathname={pathname} links={SITE_LINKS} onNavigate={onClose} />
+            <p className="mt-6 mb-3 px-2 text-caption font-semibold tracking-wide text-neutral-400 uppercase">
+              Admin
+            </p>
             <AdminNav pathname={pathname} links={links} onNavigate={onClose} />
           </aside>
         </div>

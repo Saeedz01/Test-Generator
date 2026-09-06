@@ -171,6 +171,7 @@ export function TestSummary() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Button
           variant="ghost"
+          className="w-full sm:w-auto"
           onClick={() => {
             dispatch(clearTest());
             setPreviewHtml("");
@@ -185,11 +186,18 @@ export function TestSummary() {
         <div className="flex flex-col gap-2 sm:flex-row">
           <Link
             href={questionsHref}
-            className={cn(buttonVariants({ variant: "outline", size: "md" }))}
+            className={cn(
+              buttonVariants({ variant: "outline", size: "md" }),
+              "w-full sm:w-auto",
+            )}
           >
             Back to questions
           </Link>
-          <Button variant="primary" onClick={() => setSettingsOpen(true)}>
+          <Button
+            variant="primary"
+            className="w-full sm:w-auto"
+            onClick={() => setSettingsOpen(true)}
+          >
             <FileDown className="size-4" aria-hidden="true" />
             {previewHtml ? "Update preview" : "Preview paper"}
           </Button>

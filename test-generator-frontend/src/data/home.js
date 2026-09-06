@@ -2,6 +2,8 @@
  * Homepage marketing fixtures — UI demo only.
  */
 
+import { ROUTES } from "@/constants";
+
 export const homeQuote = {
   text: "Education is the passport to the future, for tomorrow belongs to those who prepare for it today.",
   attribution: "Malcolm X",
@@ -139,6 +141,7 @@ export const homeStats = [
 ];
 
 export const footerNav = [
-  { label: "Classes", href: "/classes" },
-  { label: "Banner Designer", href: "/banner" },
+  { label: "Classes", href: ROUTES.CLASSES },
+  { label: "Banner Designer", href: ROUTES.BANNER },
+  { label: "About", href: ROUTES.ABOUT },
 ];

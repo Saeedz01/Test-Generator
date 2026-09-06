@@ -1,9 +1,11 @@
 "use client";
 
 import { Field, NumberField } from "./PropFields";
+import { ColorField } from "./ColorField";
 import { elementFill } from "../bannerColors";
 
 export function ShapeProps({ el, paletteId, onChange }) {
+  const fill = elementFill(el, paletteId);
   return (
     <div className="space-y-3">
       <Field label="Shape">
@@ -17,16 +19,14 @@ export function ShapeProps({ el, paletteId, onChange }) {
           <option value="line">Line</option>
         </select>
       </Field>
-      <Field label="Fill">
-        <input
-          type="color"
-          className="mt-1.5 h-9 w-full min-w-0 cursor-pointer rounded-[var(--radius-input)] border border-neutral-300"
-          value={elementFill(el, paletteId)}
-          onChange={(event) =>
-            onChange({ fill: event.target.value, fillRole: null })
-          }
-        />
-      </Field>
+      <ColorField
+        label="Fill"
+        fill
+        value={fill === "transparent" ? "#ffffff" : fill}
+        paletteId={paletteId}
+        role={el.fill ? null : el.fillRole}
+        onPick={onChange}
+      />
       {el.shape !== "ellipse" && el.shape !== "line" ? (
         <NumberField
           label="Corner radius"

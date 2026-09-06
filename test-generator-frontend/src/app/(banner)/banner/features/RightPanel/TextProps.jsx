@@ -1,11 +1,15 @@
 "use client";
 
 import { BANNER_FONTS } from "../bannerFonts";
-import { elementColor } from "../bannerColors";
+import { elementColor, textBoxFill } from "../bannerColors";
 import { ColorField } from "./ColorField";
 import { Field, NumberField } from "./PropFields";
 
-export function TextProps({ el, paletteId, onChange }) {
+export function TextProps({ el, paletteId, fillEl, onChange, onChangeFill }) {
+  const fillSource = fillEl || el;
+  const boxFill = textBoxFill(fillSource, paletteId);
+  const setFill = onChangeFill || onChange;
+
   return (
     <div className="space-y-3">
       <Field label="Text">
@@ -21,6 +25,28 @@ export function TextProps({ el, paletteId, onChange }) {
         paletteId={paletteId}
         role={el.color ? null : el.colorRole}
         onPick={onChange}
+      />
+      <ColorField
+        label="Background"
+        fill
+        value={boxFill || "#ffffff"}
+        paletteId={paletteId}
+        role={fillSource.fill ? null : fillSource.fillRole}
+        onPick={setFill}
+      />
+      <button
+        type="button"
+        className="text-caption font-medium text-neutral-600 underline-offset-2 hover:text-neutral-900 hover:underline"
+        onClick={() => setFill({ fill: "transparent", fillRole: null })}
+      >
+        No background
+      </button>
+      <NumberField
+        label="Background radius"
+        value={fillSource.radius || 0}
+        min={0}
+        max={400}
+        onChange={(radius) => setFill({ radius })}
       />
       <Field label="Font">
         <select

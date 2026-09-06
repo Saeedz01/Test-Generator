@@ -45,7 +45,7 @@ export function LoginForm() {
   };
 
   return (
-    <div className="rounded-[var(--radius-card)] border border-neutral-200 bg-neutral-0 p-8 shadow-xs">
+    <div className="rounded-[var(--radius-card)] border border-neutral-200 bg-neutral-0 p-5 shadow-xs sm:p-8">
       <Heading level="h2">Sign in</Heading>
       <p className="mt-2 text-small text-neutral-600">
         Access the {BRAND_NAME} admin dashboard to manage classes, books,

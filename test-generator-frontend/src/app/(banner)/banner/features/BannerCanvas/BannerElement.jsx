@@ -2,7 +2,7 @@
 
 import { ImageIcon } from "lucide-react";
 import { getBannerFont } from "../bannerFonts";
-import { elementColor, elementFill } from "../bannerColors";
+import { elementColor, elementFill, elementStroke, textBoxFill } from "../bannerColors";
 import { ResizeHandles } from "./ResizeHandles";
 
 export function BannerElement({
@@ -52,6 +52,8 @@ export function BannerElement({
                   ? "flex-end"
                   : "center",
             color: elementColor(el, paletteId),
+            background: textBoxFill(el, paletteId) || undefined,
+            borderRadius: el.radius || 0,
             fontFamily: font.value,
             fontSize: el.fontSize || 24,
             fontWeight: el.fontWeight || 500,
@@ -61,9 +63,22 @@ export function BannerElement({
             whiteSpace: "pre-wrap",
             overflow: "hidden",
             userSelect: "none",
+            direction: el.dir || "ltr",
+            writingMode: el.writingMode,
           }}
         >
-          <span style={{ width: "100%" }}>{el.content}</span>
+          <span
+            style={{
+              width: "100%",
+              WebkitTextStroke: el.strokeWidth
+                ? `${el.strokeWidth}px ${elementStroke(el, paletteId)}`
+                : undefined,
+              paintOrder: el.strokeWidth ? "stroke fill" : undefined,
+              textShadow: el.shadow,
+            }}
+          >
+            {el.content}
+          </span>
         </div>
       ) : null}
 
@@ -74,6 +89,10 @@ export function BannerElement({
             height: el.shape === "line" ? 4 : "100%",
             background: elementFill(el, paletteId),
             borderRadius: el.shape === "ellipse" ? "50%" : el.radius || 0,
+            border: el.strokeWidth
+              ? `${el.strokeWidth}px solid ${elementStroke(el, paletteId)}`
+              : undefined,
+            boxSizing: "border-box",
           }}
         />
       ) : null}
@@ -86,7 +105,7 @@ export function BannerElement({
             overflow: "hidden",
             borderRadius: el.clip === "circle" ? "50%" : el.radius || 0,
             border: el.strokeWidth
-              ? `${el.strokeWidth}px solid ${el.stroke || "currentColor"}`
+              ? `${el.strokeWidth}px solid ${elementStroke(el, paletteId)}`
               : undefined,
             boxSizing: "border-box",
           }}

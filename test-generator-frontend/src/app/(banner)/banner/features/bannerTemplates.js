@@ -6,6 +6,8 @@ import { createToppersTemplate } from "./templates/toppersTemplate";
 import { createAdvertiseTemplate } from "./templates/advertiseTemplate";
 import { createExamNewsTemplate } from "./templates/examNewsTemplate";
 import { createAdmissionFlyerTemplate } from "./templates/admissionFlyerTemplate";
+import { createPhotoBoardTemplate } from "./templates/photoBoardTemplate";
+import { createDualResultTemplate } from "./templates/dualResultTemplate";
 
 export const BANNER_TEMPLATES = [
   {
@@ -16,18 +18,32 @@ export const BANNER_TEMPLATES = [
     create: createResultTemplate,
   },
   {
-    id: "class-result",
-    title: "Class result",
-    description: "Sixteen round photos with names and marks on a cream exam sheet.",
-    defaultPalette: "cream",
-    create: createClassResultTemplate,
-  },
-  {
     id: "toppers",
     title: "Class stars",
     description: "Green institute header with science and commerce photo rows.",
     defaultPalette: "institute",
     create: createToppersTemplate,
+  },
+  {
+    id: "photo-board",
+    title: "Photo result board",
+    description: "Maroon board, 12 class photos, score badges, and a featured topper.",
+    defaultPalette: "board",
+    create: createPhotoBoardTemplate,
+  },
+  {
+    id: "dual-result",
+    title: "Board result flyer",
+    description: "Maroon header, featured 545 topper, and Class 9 / Class 10 score grids.",
+    defaultPalette: "flyer",
+    create: createDualResultTemplate,
+  },
+  {
+    id: "class-result",
+    title: "Class result",
+    description: "Green-gold Punjab toppers sheet with twelve round photos.",
+    defaultPalette: "cream",
+    create: createClassResultTemplate,
   },
   {
     id: "admission",
@@ -46,15 +62,15 @@ export const BANNER_TEMPLATES = [
   {
     id: "exam-news",
     title: "Result announcement",
-    description: "Breaking-news result poster with bold color blocks.",
+    description: "Green-gold BISE result poster with pass stats and campus photo.",
     defaultPalette: "announce",
     create: createExamNewsTemplate,
   },
   {
     id: "admission-flyer",
     title: "Admission flyer",
-    description: "Photo header, two-column flyer, and register-now ribbon.",
-    defaultPalette: "royal",
+    description: "Maroon-gold admissions open flyer for Matric and Intermediate.",
+    defaultPalette: "college",
     create: createAdmissionFlyerTemplate,
   },
 ];

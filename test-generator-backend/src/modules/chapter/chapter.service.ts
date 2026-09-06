@@ -1,93 +1,83 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Chapter } from './entities/chapter.entity';
-import { schoolClass} from '../class/entities/class.entity';
-import { Book } from '../book/entities/book.entity';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class ChapterService {
   constructor(
-    @InjectRepository(Chapter)
-    private chapterRepository: Repository<Chapter>,
-
-    @InjectRepository(schoolClass)
-    private schoolClassRepository: Repository<schoolClass>,
-
-    @InjectRepository(Book)
-    private bookRepository: Repository<Book>,
+    private prisma: PrismaService,
   ) {}
 
   async create(createChapterDto: CreateChapterDto) {
     const { classId, bookId, chapter_name, order, description } = createChapterDto;
     //check if chapter already exists
-    const existingChapter = await this.chapterRepository.findOne({
-      where: { chapter_name, class: { id: classId }, book: { id: bookId } },
+    const existingChapter = await this.prisma.chapter.findFirst({
+      where: { chapter_name, classId, bookId },
     });
     if (existingChapter) {
       throw new ConflictException('Chapter already exists');
     }
 
-    const schoolClass = await this.schoolClassRepository.findOne({
+    const schoolClass = await this.prisma.schoolClass.findUnique({
       where: { id: classId },
     });
     if (!schoolClass) {
       throw new NotFoundException('Class not found');
     }
 
-    const book = await this.bookRepository.findOne({
+    const book = await this.prisma.book.findUnique({
       where: { id: bookId },
-      relations: { class: true },
+      include: { class: true },
     });
     if (!book) {
       throw new NotFoundException('Book not found');
     }
 
-    if (book.class.id !== classId) {
+    if (book.class!.id !== classId) {
       throw new BadRequestException('Book does not belong to the specified class');
     }
 
     //create chapter
-    const chapter = this.chapterRepository.create({
-      chapter_name,
-      class: schoolClass,
-      book: book,
-      order,
-      description: description ?? null,
+    return await this.prisma.chapter.create({
+      data: {
+        chapter_name,
+        classId: schoolClass.id,
+        bookId: book.id,
+        order,
+        description: description ?? null,
+      },
+      include: {
+        class: true,
+        book: true,
+      },
     });
-
-    return await this.chapterRepository.save(chapter);
   }
 
   async findAll(bookId?: string, classId?: string) {
-    const query = this.chapterRepository
-      .createQueryBuilder('chapter')
-      .leftJoinAndSelect('chapter.class', 'class')
-      .leftJoinAndSelect('chapter.book', 'book')
-      .orderBy('chapter.order', 'ASC');
-
-    if (bookId) {
-      query.andWhere('book.id = :bookId', { bookId });
-    }
-
-    if (classId) {
-      query.andWhere('class.id = :classId', { classId });
-    }
-
-    const chapters = await query.getMany();
+    const chapters = await this.prisma.chapter.findMany({
+      where: {
+        ...(bookId ? { bookId } : {}),
+        ...(classId ? { classId } : {}),
+      },
+      include: {
+        class: true,
+        book: true,
+      },
+      orderBy: { order: 'asc' },
+    });
 
     if (!chapters.length) {
       return [];
     }
 
     // Normalize shape for frontend: provide `id`, `name`, `classId`, `bookId`, `order`, `description`
-    return chapters.map((ch) => this.mapChapterResponse(ch));
+    return chapters.map((ch) => this.mapChapterResponse(ch as unknown as Chapter));
   }
 
   async findOne(id: string) {
-    const chapter = await this.chapterRepository.findOne({
+    const chapter = await this.prisma.chapter.findUnique({
       where: { id:id },
     });
     if (!chapter) {
@@ -112,24 +102,24 @@ export class ChapterService {
   }
 
   async update(id: string, updateChapterDto: UpdateChapterDto) {
-    const chapter = await this.chapterRepository.findOne({
+    const chapter = await this.prisma.chapter.findUnique({
       where: { id },
-      relations: { class: true, book: true },
+      include: { class: true, book: true },
     });
 
     if (!chapter) {
       throw new NotFoundException('Chapter not found');
     }
 
-    const nextClassId = updateChapterDto.classId ?? chapter.class.id;
-    const nextBookId = updateChapterDto.bookId ?? chapter.book.id;
+    const nextClassId = updateChapterDto.classId ?? chapter.class!.id;
+    const nextBookId = updateChapterDto.bookId ?? chapter.book!.id;
     const nextChapterName = updateChapterDto.chapter_name ?? chapter.chapter_name;
 
-    const duplicateChapter = await this.chapterRepository.findOne({
+    const duplicateChapter = await this.prisma.chapter.findFirst({
       where: {
         chapter_name: nextChapterName,
-        class: { id: nextClassId },
-        book: { id: nextBookId },
+        classId: nextClassId,
+        bookId: nextBookId,
       },
     });
 
@@ -137,51 +127,65 @@ export class ChapterService {
       throw new ConflictException('Chapter already exists');
     }
 
+    const data: {
+      chapter_name?: string;
+      order?: number;
+      description?: string | null;
+      classId?: string;
+      bookId?: string;
+    } = {};
+
     if (updateChapterDto.classId || updateChapterDto.bookId) {
-      const schoolClass = await this.schoolClassRepository.findOne({
+      const schoolClass = await this.prisma.schoolClass.findUnique({
         where: { id: nextClassId },
       });
       if (!schoolClass) {
         throw new NotFoundException('Class not found');
       }
 
-      const book = await this.bookRepository.findOne({
+      const book = await this.prisma.book.findUnique({
         where: { id: nextBookId },
-        relations: { class: true },
+        include: { class: true },
       });
       if (!book) {
         throw new NotFoundException('Book not found');
       }
 
-      if (book.class.id !== nextClassId) {
+      if (book.class!.id !== nextClassId) {
         throw new BadRequestException('Book does not belong to the specified class');
       }
 
-      chapter.class = schoolClass;
-      chapter.book = book;
+      data.classId = schoolClass.id;
+      data.bookId = book.id;
     }
 
     if (updateChapterDto.chapter_name !== undefined) {
-      chapter.chapter_name = updateChapterDto.chapter_name;
+      data.chapter_name = updateChapterDto.chapter_name;
     }
 
     if (updateChapterDto.order !== undefined) {
-      chapter.order = updateChapterDto.order;
+      data.order = updateChapterDto.order;
     }
 
     if (updateChapterDto.description !== undefined) {
-      chapter.description = updateChapterDto.description;
+      data.description = updateChapterDto.description;
     }
 
-    const savedChapter = await this.chapterRepository.save(chapter);
-    return this.mapChapterResponse(savedChapter);
+    const savedChapter = await this.prisma.chapter.update({
+      where: { id },
+      data,
+      include: { class: true, book: true },
+    });
+    return this.mapChapterResponse(savedChapter as unknown as Chapter);
   }
 
   async remove(id: string) {
-    const chapter = await this.chapterRepository.delete({ id });
-    if (chapter.affected === 0) {
+    const chapter = await this.prisma.chapter.deleteMany({
+      where: { id },
+    });
+    if (chapter.count === 0) {
       throw new NotFoundException('Chapter not found');
     }
-    return chapter;
+    return { raw: [], affected: chapter.count };
   }
 }
