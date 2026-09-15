@@ -15,25 +15,37 @@ export function QuestionsFormFields({
   onSubmit,
   isSubmitting = false,
 }) {
-  const updateMcqOption = (index, value) => {
+  const updateMcqOption = (index, lang, value) => {
     setForm((current) => {
-      const nextOptions = [...(current.options || ["", "", "", ""])];
-      nextOptions[index] = value;
+      const nextOptions = [...(current.options || [])];
+      const currentOption = nextOptions[index] || { en: "", ur: "" };
+      nextOptions[index] = { ...currentOption, [lang]: value };
       return { ...current, options: nextOptions };
     });
   };
 
   return (
     <form className="space-y-4" onSubmit={onSubmit}>
-      <Field label="Statement">
-        <TextTextarea
-          value={form.statement}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, statement: e.target.value }))
-          }
-          required
-        />
-      </Field>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Statement (English)">
+          <TextTextarea
+            value={form.statement}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, statement: e.target.value }))
+            }
+            required
+          />
+        </Field>
+        <Field label="Statement (Urdu)">
+          <TextTextarea
+            value={form.statementUr || ""}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, statementUr: e.target.value }))
+            }
+            dir="rtl"
+          />
+        </Field>
+      </div>
 
       <Field label="Question type">
         <TextSelect

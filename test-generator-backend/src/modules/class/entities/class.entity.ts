@@ -1,31 +1,23 @@
-import { Chapter } from 'src/modules/chapter/entities/chapter.entity';
 import { Book } from 'src/modules/book/entities/book.entity';
-import { LongQuestion } from 'src/modules/questions/entities/question.longQuestion';
-import { ShortQuestion } from 'src/modules/questions/entities/question.shortQuestion';
-import { McqQuestion } from 'src/modules/questions/entities/question.mcqs';
 
 export class schoolClass {
-    id!: string;
+  id!: string;
 
-    name!: string;
+  name!: string;
 
-    code!: string;
+  nameUr!: string | null;
 
-    description!: string | null;
+  code!: string;
 
-    sortOrder!: number;
+  description!: string | null;
 
-    createdAt!: Date;
+  descriptionUr!: string | null;
 
-    updatedAt!: Date;
+  sortOrder!: number;
 
-    books!: Book[];
+  createdAt!: Date;
 
-    chapters!: Chapter[];
+  updatedAt!: Date;
 
-    questions!: LongQuestion[];
-
-    shortQuestions!: ShortQuestion[];
-
-    mcqQuestions!: McqQuestion[];
+  books!: Book[];
 }

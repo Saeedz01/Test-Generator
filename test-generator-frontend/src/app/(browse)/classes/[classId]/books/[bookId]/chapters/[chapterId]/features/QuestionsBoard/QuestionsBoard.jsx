@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useDispatch } from "react-redux";
 import { EmptyState, Heading } from "@/components/ui";
@@ -29,6 +29,7 @@ import { StickyGenerateBar } from "./StickyGenerateBar";
  */
 export function QuestionsBoard({ classId, bookId, chapterId }) {
   const dispatch = useDispatch();
+  const [language, setLanguage] = useState("en");
   const {
     data: classes = [],
     isLoading: classesLoading,
@@ -147,17 +148,47 @@ export function QuestionsBoard({ classId, bookId, chapterId }) {
           { label: chapter.name },
         ]}
       />
-      <div className="max-w-3xl">
-        <p className="text-caption font-medium tracking-wide break-words text-primary-700 uppercase">
-          {schoolClass.name} · {book.name}
-        </p>
-        <Heading level="h1" className="mt-1 break-words">
-          {chapter.name}
-        </Heading>
-        <p className="mt-2 text-body text-neutral-600">
-          Select questions for your paper. Order is fixed: MCQs, then Short,
-          then Long.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="max-w-3xl">
+          <p className="text-caption font-medium tracking-wide break-words text-primary-700 uppercase">
+            {schoolClass.name} · {book.name}
+          </p>
+          <Heading level="h1" className="mt-1 break-words">
+            {chapter.name}
+          </Heading>
+          <p className="mt-2 text-body text-neutral-600">
+            Select questions for your paper. Order is fixed: MCQs, then Short,
+            then Long.
+          </p>
+        </div>
+        <div
+          className="inline-flex rounded-[var(--radius-md)] border border-neutral-200 bg-neutral-0 p-1"
+          role="group"
+          aria-label="Question language"
+        >
+          <button
+            type="button"
+            onClick={() => setLanguage("en")}
+            className={`rounded-[var(--radius-sm)] px-3 py-1.5 text-caption font-semibold transition-colors ${
+              language === "en"
+                ? "bg-primary-600 text-neutral-0"
+                : "text-neutral-600 hover:text-neutral-900"
+            }`}
+          >
+            English
+          </button>
+          <button
+            type="button"
+            onClick={() => setLanguage("ur")}
+            className={`rounded-[var(--radius-sm)] px-3 py-1.5 text-caption font-semibold transition-colors ${
+              language === "ur"
+                ? "bg-primary-600 text-neutral-0"
+                : "text-neutral-600 hover:text-neutral-900"
+            }`}
+          >
+            اردو
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)] xl:grid-cols-[18rem_minmax(0,1fr)]">
@@ -192,9 +223,21 @@ export function QuestionsBoard({ classId, bookId, chapterId }) {
             />
           ) : (
             <>
-              <QuestionGroup title="MCQs" questions={grouped.mcq} />
-              <QuestionGroup title="Short Questions" questions={grouped.short} />
-              <QuestionGroup title="Long Questions" questions={grouped.long} />
+              <QuestionGroup
+                title="MCQs"
+                questions={grouped.mcq}
+                language={language}
+              />
+              <QuestionGroup
+                title="Short Questions"
+                questions={grouped.short}
+                language={language}
+              />
+              <QuestionGroup
+                title="Long Questions"
+                questions={grouped.long}
+                language={language}
+              />
             </>
           )}
           <StickyGenerateBar />

@@ -1,15 +1,23 @@
-import { IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class CreateBookDto {
   @IsString()
-  book_name !: string;
+  book_name!: string;
+
+  @IsOptional()
+  @IsString()
+  bookNameUr?: string;
 
   @IsString()
-  class_name !: string;
+  class_name!: string;
 
   @IsString()
-  description !: string;
+  description!: string;
+
+  @IsOptional()
+  @IsString()
+  descriptionUr?: string;
 
   @IsString()
-  edition !: string;
+  edition!: string;
 }

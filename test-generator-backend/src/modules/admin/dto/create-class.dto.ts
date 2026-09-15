@@ -1,8 +1,12 @@
-import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class CreateSchoolClassDto {
   @IsString()
   name!: string;
+
+  @IsOptional()
+  @IsString()
+  nameUr?: string;
 
   @IsOptional()
   @IsString()
@@ -11,4 +15,8 @@ export class CreateSchoolClassDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  descriptionUr?: string;
 }

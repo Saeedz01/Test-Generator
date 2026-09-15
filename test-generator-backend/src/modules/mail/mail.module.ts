@@ -15,7 +15,7 @@ import type SMTPTransport from 'nodemailer/lib/smtp-transport';
         const enabled = configService.get<boolean>('mail.enabled', true);
         const from = configService.getOrThrow<string>('mail.from');
         const template = {
-          dir: join(__dirname, '..', '..', 'templates'),
+          dir: join(__dirname, 'mail.templates'),
           adapter: new HandlebarsAdapter(),
           options: {
             strict: true,
@@ -53,6 +53,7 @@ import type SMTPTransport from 'nodemailer/lib/smtp-transport';
           host,
           port: configService.get<number>('mail.port', 587),
           secure: configService.get<boolean>('mail.secure', false),
+          requireTLS: true,
           auth:
             user && password
               ? {

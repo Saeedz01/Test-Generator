@@ -11,27 +11,46 @@ export function McqOptionsFields({ options, onChange }) {
         </Typography>
       </legend>
       <Typography variant="bodySmall" className="text-neutral-500">
-        Enter all four choices. They will be saved as a single options array.
+        Enter English and Urdu for each choice. Option order stays linked across
+        languages.
       </Typography>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="space-y-4">
         {MCQ_OPTION_LABELS.map((label, index) => (
-          <Field key={label} label={`Option ${label}`}>
-            <div className="flex items-center gap-2">
+          <div
+            key={label}
+            className="rounded-[var(--radius-sm)] border border-neutral-200 bg-neutral-0 p-3"
+          >
+            <div className="mb-2 flex items-center gap-2">
               <span
                 aria-hidden="true"
                 className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-primary-200 bg-primary-50 text-caption font-semibold text-primary-700"
               >
                 {label}
               </span>
-              <TextInput
-                value={options[index] ?? ""}
-                onChange={(e) => onChange(index, e.target.value)}
-                placeholder={`Enter option ${label}`}
-                required
-              />
+              <Typography variant="label" className="text-neutral-700">
+                Option {label}
+              </Typography>
             </div>
-          </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="English">
+                <TextInput
+                  value={options[index]?.en ?? ""}
+                  onChange={(e) => onChange(index, "en", e.target.value)}
+                  placeholder={`Option ${label} (English)`}
+                  required
+                />
+              </Field>
+              <Field label="Urdu">
+                <TextInput
+                  value={options[index]?.ur ?? ""}
+                  onChange={(e) => onChange(index, "ur", e.target.value)}
+                  placeholder={`آپشن ${label}`}
+                  dir="rtl"
+                />
+              </Field>
+            </div>
+          </div>
         ))}
       </div>
     </fieldset>

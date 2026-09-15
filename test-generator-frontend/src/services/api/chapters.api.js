@@ -21,12 +21,14 @@ function normalizeChapters(response) {
   return response.map((item) => ({
     id: item.id,
     name: item.name ?? item.chapter_name ?? "",
+    chapterNameUr: item.chapterNameUr ?? "",
     classId: item.classId ?? item.class?.id ?? "",
     className: item.className ?? item.class?.name ?? "",
     bookId: item.bookId ?? item.book?.id ?? "",
     bookName: item.bookName ?? item.book?.book_name ?? item.book?.name ?? "",
     order: item.order ?? 0,
     description: item.description ?? "",
+    descriptionUr: item.descriptionUr ?? "",
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
   }));

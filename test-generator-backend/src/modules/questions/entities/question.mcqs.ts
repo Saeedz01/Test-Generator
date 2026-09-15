@@ -1,21 +1,17 @@
-import { schoolClass } from '../../class/entities/class.entity';
-import { Book } from '../../book/entities/book.entity';
 import { Chapter } from '../../chapter/entities/chapter.entity';
 
 export class McqQuestion {
-    id!: string;
+  id!: string;
 
-    question_text!: string;
+  question_text!: string;
 
-    options!: string[];
+  questionTextUr!: string | null;
 
-    class!: schoolClass;
+  options!: Array<{ en: string; ur: string }>;
 
-    book!: Book;
+  chapter!: Chapter;
 
-    chapter!: Chapter;
+  createdAt!: Date;
 
-    createdAt!: Date;
-
-    updatedAt!: Date;
+  updatedAt!: Date;
 }

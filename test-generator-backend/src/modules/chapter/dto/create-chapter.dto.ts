@@ -1,17 +1,17 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsUUID } from 'class-validator';
 
 export class CreateChapterDto {
-  @IsString()
-  @IsNotEmpty()
-  classId: string;
-  
-  @IsString()
+  @IsUUID()
   @IsNotEmpty()
   bookId: string;
-  
+
   @IsString()
   @IsNotEmpty()
   chapter_name: string;
+
+  @IsOptional()
+  @IsString()
+  chapterNameUr?: string;
 
   @IsNumber()
   @IsNotEmpty()
@@ -20,4 +20,8 @@ export class CreateChapterDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  descriptionUr?: string;
 }

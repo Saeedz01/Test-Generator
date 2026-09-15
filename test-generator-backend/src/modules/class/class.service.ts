@@ -1,5 +1,4 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { UpdateClassDto } from '../admin/dto/update-class.dto';
 import { schoolClass } from './entities/class.entity';
 import { CreateSchoolClassDto } from '../admin/dto/create-class.dto';
@@ -24,7 +23,14 @@ export class ClassService {
     return await this.prisma.schoolClass.create({
       data: {
         name: dto.name,
-      } as Prisma.SchoolClassUncheckedCreateInput,
+        nameUr: dto.nameUr?.trim() || null,
+        description: dto.description ?? null,
+        descriptionUr: dto.descriptionUr?.trim() || null,
+        code:
+          dto.code?.trim() ||
+          dto.name.trim().toLowerCase().replace(/\s+/g, '-').slice(0, 50),
+        sortOrder: 0,
+      },
     }) as unknown as schoolClass;
   }
 

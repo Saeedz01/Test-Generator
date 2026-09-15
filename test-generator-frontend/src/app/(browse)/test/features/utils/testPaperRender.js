@@ -27,10 +27,11 @@ export function renderQuestion(question, index, compact) {
 
   if (question.type === "mcq" && Array.isArray(question.options)) {
     optionsHtml = `<div class="options-inline">${question.options
-      .map(
-        (option, optIndex) =>
-          `<span class="option"><strong>${String.fromCharCode(65 + optIndex)})</strong> ${escapeHtml(option)}</span>`,
-      )
+      .map((option, optIndex) => {
+        const text =
+          typeof option === "string" ? option : option?.en ?? option?.ur ?? "";
+        return `<span class="option"><strong>${String.fromCharCode(65 + optIndex)})</strong> ${escapeHtml(text)}</span>`;
+      })
       .join("")}</div>`;
   }
 

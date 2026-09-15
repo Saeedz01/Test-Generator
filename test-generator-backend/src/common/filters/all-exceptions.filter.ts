@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import { ERROR_MESSAGES } from '../constant/error-messages';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -14,7 +15,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost) {
     const res = host.switchToHttp().getResponse<Response>();
-    const isProduction = process.env.NODE_ENV === 'production';
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
@@ -33,11 +33,28 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: isProduction
-        ? 'Internal server error'
-        : exception instanceof Error
-          ? exception.message
-          : 'Internal server error',
+      message: this.toUserMessage(exception),
     });
+  }
+
+  private toUserMessage(exception: unknown): string {
+    const raw =
+      exception instanceof Error ? exception.message : String(exception ?? '');
+    const lower = raw.toLowerCase();
+
+    if (
+      lower.includes('prisma') ||
+      lower.includes('does not exist') ||
+      lower.includes('column') ||
+      lower.includes('relation') ||
+      lower.includes('database') ||
+      lower.includes('econnrefused') ||
+      lower.includes('p1001') ||
+      lower.includes('p2022')
+    ) {
+      return ERROR_MESSAGES.SERVICE_UNAVAILABLE;
+    }
+
+    return ERROR_MESSAGES.INTERNAL_SERVER_ERROR;
   }
 }

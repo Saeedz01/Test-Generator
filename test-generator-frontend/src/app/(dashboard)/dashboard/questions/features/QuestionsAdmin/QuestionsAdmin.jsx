@@ -188,8 +188,8 @@ export function QuestionsAdmin() {
       try {
         if (editing.type === "mcq") {
           const options = buildMcqOptions(form.options);
-          if (options.length !== 4 || options.some((option) => !option)) {
-            toast.error("All four MCQ options are required");
+          if (options.length !== 4 || options.some((option) => !option.en)) {
+            toast.error("All four MCQ options require English text");
             return;
           }
 
@@ -223,8 +223,8 @@ export function QuestionsAdmin() {
     try {
       if (form.type === "mcq") {
         const options = buildMcqOptions(form.options);
-        if (options.length !== 4 || options.some((option) => !option)) {
-          toast.error("All four MCQ options are required");
+        if (options.length !== 4 || options.some((option) => !option.en)) {
+          toast.error("All four MCQ options require English text");
           return;
         }
 

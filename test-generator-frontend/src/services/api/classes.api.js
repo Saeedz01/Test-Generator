@@ -12,8 +12,10 @@ function normalizeClasses(response) {
   return asClassList(response).map((item) => ({
     id: item.id,
     name: item.name ?? "",
+    nameUr: item.nameUr ?? "",
     code: item.code ?? "",
     description: item.description ?? "",
+    descriptionUr: item.descriptionUr ?? "",
     sortOrder: item.sortOrder ?? 0,
     booksCount: Number(item.booksCount ?? 0),
     createdAt: item.createdAt,

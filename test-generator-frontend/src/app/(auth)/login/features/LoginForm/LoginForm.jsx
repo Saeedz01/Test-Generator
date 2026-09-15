@@ -1,13 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { Button, Heading } from "@/components/ui";
 import { BRAND_NAME, ROUTES } from "@/constants";
-import { useLoginMutation } from "@/services/api/auth.api";
+import { useLoginMutation, useSendOtpMutation } from "@/services/api/auth.api";
 import { setUser } from "@/store/authSlice";
+
+const RESEND_COOLDOWN_SECONDS = 30;
+
+function toastApiError(error, fallback = "Invalid email or password") {
+  const raw = error?.data?.message || error?.error;
+  const message = Array.isArray(raw) ? raw[0] : raw;
+  const looksTechnical =
+    typeof message === "string" &&
+    (/prisma|column|invocation|does not exist|database/i.test(message) ||
+      message.length > 120);
+  toast.error(
+    looksTechnical
+      ? "Sign-in is temporarily unavailable. Please try again."
+      : message || fallback,
+  );
+}
 
 export function LoginForm() {
   const router = useRouter();
@@ -16,7 +32,15 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [needsOtp, setNeedsOtp] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
   const [login, { isLoading }] = useLoginMutation();
+  const [sendOtp, { isLoading: isResending }] = useSendOtpMutation();
+
+  useEffect(() => {
+    if (resendIn <= 0) return undefined;
+    const timer = setTimeout(() => setResendIn((value) => value - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendIn]);
 
   const onSubmit = async (event) => {
     event.preventDefault();
@@ -39,6 +63,7 @@ export function LoginForm() {
       if (result?.requiresOtp) {
         setNeedsOtp(true);
         setOtp("");
+        setResendIn(RESEND_COOLDOWN_SECONDS);
         toast.success("Enter the 6-digit code sent to your email");
         return;
       }
@@ -52,9 +77,27 @@ export function LoginForm() {
         router.push(ROUTES.DASHBOARD);
       }
     } catch (error) {
-      toast.error(
-        error?.data?.message || error?.error || "Invalid email or password",
-      );
+      toastApiError(error);
+    }
+  };
+
+  const onResendOtp = async () => {
+    if (resendIn > 0 || isResending) return;
+    if (!email.trim() || !password.trim()) {
+      toast.error("Email and password are required");
+      return;
+    }
+
+    try {
+      await sendOtp({
+        email: email.trim(),
+        password: password.trim(),
+      }).unwrap();
+      setOtp("");
+      setResendIn(RESEND_COOLDOWN_SECONDS);
+      toast.success("A new 6-digit code was sent to your email");
+    } catch (error) {
+      toastApiError(error, "Could not resend the code. Please try again.");
     }
   };
 
@@ -96,22 +139,43 @@ export function LoginForm() {
         </label>
 
         {needsOtp ? (
-          <label className="block">
-            <span className="text-caption font-medium text-neutral-600">
-              Email code
-            </span>
-            <input
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              className="mt-1.5 h-11 w-full rounded-[var(--radius-input)] border border-neutral-300 bg-neutral-0 px-3 text-small tracking-[0.3em] outline-none focus-visible:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500/30"
-              required
-              minLength={6}
-              maxLength={6}
-            />
-          </label>
+          <div className="space-y-2">
+            <label className="block">
+              <span className="text-caption font-medium text-neutral-600">
+                Email code
+              </span>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={otp}
+                onChange={(e) =>
+                  setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                }
+                className="mt-1.5 h-11 w-full rounded-[var(--radius-input)] border border-neutral-300 bg-neutral-0 px-3 text-small tracking-[0.3em] outline-none focus-visible:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500/30"
+                required
+                minLength={6}
+                maxLength={6}
+              />
+            </label>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-caption text-neutral-500">
+                Didn&apos;t get the code? Check spam, then resend.
+              </p>
+              <button
+                type="button"
+                onClick={onResendOtp}
+                disabled={resendIn > 0 || isResending}
+                className="shrink-0 text-caption font-medium text-primary-600 disabled:cursor-not-allowed disabled:text-neutral-400"
+              >
+                {isResending
+                  ? "Sending…"
+                  : resendIn > 0
+                    ? `Resend in ${resendIn}s`
+                    : "Resend OTP"}
+              </button>
+            </div>
+          </div>
         ) : null}
 
         <Button type="submit" fullWidth loading={isLoading}>

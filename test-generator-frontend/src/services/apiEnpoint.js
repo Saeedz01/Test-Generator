@@ -3,6 +3,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || "http://
 export const API_ENDPOINTS = {
   // ---------------Auth-----------------
   login: `${BASE_URL}/api/auth/login`,
+  sendOtp: `${BASE_URL}/api/auth/send-otp`,
   logout: `${BASE_URL}/api/auth/logout`,
   getMe: `${BASE_URL}/api/auth/me`,
   getAdmins: `${BASE_URL}/api/auth/admins`,

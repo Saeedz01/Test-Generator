@@ -14,12 +14,31 @@ const TYPE_LABEL = {
   long: "Long",
 };
 
+function resolveStatement(question, language) {
+  if (language === "ur" && question.statementUr) {
+    return question.statementUr;
+  }
+  return question.statement;
+}
+
+function resolveOptionText(option, language) {
+  if (typeof option === "string") {
+    return option;
+  }
+  if (language === "ur" && option?.ur) {
+    return option.ur;
+  }
+  return option?.en ?? "";
+}
+
 /**
  * Single selectable question row — the whole card toggles selection.
  */
-export function QuestionItem({ question }) {
+export function QuestionItem({ question, language = "en" }) {
   const dispatch = useDispatch();
   const selected = useSelector(selectIsQuestionSelected(question.id));
+  const statement = resolveStatement(question, language);
+  const isUrdu = language === "ur";
 
   const toggle = () => dispatch(toggleQuestion(question));
 
@@ -41,7 +60,7 @@ export function QuestionItem({ question }) {
       role="checkbox"
       aria-checked={selected}
       tabIndex={0}
-      aria-label={`Select question: ${question.statement}`}
+      aria-label={`Select question: ${statement}`}
     >
       <div className="flex items-start gap-3">
         <span
@@ -70,8 +89,11 @@ export function QuestionItem({ question }) {
               </span>
             ) : null}
           </div>
-          <p className="text-small leading-relaxed break-words text-neutral-900 sm:text-body">
-            {question.statement}
+          <p
+            className="text-small leading-relaxed break-words text-neutral-900 sm:text-body"
+            dir={isUrdu ? "rtl" : "ltr"}
+          >
+            {statement}
           </p>
           {question.type === "mcq" && Array.isArray(question.options) ? (
             <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
@@ -79,11 +101,12 @@ export function QuestionItem({ question }) {
                 <li
                   key={`${question.id}-opt-${index}`}
                   className="rounded-[var(--radius-sm)] bg-neutral-50 px-2.5 py-1.5 text-caption text-neutral-600"
+                  dir={isUrdu ? "rtl" : "ltr"}
                 >
                   <span className="mr-1.5 font-semibold text-neutral-500">
                     {String.fromCharCode(65 + index)}.
                   </span>
-                  {option}
+                  {resolveOptionText(option, language)}
                 </li>
               ))}
             </ul>

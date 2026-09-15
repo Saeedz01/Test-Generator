@@ -9,10 +9,23 @@ function isEmptyQuestionsError(error) {
 }
 
 function normalizeQuestion(item, type) {
+  const options = Array.isArray(item.options)
+    ? item.options.map((option) => {
+        if (typeof option === "string") {
+          return { en: option, ur: "" };
+        }
+        return {
+          en: String(option?.en ?? ""),
+          ur: String(option?.ur ?? ""),
+        };
+      })
+    : [];
+
   return {
     id: item.id,
     type: item.type ?? type,
     statement: item.question_text ?? item.statement ?? "",
+    statementUr: item.questionTextUr ?? item.statementUr ?? "",
     classId: item.classId ?? item.class?.id ?? "",
     bookId: item.bookId ?? item.book?.id ?? "",
     chapterId: item.chapterId ?? item.chapter?.id ?? "",
@@ -20,7 +33,7 @@ function normalizeQuestion(item, type) {
     bookName: item.bookName ?? item.book?.book_name ?? item.book?.name ?? "",
     chapterName:
       item.chapterName ?? item.chapter?.chapter_name ?? item.chapter?.name ?? "",
-    options: Array.isArray(item.options) ? item.options : [],
+    options,
   };
 }
 

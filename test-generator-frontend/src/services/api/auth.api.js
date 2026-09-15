@@ -38,6 +38,14 @@ export const authApi = SplitApiSettings.injectEndpoints({
       invalidatesTags: [{ type: "Auth", id: "ME" }],
     }),
 
+    sendOtp: builder.mutation({
+      query: (payload) => ({
+        url: API_ENDPOINTS.sendOtp,
+        method: "POST",
+        body: payload,
+      }),
+    }),
+
     getMe: builder.query({
       query: () => ({
         url: API_ENDPOINTS.getMe,
@@ -105,6 +113,7 @@ export const authApi = SplitApiSettings.injectEndpoints({
 
 export const {
   useLoginMutation,
+  useSendOtpMutation,
   useGetMeQuery,
   useLogoutMutation,
   useGetAdminsQuery,

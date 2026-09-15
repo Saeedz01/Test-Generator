@@ -67,6 +67,57 @@ export class UserService {
     })) as unknown as User;
   }
 
+  /**
+   * Replaces any other super_admin accounts and upserts this one.
+   * Password is bcrypt-hashed before storage.
+   */
+  async upsertSuperAdmin(
+    email: string,
+    password: string,
+    name?: string,
+  ): Promise<User> {
+    const userRole = await this.ensureRole(Role.SUPER_ADMIN);
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await this.prisma.user.deleteMany({
+      where: {
+        role_id: { role_name: Role.SUPER_ADMIN },
+        NOT: { email },
+      },
+    });
+
+    const existing = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existing) {
+      return (await this.prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          name: name?.trim() || email.split('@')[0],
+          password: hashedPassword,
+          roleId: userRole.id,
+          isSuspended: false,
+          otp: null,
+          otpExpiresAt: null,
+          refreshTokenHash: null,
+        },
+        include: { role_id: true },
+      })) as unknown as User;
+    }
+
+    return (await this.prisma.user.create({
+      data: {
+        name: name?.trim() || email.split('@')[0],
+        email,
+        password: hashedPassword,
+        roleId: userRole.id,
+        isSuspended: false,
+      },
+      include: { role_id: true },
+    })) as unknown as User;
+  }
+
   async create(createUserDto: CreateUserDto) {
     return this.createWithRole(
       createUserDto.email,

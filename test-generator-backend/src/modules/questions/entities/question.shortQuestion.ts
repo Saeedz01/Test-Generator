@@ -1,19 +1,15 @@
-import { schoolClass } from '../../class/entities/class.entity';
-import { Book } from '../../book/entities/book.entity';
 import { Chapter } from '../../chapter/entities/chapter.entity';
 
 export class ShortQuestion {
-    id!: string;
+  id!: string;
 
-    question_text!: string;
+  question_text!: string;
 
-    class!: schoolClass;
+  questionTextUr!: string | null;
 
-    book!: Book;
+  chapter!: Chapter;
 
-    chapter!: Chapter;
+  createdAt!: Date;
 
-    createdAt!: Date;
-
-    updatedAt!: Date;
+  updatedAt!: Date;
 }

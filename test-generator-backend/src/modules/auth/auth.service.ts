@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ForbiddenException, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -22,6 +22,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
 
@@ -362,17 +364,29 @@ export class AuthService {
       },
     });
 
-    await this.mailerService.sendMail({
-      to: user.email,
-      subject: 'Your login OTP - Testora',
-      template: 'otp',
-      context: {
-        name: user.name ?? 'User',
-        otp,
-        expiresInMinutes,
-        year: new Date().getFullYear(),
-      },
-    });
+    try {
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: 'Your login OTP - Testora',
+        template: 'otp',
+        context: {
+          name: user.name ?? 'User',
+          otp,
+          expiresInMinutes,
+          year: new Date().getFullYear(),
+        },
+      });
+      this.logger.log(`Login OTP emailed to ${user.email}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to send login OTP email: ${message}`);
+      if (this.configService.get<string>('app.nodeEnv') !== 'production') {
+        this.logger.warn(
+          `Dev fallback: login OTP for ${user.email} is ${otp} (expires in ${expiresInMinutes}m)`,
+        );
+      }
+      throw new ServiceUnavailableException(ERROR_MESSAGES.OTP_SEND_FAILED);
+    }
 
     // await this.mailerService.sendMail({
     //   to: user.email,

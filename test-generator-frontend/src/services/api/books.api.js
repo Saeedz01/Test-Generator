@@ -12,9 +12,11 @@ function normalizeBooks(response) {
   return response.map((item) => ({
     id: item.id,
     name: item.book_name ?? item.name ?? "",
+    bookNameUr: item.bookNameUr ?? "",
     classId: item.classId ?? item.class?.id ?? item.class?.classId ?? "",
     className: item.class_name ?? item.class?.name ?? "",
     description: item.description ?? "",
+    descriptionUr: item.descriptionUr ?? "",
     edition: item.edition ?? "",
     subject: item.edition?.trim() || "General",
     author: item.class_name ?? item.className ?? item.class?.name ?? "",

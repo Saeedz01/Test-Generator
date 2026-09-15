@@ -12,7 +12,7 @@ import { QuestionItem } from "./QuestionItem";
 /**
  * Grouped list for one question type, with select-all / clear.
  */
-export function QuestionGroup({ title, questions }) {
+export function QuestionGroup({ title, questions, language = "en" }) {
   const dispatch = useDispatch();
   const selectedMap = useSelector(selectSelectedQuestionsMap);
 
@@ -55,7 +55,7 @@ export function QuestionGroup({ title, questions }) {
       <ul className="space-y-3">
         {questions.map((question) => (
           <li key={question.id}>
-            <QuestionItem question={question} />
+            <QuestionItem question={question} language={language} />
           </li>
         ))}
       </ul>
