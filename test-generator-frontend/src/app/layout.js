@@ -43,12 +43,28 @@ export const metadata = {
   },
   description:
     "Testora helps teachers assemble balanced exam papers from chapter-wise MCQs, short, and long questions.",
+  applicationName: BRAND_NAME,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: BRAND_NAME,
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    apple: [{ url: "/icons/icon-180.png", sizes: "180x180" }],
+  },
 };
 
 export const viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#587b2a" },
+    { media: "(prefers-color-scheme: dark)", color: "#587b2a" },
+  ],
 };
 
 export default function RootLayout({ children }) {

@@ -1,0 +1,1 @@
+export { InstallTestora } from "./InstallTestora";

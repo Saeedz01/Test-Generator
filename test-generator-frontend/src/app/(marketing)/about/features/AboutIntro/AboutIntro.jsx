@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { InstallTestora } from "@/components/shared/InstallTestora";
 import { buttonVariants, Container, Typography } from "@/components/ui";
 import { ROUTES } from "@/constants";
 import { cn } from "@/utils";
@@ -18,6 +19,8 @@ export function AboutIntro() {
         "dark:bg-neutral-50 dark:bg-none",
       )}
     >
+      <InstallTestora variant="sticky" />
+
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 overflow-hidden dark:hidden"

@@ -1,5 +1,19 @@
+import withPWAInit from "@ducanh2912/next-pwa";
+
 /** @type {import('next').NextConfig} */
 const isProduction = process.env.NODE_ENV === "production";
+
+const withPWA = withPWAInit({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  register: true,
+  fallbacks: {
+    document: "/",
+  },
+  workboxOptions: {
+    disableDevLogs: true,
+  },
+});
 
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
@@ -35,12 +49,11 @@ const nextConfig = {
       {
         source:
           "/classes/:classId/books/:bookId/chapters/:chapterId/questions",
-        destination:
-          "/classes/:classId/books/:bookId/chapters/:chapterId",
+        destination: "/classes/:classId/books/:bookId/chapters/:chapterId",
         permanent: false,
       },
     ];
   },
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);

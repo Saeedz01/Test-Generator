@@ -5,6 +5,7 @@
 export { BrandLogo, BrandMark } from "./BrandLogo";
 export { ThemeProvider, useTheme } from "./ThemeProvider";
 export { ThemeToggle } from "./ThemeToggle";
+export { InstallTestora } from "./InstallTestora";
 export { default as Header } from "./Header/Header";
 export { default as Footer } from "./Footer/Footer";
 export { default as AuthShell } from "./AuthShell/AuthShell";

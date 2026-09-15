@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import { TeacherMenu } from "@/components/shared/Header/TeacherMenu";
+import { InstallTestora } from "@/components/shared/InstallTestora";
 import { buttonVariants, Typography } from "@/components/ui";
 import { ROUTES } from "@/constants";
 import { cn } from "@/utils";
@@ -94,6 +95,10 @@ export function MobileNav({
 
         <div className="border-t border-neutral-100 pt-4">
           <TeacherMenu layout="stack" />
+        </div>
+
+        <div className="border-t border-neutral-100 pt-4">
+          <InstallTestora onInstalled={onClose} />
         </div>
 
         {isStaff ? (
