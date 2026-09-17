@@ -6,17 +6,9 @@ export class CreateSchoolClassDto {
 
   @IsOptional()
   @IsString()
-  nameUr?: string;
-
-  @IsOptional()
-  @IsString()
   code?: string;
 
   @IsOptional()
   @IsString()
   description?: string;
-
-  @IsOptional()
-  @IsString()
-  descriptionUr?: string;
 }

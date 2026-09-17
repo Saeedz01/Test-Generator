@@ -47,6 +47,7 @@ export function McqOptionsFields({ options, onChange }) {
                   onChange={(e) => onChange(index, "ur", e.target.value)}
                   placeholder={`آپشن ${label}`}
                   dir="rtl"
+                  required
                 />
               </Field>
             </div>

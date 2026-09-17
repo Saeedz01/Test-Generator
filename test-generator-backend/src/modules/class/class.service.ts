@@ -23,9 +23,7 @@ export class ClassService {
     return await this.prisma.schoolClass.create({
       data: {
         name: dto.name,
-        nameUr: dto.nameUr?.trim() || null,
         description: dto.description ?? null,
-        descriptionUr: dto.descriptionUr?.trim() || null,
         code:
           dto.code?.trim() ||
           dto.name.trim().toLowerCase().replace(/\s+/g, '-').slice(0, 50),

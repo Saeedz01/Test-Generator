@@ -16,13 +16,9 @@ export class Chapter {
 
   chapter_name!: string;
 
-  chapterNameUr!: string | null;
-
   order!: number;
 
   description!: string | null;
-
-  descriptionUr!: string | null;
 
   createdAt!: Date;
 

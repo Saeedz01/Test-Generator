@@ -33,9 +33,7 @@ export class BookService {
     return await this.prisma.book.create({
       data: {
         book_name: createBookDto.book_name,
-        bookNameUr: createBookDto.bookNameUr?.trim() || null,
         description: createBookDto.description,
-        descriptionUr: createBookDto.descriptionUr?.trim() || null,
         edition: createBookDto.edition,
         classId: schoolClassRecord.id,
       },
@@ -105,9 +103,7 @@ export class BookService {
 
     const data: {
       book_name?: string;
-      bookNameUr?: string | null;
       description?: string | null;
-      descriptionUr?: string | null;
       edition?: string | null;
       classId?: string;
     } = {};
@@ -116,16 +112,8 @@ export class BookService {
       data.book_name = updateBookDto.book_name;
     }
 
-    if (updateBookDto.bookNameUr !== undefined) {
-      data.bookNameUr = updateBookDto.bookNameUr?.trim() || null;
-    }
-
     if (updateBookDto.description !== undefined) {
       data.description = updateBookDto.description;
-    }
-
-    if (updateBookDto.descriptionUr !== undefined) {
-      data.descriptionUr = updateBookDto.descriptionUr?.trim() || null;
     }
 
     if (updateBookDto.edition !== undefined) {

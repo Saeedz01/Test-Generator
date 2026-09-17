@@ -12,10 +12,8 @@ import { useGetBooksQuery, useAddBookMutation, useUpdateBookMutation, useDeleteB
 
 const EMPTY = {
   name: "",
-  bookNameUr: "",
   classId: "",
   description: "",
-  descriptionUr: "",
   edition: "",
 };
 
@@ -68,10 +66,8 @@ export function BooksAdmin() {
           setEditing(item);
           setForm({
             name: item.name,
-            bookNameUr: item.bookNameUr || "",
             classId: item.classId,
             description: item.description || "",
-            descriptionUr: item.descriptionUr || "",
             edition: item.edition || "",
           });
           setOpen(true);
@@ -105,10 +101,8 @@ export function BooksAdmin() {
         await updateBookMutation({
           id: editing.id,
           book_name: form.name.trim(),
-          bookNameUr: form.bookNameUr.trim() || undefined,
           classId: form.classId,
           description: form.description.trim(),
-          descriptionUr: form.descriptionUr.trim() || undefined,
           edition: form.edition.trim(),
         }).unwrap();
         toast.success("Book updated");
@@ -130,10 +124,8 @@ export function BooksAdmin() {
     try {
       await addBookMutation({
         book_name: form.name.trim(),
-        bookNameUr: form.bookNameUr.trim() || undefined,
         class_name: selectedClass.name,
         description: form.description.trim(),
-        descriptionUr: form.descriptionUr.trim() || undefined,
         edition: form.edition.trim(),
       }).unwrap();
       toast.success("Book added");
@@ -199,32 +191,18 @@ export function BooksAdmin() {
         onClose={close}
       >
         <form className="space-y-4" onSubmit={submit}>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Book name (English)">
-              <TextInput
-                value={form.name}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }))
-                }
-                required
-              />
-            </Field>
-            <Field label="Book name (Urdu)">
-              <TextInput
-                value={form.bookNameUr}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    bookNameUr: e.target.value,
-                  }))
-                }
-                dir="rtl"
-              />
-            </Field>
-          </div>
+          <Field label="Book name">
+            <TextInput
+              value={form.name}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  name: e.target.value,
+                }))
+              }
+              required
+            />
+          </Field>
 
           <Field label="Class">
             <TextSelect
@@ -256,22 +234,6 @@ export function BooksAdmin() {
             )}
           </Field>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            {/* <Field label="Subject">
-              <TextInput
-                value={form.subject}
-                onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
-              />
-            </Field> */}
-
-            {/* <Field label="Author">
-              <TextInput
-                value={form.author}
-                onChange={(e) => setForm((f) => ({ ...f, author: e.target.value }))}
-              />
-            </Field> */}
-          </div>
-
           <Field label="Edition">
             <TextInput
               value={form.edition}
@@ -284,31 +246,17 @@ export function BooksAdmin() {
             />
           </Field>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Description (English)">
-              <TextTextarea
-                value={form.description}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-              />
-            </Field>
-            <Field label="Description (Urdu)">
-              <TextTextarea
-                value={form.descriptionUr}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    descriptionUr: e.target.value,
-                  }))
-                }
-                dir="rtl"
-              />
-            </Field>
-          </div>
+          <Field label="Description">
+            <TextTextarea
+              value={form.description}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
+            />
+          </Field>
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={close}>

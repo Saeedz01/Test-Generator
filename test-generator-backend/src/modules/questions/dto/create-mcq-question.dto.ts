@@ -4,18 +4,19 @@ import {
   ArrayMinSize,
   ArrayMaxSize,
   IsString,
-  IsOptional,
+  IsNotEmpty,
   ValidateNested,
 } from 'class-validator';
 import { CreateQuestionBaseDto } from './create-question-base.dto';
 
 export class McqOptionDto {
   @IsString()
+  @IsNotEmpty()
   en: string;
 
-  @IsOptional()
   @IsString()
-  ur?: string;
+  @IsNotEmpty()
+  ur: string;
 }
 
 export class CreateMcqQuestionDto extends CreateQuestionBaseDto {

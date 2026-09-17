@@ -116,8 +116,8 @@ export class QuestionsService {
     const chapter = await this.resolveChapter(chapterId);
 
     const data: Record<string, unknown> = {
-      question_text: statement,
-      questionTextUr: statementUr?.trim() || null,
+      question_text: statement.trim(),
+      questionTextUr: statementUr.trim(),
       chapterId: chapter.id,
     };
 
@@ -276,7 +276,7 @@ export class QuestionsService {
     };
 
     if (dto.statementUr !== undefined) {
-      data.questionTextUr = dto.statementUr?.trim() || null;
+      data.questionTextUr = dto.statementUr.trim();
     }
 
     if (type === 'mcq' && dto.options) {

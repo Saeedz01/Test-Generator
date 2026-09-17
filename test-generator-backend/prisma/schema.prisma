@@ -8,32 +8,28 @@ datasource db {
 }
 
 model SchoolClass {
-  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name          String   @unique @db.VarChar(255)
-  nameUr        String?  @db.VarChar(255)
-  code          String   @unique @db.VarChar(50)
-  description   String?
-  descriptionUr String?
-  sortOrder     Int      @default(0)
-  createdAt     DateTime @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  books         Book[]
+  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name        String   @unique @db.VarChar(255)
+  code        String   @unique @db.VarChar(50)
+  description String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime @default(now()) @updatedAt @db.Timestamp(6)
+  books       Book[]
 
   @@map("classes")
 }
 
 model Book {
-  id            String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  book_name     String       @db.VarChar(255)
-  bookNameUr    String?      @db.VarChar(255)
-  description   String?
-  descriptionUr String?
-  edition       String?      @db.VarChar(100)
-  created_At    DateTime     @default(now()) @db.Timestamp(6)
-  updated_At    DateTime     @default(now()) @updatedAt @db.Timestamp(6)
-  classId       String?      @db.Uuid
-  class         SchoolClass? @relation(fields: [classId], references: [id], onDelete: Cascade)
-  chapters      Chapter[]
+  id          String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  book_name   String       @db.VarChar(255)
+  description String?
+  edition     String?      @db.VarChar(100)
+  created_At  DateTime     @default(now()) @db.Timestamp(6)
+  updated_At  DateTime     @default(now()) @updatedAt @db.Timestamp(6)
+  classId     String?      @db.Uuid
+  class       SchoolClass? @relation(fields: [classId], references: [id], onDelete: Cascade)
+  chapters    Chapter[]
 
   @@map("books")
 }
@@ -41,10 +37,8 @@ model Book {
 model Chapter {
   id             String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   chapter_name   String          @db.VarChar(255)
-  chapterNameUr  String?         @db.VarChar(255)
   order          Int
   description    String?
-  descriptionUr  String?
   createdAt      DateTime        @default(now()) @db.Timestamp(6)
   updatedAt      DateTime        @default(now()) @updatedAt @db.Timestamp(6)
   bookId         String          @db.Uuid

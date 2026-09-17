@@ -177,8 +177,14 @@ export function QuestionsAdmin() {
   const submit = async (event) => {
     event.preventDefault();
 
-    if (!form.statement.trim() || !form.classId || !form.bookId || !form.chapterId) {
-      toast.error("Statement, class, book, and chapter are required");
+    if (
+      !form.statement.trim() ||
+      !form.statementUr?.trim() ||
+      !form.classId ||
+      !form.bookId ||
+      !form.chapterId
+    ) {
+      toast.error("English and Urdu statements, class, book, and chapter are required");
       return;
     }
 
@@ -188,8 +194,11 @@ export function QuestionsAdmin() {
       try {
         if (editing.type === "mcq") {
           const options = buildMcqOptions(form.options);
-          if (options.length !== 4 || options.some((option) => !option.en)) {
-            toast.error("All four MCQ options require English text");
+          if (
+            options.length !== 4 ||
+            options.some((option) => !option.en || !option.ur)
+          ) {
+            toast.error("All four MCQ options require English and Urdu text");
             return;
           }
 
@@ -223,8 +232,11 @@ export function QuestionsAdmin() {
     try {
       if (form.type === "mcq") {
         const options = buildMcqOptions(form.options);
-        if (options.length !== 4 || options.some((option) => !option.en)) {
-          toast.error("All four MCQ options require English text");
+        if (
+          options.length !== 4 ||
+          options.some((option) => !option.en || !option.ur)
+        ) {
+          toast.error("All four MCQ options require English and Urdu text");
           return;
         }
 

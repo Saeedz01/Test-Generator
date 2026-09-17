@@ -31,7 +31,7 @@ export function buildMcqOptionsForForm(options) {
 export function buildCreatePayload(form) {
   const payload = {
     statement: form.statement.trim(),
-    statementUr: form.statementUr?.trim() || undefined,
+    statementUr: form.statementUr.trim(),
     chapterId: form.chapterId,
   };
 
@@ -64,10 +64,8 @@ export function normalizeChapter(item) {
   return {
     ...item,
     name: item.name ?? item.chapter_name ?? "",
-    chapterNameUr: item.chapterNameUr ?? "",
     classId: item.classId ?? item.class?.id ?? "",
     bookId: item.bookId ?? item.book?.id ?? "",
     order: item.order ?? 0,
-    descriptionUr: item.descriptionUr ?? "",
   };
 }

@@ -5,8 +5,6 @@ import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 type ChapterWithBookClass = Chapter & {
-  chapterNameUr?: string | null;
-  descriptionUr?: string | null;
   book?: {
     id: string;
     book_name: string;
@@ -19,14 +17,7 @@ export class ChapterService {
   constructor(private prisma: PrismaService) {}
 
   async create(createChapterDto: CreateChapterDto) {
-    const {
-      bookId,
-      chapter_name,
-      chapterNameUr,
-      order,
-      description,
-      descriptionUr,
-    } = createChapterDto;
+    const { bookId, chapter_name, order, description } = createChapterDto;
 
     const book = await this.prisma.book.findUnique({
       where: { id: bookId },
@@ -46,11 +37,9 @@ export class ChapterService {
     const created = await this.prisma.chapter.create({
       data: {
         chapter_name,
-        chapterNameUr: chapterNameUr?.trim() || null,
         bookId: book.id,
         order,
         description: description ?? null,
-        descriptionUr: descriptionUr?.trim() || null,
       },
       include: {
         book: { include: { class: true } },
@@ -98,14 +87,12 @@ export class ChapterService {
     return {
       id: ch.id,
       name: ch.chapter_name,
-      chapterNameUr: ch.chapterNameUr ?? null,
       classId: ch.book?.class?.id ?? null,
       className: ch.book?.class?.name ?? null,
       bookId: ch.book?.id ?? null,
       bookName: ch.book?.book_name ?? null,
       order: ch.order,
       description: ch.description,
-      descriptionUr: ch.descriptionUr ?? null,
       createdAt: ch.createdAt,
       updatedAt: ch.updatedAt,
     };
@@ -138,10 +125,8 @@ export class ChapterService {
 
     const data: {
       chapter_name?: string;
-      chapterNameUr?: string | null;
       order?: number;
       description?: string | null;
-      descriptionUr?: string | null;
       bookId?: string;
     } = {};
 
@@ -159,20 +144,12 @@ export class ChapterService {
       data.chapter_name = updateChapterDto.chapter_name;
     }
 
-    if (updateChapterDto.chapterNameUr !== undefined) {
-      data.chapterNameUr = updateChapterDto.chapterNameUr?.trim() || null;
-    }
-
     if (updateChapterDto.order !== undefined) {
       data.order = updateChapterDto.order;
     }
 
     if (updateChapterDto.description !== undefined) {
       data.description = updateChapterDto.description;
-    }
-
-    if (updateChapterDto.descriptionUr !== undefined) {
-      data.descriptionUr = updateChapterDto.descriptionUr?.trim() || null;
     }
 
     const savedChapter = await this.prisma.chapter.update({

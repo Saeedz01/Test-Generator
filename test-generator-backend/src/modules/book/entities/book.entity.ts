@@ -6,11 +6,7 @@ export class Book {
 
   book_name!: string;
 
-  bookNameUr!: string | null;
-
   description!: string | null;
-
-  descriptionUr!: string | null;
 
   edition!: string | null;
 

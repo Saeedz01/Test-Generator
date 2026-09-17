@@ -43,6 +43,7 @@ export function QuestionsFormFields({
               setForm((f) => ({ ...f, statementUr: e.target.value }))
             }
             dir="rtl"
+            required
           />
         </Field>
       </div>

@@ -18,12 +18,10 @@ import {
 
 const EMPTY = {
   name: "",
-  chapterNameUr: "",
   classId: "",
   bookId: "",
   order: 1,
   description: "",
-  descriptionUr: "",
 };
 
 export function ChaptersAdmin() {
@@ -64,12 +62,10 @@ export function ChaptersAdmin() {
             setEditing(item);
             setForm({
               name: item.name,
-              chapterNameUr: item.chapterNameUr || "",
               classId: item.classId,
               bookId: item.bookId,
               order: item.order,
               description: item.description || "",
-              descriptionUr: item.descriptionUr || "",
             });
             setOpen(true);
           },
@@ -98,11 +94,9 @@ export function ChaptersAdmin() {
 
     const payload = {
       chapter_name: form.name.trim(),
-      chapterNameUr: form.chapterNameUr.trim() || undefined,
       bookId: form.bookId,
       order: Number(form.order),
       description: form.description || "",
-      descriptionUr: form.descriptionUr.trim() || undefined,
     };
 
     try {
@@ -197,24 +191,13 @@ export function ChaptersAdmin() {
         onClose={close}
       >
         <form className="space-y-4" onSubmit={submit}>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Chapter name (English)">
-              <TextInput
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                required
-              />
-            </Field>
-            <Field label="Chapter name (Urdu)">
-              <TextInput
-                value={form.chapterNameUr}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, chapterNameUr: e.target.value }))
-                }
-                dir="rtl"
-              />
-            </Field>
-          </div>
+          <Field label="Chapter name">
+            <TextInput
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              required
+            />
+          </Field>
           <Field label="Class">
             <TextSelect
               value={form.classId}
@@ -261,25 +244,14 @@ export function ChaptersAdmin() {
               onChange={(e) => setForm((f) => ({ ...f, order: e.target.value }))}
             />
           </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Description (English)">
-              <TextTextarea
-                value={form.description}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, description: e.target.value }))
-                }
-              />
-            </Field>
-            <Field label="Description (Urdu)">
-              <TextTextarea
-                value={form.descriptionUr}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, descriptionUr: e.target.value }))
-                }
-                dir="rtl"
-              />
-            </Field>
-          </div>
+          <Field label="Description">
+            <TextTextarea
+              value={form.description}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, description: e.target.value }))
+              }
+            />
+          </Field>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={close}>
               Cancel

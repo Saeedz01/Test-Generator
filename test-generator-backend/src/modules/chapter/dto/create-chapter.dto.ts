@@ -9,10 +9,6 @@ export class CreateChapterDto {
   @IsNotEmpty()
   chapter_name: string;
 
-  @IsOptional()
-  @IsString()
-  chapterNameUr?: string;
-
   @IsNumber()
   @IsNotEmpty()
   order: number;
@@ -20,8 +16,4 @@ export class CreateChapterDto {
   @IsOptional()
   @IsString()
   description?: string;
-
-  @IsOptional()
-  @IsString()
-  descriptionUr?: string;
 }

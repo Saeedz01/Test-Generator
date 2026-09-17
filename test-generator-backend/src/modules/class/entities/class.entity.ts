@@ -5,13 +5,9 @@ export class schoolClass {
 
   name!: string;
 
-  nameUr!: string | null;
-
   code!: string;
 
   description!: string | null;
-
-  descriptionUr!: string | null;
 
   sortOrder!: number;
 

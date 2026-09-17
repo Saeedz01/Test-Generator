@@ -13,10 +13,8 @@ import {
 
 const EMPTY = {
   name: "",
-  nameUr: "",
   code: "",
   description: "",
-  descriptionUr: "",
 };
 
 export function ClassesAdmin() {
@@ -53,10 +51,8 @@ export function ClassesAdmin() {
     try {
       await addClassMutation({
         name: form.name.trim(),
-        nameUr: form.nameUr.trim() || undefined,
         code: form.code.trim(),
         description: form.description.trim(),
-        descriptionUr: form.descriptionUr.trim() || undefined,
       }).unwrap();
       toast.success("Class added");
       close();
@@ -124,26 +120,15 @@ export function ClassesAdmin() {
 
       <AdminModal open={open} title="Add class" onClose={close}>
         <form className="space-y-4" onSubmit={submit}>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Name (English)">
-              <TextInput
-                value={form.name}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, name: e.target.value }))
-                }
-                required
-              />
-            </Field>
-            <Field label="Name (Urdu)">
-              <TextInput
-                value={form.nameUr}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, nameUr: e.target.value }))
-                }
-                dir="rtl"
-              />
-            </Field>
-          </div>
+          <Field label="Name">
+            <TextInput
+              value={form.name}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, name: e.target.value }))
+              }
+              required
+            />
+          </Field>
           <Field label="Code">
             <TextInput
               value={form.code}
@@ -153,25 +138,14 @@ export function ClassesAdmin() {
               required
             />
           </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Description (English)">
-              <TextTextarea
-                value={form.description}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, description: e.target.value }))
-                }
-              />
-            </Field>
-            <Field label="Description (Urdu)">
-              <TextTextarea
-                value={form.descriptionUr}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, descriptionUr: e.target.value }))
-                }
-                dir="rtl"
-              />
-            </Field>
-          </div>
+          <Field label="Description">
+            <TextTextarea
+              value={form.description}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, description: e.target.value }))
+              }
+            />
+          </Field>
           <div className="flex justify-end gap-2 pt-2">
             <Button
               type="button"

@@ -1,12 +1,13 @@
-import { IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
 
 export class CreateQuestionBaseDto {
   @IsString()
+  @IsNotEmpty()
   statement: string;
 
-  @IsOptional()
   @IsString()
-  statementUr?: string;
+  @IsNotEmpty()
+  statementUr: string;
 
   @IsUUID()
   chapterId: string;
