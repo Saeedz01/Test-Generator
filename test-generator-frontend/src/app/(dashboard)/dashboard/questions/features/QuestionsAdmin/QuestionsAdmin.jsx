@@ -33,13 +33,22 @@ import {
 import { QuestionsAdminError, QuestionsAdminLoading } from "./QuestionsAdminStates";
 
 export function QuestionsAdmin() {
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+
+  const questionScope = useMemo(() => {
+    if (filters.chapterId) return { chapterId: filters.chapterId, limit: 200 };
+    if (filters.bookId) return { bookId: filters.bookId, limit: 200 };
+    if (filters.classId) return { classId: filters.classId, limit: 200 };
+    return { limit: 200 };
+  }, [filters.chapterId, filters.bookId, filters.classId]);
+
   const {
     data: questions = [],
     isLoading: questionsLoading,
     isError: questionsError,
     error: questionsQueryError,
     refetch: refetchQuestions,
-  } = useGetQuestionsQuery();
+  } = useGetQuestionsQuery(questionScope);
 
   const { data: classes = [], isLoading: classesLoading } = useGetClassesQuery();
   const { data: books = [], isLoading: booksLoading } = useGetBooksQuery();
@@ -69,7 +78,6 @@ export function QuestionsAdmin() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
 
   const isSaving =
     creatingLong ||

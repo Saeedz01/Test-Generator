@@ -18,12 +18,13 @@ export class User {
 
   otpExpiresAt?: Date | null;
 
+  resetOtp?: string | null;
+
+  resetOtpExpiresAt?: Date | null;
+
   refreshTokenHash?: string | null;
 
   isSuspended!: boolean;
 
-  // @Column({ type: 'varchar', length: 255 })
-  // role!: string;
-
-  role_id: UserRole;
+  role: UserRole;
 }

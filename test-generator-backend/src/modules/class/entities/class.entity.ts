@@ -11,6 +11,10 @@ export class schoolClass {
 
   sortOrder!: number;
 
+  isArchived!: boolean;
+
+  archivedAt!: Date | null;
+
   createdAt!: Date;
 
   updatedAt!: Date;

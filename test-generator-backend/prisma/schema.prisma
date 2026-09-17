@@ -7,14 +7,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum QuestionDifficulty {
+  easy
+  medium
+  hard
+}
+
 model SchoolClass {
-  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name        String   @unique @db.VarChar(255)
-  code        String   @unique @db.VarChar(50)
+  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name        String    @unique @db.VarChar(255)
+  code        String    @unique @db.VarChar(50)
   description String?
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now()) @db.Timestamp(6)
-  updatedAt   DateTime @default(now()) @updatedAt @db.Timestamp(6)
+  sortOrder   Int       @default(0)
+  isArchived  Boolean   @default(false)
+  archivedAt  DateTime? @db.Timestamp(6)
+  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @db.Timestamp(6)
   books       Book[]
 
   @@map("classes")
@@ -25,8 +33,8 @@ model Book {
   book_name   String       @db.VarChar(255)
   description String?
   edition     String?      @db.VarChar(100)
-  created_At  DateTime     @default(now()) @db.Timestamp(6)
-  updated_At  DateTime     @default(now()) @updatedAt @db.Timestamp(6)
+  createdAt   DateTime     @default(now()) @db.Timestamp(6)
+  updatedAt   DateTime     @default(now()) @updatedAt @db.Timestamp(6)
   classId     String?      @db.Uuid
   class       SchoolClass? @relation(fields: [classId], references: [id], onDelete: Cascade)
   chapters    Chapter[]
@@ -51,53 +59,64 @@ model Chapter {
 }
 
 model LongQuestion {
-  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  question_text  String   @db.Text
-  questionTextUr String?  @db.Text
-  createdAt      DateTime @default(now()) @db.Timestamp(6)
-  updatedAt      DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  chapterId      String   @db.Uuid
-  chapter        Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  id             String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  question_text  String              @db.Text
+  questionTextUr String?             @db.Text
+  marks          Int                 @default(5)
+  difficulty     QuestionDifficulty  @default(medium)
+  createdAt      DateTime            @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime            @default(now()) @updatedAt @db.Timestamp(6)
+  chapterId      String              @db.Uuid
+  chapter        Chapter             @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
+  @@unique([chapterId, question_text])
   @@map("long_questions")
 }
 
 model ShortQuestion {
-  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  question_text  String   @db.Text
-  questionTextUr String?  @db.Text
-  createdAt      DateTime @default(now()) @db.Timestamp(6)
-  updatedAt      DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  chapterId      String   @db.Uuid
-  chapter        Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  id             String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  question_text  String              @db.Text
+  questionTextUr String?             @db.Text
+  marks          Int                 @default(2)
+  difficulty     QuestionDifficulty  @default(medium)
+  createdAt      DateTime            @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime            @default(now()) @updatedAt @db.Timestamp(6)
+  chapterId      String              @db.Uuid
+  chapter        Chapter             @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
+  @@unique([chapterId, question_text])
   @@map("short_questions")
 }
 
 model McqQuestion {
-  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  question_text  String   @db.Text
-  questionTextUr String?  @db.Text
+  id             String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  question_text  String              @db.Text
+  questionTextUr String?             @db.Text
   options        Json
-  createdAt      DateTime @default(now()) @db.Timestamp(6)
-  updatedAt      DateTime @default(now()) @updatedAt @db.Timestamp(6)
-  chapterId      String   @db.Uuid
-  chapter        Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  marks          Int                 @default(1)
+  difficulty     QuestionDifficulty  @default(medium)
+  createdAt      DateTime            @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime            @default(now()) @updatedAt @db.Timestamp(6)
+  chapterId      String              @db.Uuid
+  chapter        Chapter             @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
+  @@unique([chapterId, question_text])
   @@map("mcq_questions")
 }
 
 model User {
-  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name             String    @db.VarChar(255)
-  email            String    @unique @db.VarChar(255)
-  password         String    @db.VarChar(255)
-  otp              String?   @db.VarChar(255)
-  otpExpiresAt     DateTime? @db.Timestamptz(6)
-  refreshTokenHash String?   @db.VarChar(64)
-  roleId           String?   @db.Uuid
-  isSuspended      Boolean   @default(false)
-  role_id          UserRole? @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  id                 String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name               String    @db.VarChar(255)
+  email              String    @unique @db.VarChar(255)
+  password           String    @db.VarChar(255)
+  otp                String?   @db.VarChar(255)
+  otpExpiresAt       DateTime? @db.Timestamptz(6)
+  resetOtp           String?   @db.VarChar(255)
+  resetOtpExpiresAt  DateTime? @db.Timestamptz(6)
+  refreshTokenHash   String?   @db.VarChar(64)
+  roleId             String?   @db.Uuid
+  isSuspended        Boolean   @default(false)
+  role               UserRole? @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@map("user")
 }

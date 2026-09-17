@@ -1,5 +1,6 @@
 /**
  * Returns the printable test paper CSS string.
+ * Includes Noto Nastaliq Urdu for Urdu / bilingual papers.
  */
 export function testPaperCss({
   headingPx,
@@ -7,8 +8,13 @@ export function testPaperCss({
   detailPx,
   compact,
   copiesPerPage,
+  paperLanguage = "en",
 }) {
+  const useUrduFont = paperLanguage === "ur" || paperLanguage === "both";
+
   return `
+    @import url("https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap");
+
     :root { color-scheme: light; }
     * { box-sizing: border-box; }
     @page { size: A4; margin: 5mm 3mm; }
@@ -21,6 +27,19 @@ export function testPaperCss({
       line-height: 1.3;
       width: 100%;
     }
+    .q-text-ur,
+    .opt-ur,
+    .section-title-ur,
+    [lang="ur"] {
+      font-family: "Noto Nastaliq Urdu", "Segoe UI", serif;
+      line-height: 1.85;
+    }
+    ${useUrduFont ? `
+    .sheet[data-language="ur"] {
+      font-family: "Noto Nastaliq Urdu", "Segoe UI", serif;
+      line-height: 1.85;
+    }
+    ` : ""}
     .page {
       display: grid;
       width: 100%;
@@ -95,13 +114,25 @@ export function testPaperCss({
       border-radius: 4px;
       padding: 2px 6px;
     }
-    h2 {
+    h2, .section-title {
       margin: ${compact ? "6px 0 4px" : "12px 0 8px"};
       font-size: ${subtextPx}px;
       color: #446022;
       border-bottom: 1px solid #e3e3de;
       padding-bottom: 2px;
     }
+    .section-title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .q-text-bilingual {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .q-text-bilingual .q-text-en { margin: 0; }
+    .q-text-bilingual .q-text-ur { margin: 0; }
     .question {
       margin: 0 0 ${compact ? "4px" : "8px"};
       page-break-inside: avoid;
@@ -131,6 +162,12 @@ export function testPaperCss({
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .option-both {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      white-space: normal;
     }
     .answer-space {
       margin-top: 2px;

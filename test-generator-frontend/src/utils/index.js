@@ -19,3 +19,4 @@
  */
 
 export { cn } from "./cn";
+export { groupQuestionsByType } from "./groupQuestionsByType";

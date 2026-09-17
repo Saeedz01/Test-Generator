@@ -36,7 +36,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         name: true,
         isSuspended: true,
         // role: true,
-        role_id: {
+        role: {
           select: {
             role_name: true,
           },
@@ -56,8 +56,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       id: user.id,
       email: user.email,
       name: user.name,
-      // role: user.role_id?.role_name ?? user.role,
-      role: user.role_id?.role_name,
+      // role: user.role?.role_name ?? user.role,
+      role: user.role?.role_name,
     };
   }
 }

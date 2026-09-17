@@ -46,7 +46,7 @@ export class AuthService {
         otpExpiresAt: true,
         isSuspended: true,
         // role: true,
-        role_id: {
+        role: {
           select: {
             role_name: true,
           },
@@ -68,7 +68,7 @@ export class AuthService {
 
     await this.verifyOtp(user as User, loginDto.otp);
 
-    const role = user.role_id?.role_name as string;
+    const role = user.role?.role_name as string;
     const payload: TokenPayload = {
       sub: user.id,
       email: user.email,
@@ -137,13 +137,13 @@ export class AuthService {
 
     const resetCode = this.generateResetCode();
     const hashedCode = await bcrypt.hash(resetCode, 10);
-    const otpExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
+    const resetOtpExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
     await this.prisma.user.update({
       where: { id: user.id },
       data: {
-        otp: hashedCode,
-        otpExpiresAt,
+        resetOtp: hashedCode,
+        resetOtpExpiresAt,
       },
     });
 
@@ -167,21 +167,21 @@ export class AuthService {
       where: { email: dto.email },
       select: {
         id: true,
-        otp: true,
-        otpExpiresAt: true,
+        resetOtp: true,
+        resetOtpExpiresAt: true,
       },
     });
 
-    if (!user?.otp || !user.otpExpiresAt) {
+    if (!user?.resetOtp || !user.resetOtpExpiresAt) {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_TOKEN);
     }
 
-    if (user.otpExpiresAt.getTime() < Date.now()) {
-      await this.clearOtp(user.id);
+    if (user.resetOtpExpiresAt.getTime() < Date.now()) {
+      await this.clearResetOtp(user.id);
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_TOKEN);
     }
 
-    const isValid = await bcrypt.compare(dto.token, user.otp);
+    const isValid = await bcrypt.compare(dto.token, user.resetOtp);
     if (!isValid) {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_TOKEN);
     }
@@ -191,8 +191,9 @@ export class AuthService {
       where: { id: user.id },
       data: {
         password: hashedPassword,
-        otp: null,
-        otpExpiresAt: null,
+        resetOtp: null,
+        resetOtpExpiresAt: null,
+        refreshTokenHash: null,
       },
     });
 
@@ -221,6 +222,7 @@ export class AuthService {
       where: { id: user.id },
       data: {
         password: hashedPassword,
+        refreshTokenHash: null,
       },
     });
 
@@ -264,7 +266,7 @@ export class AuthService {
         name: true,
         isSuspended: true,
         refreshTokenHash: true,
-        role_id: {
+        role: {
           select: {
             role_name: true,
           },
@@ -284,7 +286,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       name: user.name,
-      role: user.role_id?.role_name as string,
+      role: user.role?.role_name as string,
     });
   }
 
@@ -309,7 +311,7 @@ export class AuthService {
         email: true,
         name: true,
         isSuspended: true,
-        role_id: {
+        role: {
           select: {
             role_name: true,
           },
@@ -329,7 +331,7 @@ export class AuthService {
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role_id?.role_name,
+      role: user.role?.role_name,
       isSuspended: user.isSuspended,
     };
   }
@@ -430,6 +432,16 @@ export class AuthService {
       data: {
         otp: null,
         otpExpiresAt: null,
+      },
+    });
+  }
+
+  private async clearResetOtp(userId: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        resetOtp: null,
+        resetOtpExpiresAt: null,
       },
     });
   }

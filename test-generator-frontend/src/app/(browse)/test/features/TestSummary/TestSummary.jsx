@@ -26,7 +26,7 @@ import {
 } from "@/store/selectionSlice";
 import { cn } from "@/utils";
 import { buildTestPaperHtml } from "../utils/buildTestPaperHtml";
-import { generatePdf } from "../utils/generatePdf";
+import { downloadPdfFile, generatePdf } from "../utils/generatePdf";
 import { applyMarksConfig } from "../utils/testSettingsStorage";
 import { saveGeneratedPaper } from "../utils/savedPapersStorage";
 import { GenerateTestModal } from "../GenerateTestModal";
@@ -74,6 +74,7 @@ export function TestSummary() {
       copiesPerPage: settings.copiesPerPage || 1,
       headingFontSize: settings.headingFontSize,
       subtextFontSize: settings.subtextFontSize,
+      paperLanguage: settings.paperLanguage || "en",
     };
 
     setPrintMeta({ meta, questions: scored });
@@ -91,8 +92,18 @@ export function TestSummary() {
       return;
     }
     toast.success(
-      "Print dialog opened — turn off “Headers and footers” to hide date/URL, then Save as PDF.",
+      "Print dialog opened — turn off “Headers and footers” to hide date/URL.",
     );
+  };
+
+  const handleDownload = async () => {
+    if (!printMeta) return;
+    const result = await downloadPdfFile(printMeta.meta, printMeta.questions);
+    if (!result.ok) {
+      toast.error(result.error || "Could not download PDF.");
+      return;
+    }
+    toast.success("PDF downloaded.");
   };
 
   if (count === 0) {
@@ -161,6 +172,7 @@ export function TestSummary() {
         <TestPaperPreview
           html={previewHtml}
           onPrint={handlePrint}
+          onDownload={handleDownload}
           onDismiss={() => {
             setPreviewHtml("");
             setPrintMeta(null);

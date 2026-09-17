@@ -7,6 +7,10 @@ export class ShortQuestion {
 
   questionTextUr!: string | null;
 
+  marks!: number;
+
+  difficulty!: 'easy' | 'medium' | 'hard';
+
   chapter!: Chapter;
 
   createdAt!: Date;

@@ -8,13 +8,6 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class BookService {
 
   constructor(
-    
-  // When the NestJS application starts, TypeORM registers the Book entity
-  // and creates a repository for it, which acts as a ready-to-use interface for interacting with the books table.
-  // When this service is instantiated, the NestJS dependency injection container checks this constructor
-  // and sees that it requires a Book repository via @InjectRepository(Book).
-  // The container then retrieves the pre-created Book repository and injects it into this variable(bookRepository),
-  // making bookRepository capable of performing direct database operations like find, save, update, and delete.
     private readonly prisma: PrismaService,
   ) {}
   

@@ -26,6 +26,8 @@ function normalizeQuestion(item, type) {
     type: item.type ?? type,
     statement: item.question_text ?? item.statement ?? "",
     statementUr: item.questionTextUr ?? item.statementUr ?? "",
+    marks: Number(item.marks) || 0,
+    difficulty: item.difficulty ?? "medium",
     classId: item.classId ?? item.class?.id ?? "",
     bookId: item.bookId ?? item.book?.id ?? "",
     chapterId: item.chapterId ?? item.chapter?.id ?? "",
@@ -37,9 +39,29 @@ function normalizeQuestion(item, type) {
   };
 }
 
+function unwrapQuestionList(response) {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  return [];
+}
+
 function normalizeQuestionList(response, type) {
-  if (!Array.isArray(response)) return [];
-  return response.map((item) => normalizeQuestion(item, type));
+  return unwrapQuestionList(response).map((item) =>
+    normalizeQuestion(item, type),
+  );
+}
+
+function buildQuestionsUrl(baseUrl, params = {}) {
+  const search = new URLSearchParams();
+  if (params.chapterId) search.set("chapterId", params.chapterId);
+  if (params.bookId) search.set("bookId", params.bookId);
+  if (params.classId) search.set("classId", params.classId);
+  if (params.page) search.set("page", String(params.page));
+  if (params.limit) search.set("limit", String(params.limit));
+  const query = search.toString();
+  if (!query) return baseUrl;
+  const separator = baseUrl.includes("?") ? "&" : "?";
+  return `${baseUrl}${separator}${query}`;
 }
 
 async function fetchQuestionType(baseQuery, url, type) {
@@ -58,11 +80,24 @@ async function fetchQuestionType(baseQuery, url, type) {
 export const questionsApi = SplitApiSettings.injectEndpoints({
   endpoints: (builder) => ({
     getQuestions: builder.query({
-      async queryFn(_arg, _queryApi, _extraOptions, baseQuery) {
+      async queryFn(arg = {}, _queryApi, _extraOptions, baseQuery) {
+        const params = typeof arg === "string" ? { chapterId: arg } : arg || {};
         const [longResult, shortResult, mcqResult] = await Promise.all([
-          fetchQuestionType(baseQuery, API_ENDPOINTS.getLongQuestions, "long"),
-          fetchQuestionType(baseQuery, API_ENDPOINTS.getShortQuestions, "short"),
-          fetchQuestionType(baseQuery, API_ENDPOINTS.getMcqQuestions, "mcq"),
+          fetchQuestionType(
+            baseQuery,
+            buildQuestionsUrl(API_ENDPOINTS.getLongQuestions, params),
+            "long",
+          ),
+          fetchQuestionType(
+            baseQuery,
+            buildQuestionsUrl(API_ENDPOINTS.getShortQuestions, params),
+            "short",
+          ),
+          fetchQuestionType(
+            baseQuery,
+            buildQuestionsUrl(API_ENDPOINTS.getMcqQuestions, params),
+            "mcq",
+          ),
         ]);
 
         if (longResult.error) return { error: longResult.error };
@@ -77,13 +112,22 @@ export const questionsApi = SplitApiSettings.injectEndpoints({
           ],
         };
       },
-      providesTags: (result) =>
-        result?.length
+      providesTags: (result, _error, arg) => {
+        const scope =
+          (typeof arg === "object" &&
+            (arg?.chapterId || arg?.bookId || arg?.classId)) ||
+          "ALL";
+        return result?.length
           ? [
               ...result.map((item) => ({ type: "Question", id: item.id })),
               { type: "Question", id: "LIST" },
+              { type: "Question", id: `SCOPE-${scope}` },
             ]
-          : [{ type: "Question", id: "LIST" }],
+          : [
+              { type: "Question", id: "LIST" },
+              { type: "Question", id: `SCOPE-${scope}` },
+            ];
+      },
     }),
 
     createLongQuestion: builder.mutation({

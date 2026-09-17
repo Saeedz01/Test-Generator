@@ -3,12 +3,17 @@
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Button, EmptyState } from "@/components/ui";
+import { deleteWithToast } from "../../../features/deleteWithToast";
 import { AdminCrudPage } from "../../../features/AdminCrudPage";
 import { AdminModal } from "../../../features/AdminModal";
 import { Field, TextInput, TextTextarea } from "../../../features/AdminFormFields";
 import {
   useAddClassMutation,
+  useArchiveClassMutation,
+  useDeleteClassMutation,
   useGetClassesQuery,
+  useUnarchiveClassMutation,
+  useUpdateClassMutation,
 } from "@/services/api/classes.api";
 
 const EMPTY = {
@@ -18,22 +23,75 @@ const EMPTY = {
 };
 
 export function ClassesAdmin() {
-  const [addClassMutation, { isLoading }] = useAddClassMutation();
+  const [addClassMutation, { isLoading: isAdding }] = useAddClassMutation();
+  const [updateClassMutation, { isLoading: isUpdating }] =
+    useUpdateClassMutation();
+  const [deleteClassMutation] = useDeleteClassMutation();
+  const [archiveClassMutation] = useArchiveClassMutation();
+  const [unarchiveClassMutation] = useUnarchiveClassMutation();
+  const [showArchived, setShowArchived] = useState(false);
+
   const {
     data: classes = [],
     isLoading: classesLoading,
     isError: classesError,
     error: classesQueryError,
     refetch,
-  } = useGetClassesQuery();
+  } = useGetClassesQuery(showArchived);
 
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
 
-  const rows = useMemo(() => classes.map((item) => ({ ...item })), [classes]);
+  const rows = useMemo(
+    () =>
+      classes.map((item) => ({
+        ...item,
+        onEdit: () => {
+          setEditing(item);
+          setForm({
+            name: item.name || "",
+            code: item.code || "",
+            description: item.description || "",
+          });
+          setOpen(true);
+        },
+        onDelete: () =>
+          deleteWithToast({
+            entityLabel: "Class",
+            entityName: item.name,
+            onDelete: () => deleteClassMutation(item.id).unwrap(),
+          }),
+        onArchive: () => {
+          const run = item.isArchived
+            ? () => unarchiveClassMutation(item.id).unwrap()
+            : () => archiveClassMutation(item.id).unwrap();
+          run()
+            .then(() =>
+              toast.success(
+                item.isArchived ? "Class restored" : "Class archived",
+              ),
+            )
+            .catch((error) =>
+              toast.error(
+                error?.data?.message ||
+                  error?.error ||
+                  "Failed to update archive state",
+              ),
+            );
+        },
+      })),
+    [
+      classes,
+      deleteClassMutation,
+      archiveClassMutation,
+      unarchiveClassMutation,
+    ],
+  );
 
   const close = () => {
     setOpen(false);
+    setEditing(null);
     setForm(EMPTY);
   };
 
@@ -48,17 +106,26 @@ export function ClassesAdmin() {
       return;
     }
 
+    const payload = {
+      name: form.name.trim(),
+      code: form.code.trim(),
+      description: form.description.trim(),
+    };
+
     try {
-      await addClassMutation({
-        name: form.name.trim(),
-        code: form.code.trim(),
-        description: form.description.trim(),
-      }).unwrap();
-      toast.success("Class added");
+      if (editing) {
+        await updateClassMutation({ id: editing.id, ...payload }).unwrap();
+        toast.success("Class updated");
+      } else {
+        await addClassMutation(payload).unwrap();
+        toast.success("Class added");
+      }
       close();
     } catch (error) {
       toast.error(
-        error?.data?.message || error?.error || "Failed to add class",
+        error?.data?.message ||
+          error?.error ||
+          (editing ? "Failed to update class" : "Failed to add class"),
       );
     }
   };
@@ -94,17 +161,33 @@ export function ClassesAdmin() {
     <>
       <AdminCrudPage
         title="Manage Classes"
-        description="Create academic classes. Editing and deleting will appear here when those APIs are wired."
+        description="Create, edit, archive, or delete academic classes."
         addLabel="Add class"
         emptyTitle="No classes yet"
         emptyDescription="Add your first class to start the library."
         onAdd={() => {
+          setEditing(null);
           setForm(EMPTY);
           setOpen(true);
         }}
+        toolbar={
+          <label className="inline-flex items-center gap-2 text-small text-neutral-600">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={(e) => setShowArchived(e.target.checked)}
+            />
+            Show archived
+          </label>
+        }
         columns={[
           { key: "name", label: "Name" },
           { key: "code", label: "Code" },
+          {
+            key: "isArchived",
+            label: "Status",
+            render: (row) => (row.isArchived ? "Archived" : "Active"),
+          },
           {
             key: "description",
             label: "Description",
@@ -114,11 +197,28 @@ export function ClassesAdmin() {
               </span>
             ),
           },
+          {
+            key: "archiveAction",
+            label: "Archive",
+            render: (row) => (
+              <button
+                type="button"
+                className="text-small font-medium text-primary-700 hover:underline"
+                onClick={row.onArchive}
+              >
+                {row.isArchived ? "Restore" : "Archive"}
+              </button>
+            ),
+          },
         ]}
         rows={rows}
       />
 
-      <AdminModal open={open} title="Add class" onClose={close}>
+      <AdminModal
+        open={open}
+        title={editing ? "Edit class" : "Add class"}
+        onClose={close}
+      >
         <form className="space-y-4" onSubmit={submit}>
           <Field label="Name">
             <TextInput
@@ -151,12 +251,12 @@ export function ClassesAdmin() {
               type="button"
               variant="outline"
               onClick={close}
-              disabled={isLoading}
+              disabled={isAdding || isUpdating}
             >
               Cancel
             </Button>
-            <Button type="submit" loading={isLoading}>
-              Create
+            <Button type="submit" loading={isAdding || isUpdating}>
+              {editing ? "Save changes" : "Create"}
             </Button>
           </div>
         </form>

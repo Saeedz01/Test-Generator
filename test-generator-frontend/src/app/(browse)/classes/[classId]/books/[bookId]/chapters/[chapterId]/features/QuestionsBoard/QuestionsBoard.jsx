@@ -11,7 +11,7 @@ import {
   QuestionListSkeleton,
 } from "@/components/shared";
 import { ROUTES } from "@/constants";
-import { groupQuestionsByType } from "@/data/curriculum";
+import { groupQuestionsByType } from "@/utils/groupQuestionsByType";
 import { useGetClassesQuery } from "@/services/api/classes.api";
 import { useGetBooksQuery } from "@/services/api/books.api";
 import { useGetChaptersQuery } from "@/services/api/chapters.api";
@@ -57,22 +57,23 @@ export function QuestionsBoard({ classId, bookId, chapterId }) {
     isError: questionsError,
     error: questionsFetchError,
     refetch: refetchQuestions,
-  } = useGetQuestionsQuery();
+  } = useGetQuestionsQuery(
+    { chapterId },
+    { skip: !chapterId },
+  );
 
   const schoolClass = classes.find((item) => item.id === classId);
   const book = books.find((item) => item.id === bookId);
   const chapter = chapters.find((item) => item.id === chapterId);
   const questions = useMemo(
     () =>
-      allQuestions
-        .filter((item) => item.chapterId === chapterId)
-        .map((item) => ({
-          ...item,
-          chapterName: item.chapterName || chapter?.name || "",
-          classId: item.classId || classId,
-          bookId: item.bookId || bookId,
-        })),
-    [allQuestions, chapterId, chapter?.name, classId, bookId],
+      allQuestions.map((item) => ({
+        ...item,
+        chapterName: item.chapterName || chapter?.name || "",
+        classId: item.classId || classId,
+        bookId: item.bookId || bookId,
+      })),
+    [allQuestions, chapter?.name, classId, bookId],
   );
   const grouped = groupQuestionsByType(questions);
 

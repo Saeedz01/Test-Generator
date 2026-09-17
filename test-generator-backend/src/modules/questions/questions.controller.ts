@@ -1,9 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { QuestionsService } from './questions.service';
-import { CreatelngQuestionDto } from './dto/create-lng-question.dto';
-import { CreateShortQuestionDto } from './dto/create-short-question.dto';
-import { CreateMcqQuestionDto } from './dto/create-mcq-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
+import { UpdateMcqQuestionDto } from './dto/update-mcq-question.dto';
+import { ListQuestionsQueryDto } from './dto/list-questions-query.dto';
 import { AdminOnly } from 'src/common/decorator/admin-only.decorator';
 
 @Controller('questions')
@@ -26,31 +33,20 @@ export class QuestionsController {
   //   return this.questionsService.createMcqQuestion(createMcqQuestion);
   // }
 
-  // Find All Endpoints
+  // Find All Endpoints — scoped by chapterId / bookId / classId with pagination
   @Get()
-  findAlllng() {
-    return this.questionsService.findAlllngQuestions();
+  findAlllng(@Query() query: ListQuestionsQueryDto) {
+    return this.questionsService.findAlllngQuestions(query);
   }
-  
+
   @Get('getmcq')
-  findAllmcq() {
-    return this.questionsService.findAllmcqQuestions();
+  findAllmcq(@Query() query: ListQuestionsQueryDto) {
+    return this.questionsService.findAllmcqQuestions(query);
   }
-  
+
   @Get('getshort')
-  findAllshort() {
-    return this.questionsService.findAllshortQuestions();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.questionsService.findOne(+id);
-  }
-
-  @AdminOnly()
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateQuestionDto: UpdateQuestionDto) {
-    return this.questionsService.update(+id, updateQuestionDto);
+  findAllshort(@Query() query: ListQuestionsQueryDto) {
+    return this.questionsService.findAllshortQuestions(query);
   }
 
   // Delete Endpoints
@@ -70,5 +66,33 @@ export class QuestionsController {
   @Delete('delMcq/:id')
   removeMcq(@Param('id') id: string) {
     return this.questionsService.removeMcqQ(id);
+  }
+
+  // Typed updates for admin tools that hit resource routes
+  @AdminOnly()
+  @Patch('long/:id')
+  updateLong(
+    @Param('id') id: string,
+    @Body() updateQuestionDto: UpdateQuestionDto,
+  ) {
+    return this.questionsService.updateLongQuestion(id, updateQuestionDto);
+  }
+
+  @AdminOnly()
+  @Patch('short/:id')
+  updateShort(
+    @Param('id') id: string,
+    @Body() updateQuestionDto: UpdateQuestionDto,
+  ) {
+    return this.questionsService.updateShortQuestion(id, updateQuestionDto);
+  }
+
+  @AdminOnly()
+  @Patch('mcq/:id')
+  updateMcq(
+    @Param('id') id: string,
+    @Body() updateMcqQuestionDto: UpdateMcqQuestionDto,
+  ) {
+    return this.questionsService.updateMcqQuestion(id, updateMcqQuestionDto);
   }
 }

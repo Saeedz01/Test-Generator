@@ -2,13 +2,12 @@
  * =============================================================================
  * store/index.js
  * =============================================================================
- * Redux Toolkit store — selection slice today; RTK Query middleware later.
+ * Redux Toolkit store — selection + auth; RTK Query for API data.
  */
 
 import { configureStore } from "@reduxjs/toolkit";
 import selectionReducer from "./selectionSlice";
 import authReducer from "./authSlice";
-import adminContentReducer from "./adminContentSlice";
 import { SplitApiSettings } from "../services/SplitApiSetting";
 // Ensure RTK Query endpoints are injected into the store.
 import "../services/api/classes.api";
@@ -23,7 +22,6 @@ export function makeStore() {
     reducer: {
       auth: authReducer,
       selection: selectionReducer,
-      adminContent: adminContentReducer,
       [SplitApiSettings.reducerPath]: SplitApiSettings.reducer,
     },
     middleware: (getDefaultMiddleware) =>

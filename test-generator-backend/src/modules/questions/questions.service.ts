@@ -53,6 +53,7 @@ export class QuestionsService {
     findUnique: (args: unknown) => Promise<QuestionEntity | null>;
     deleteMany: (args: unknown) => Promise<{ count: number }>;
     update: (args: unknown) => Promise<QuestionEntity>;
+    count: (args: unknown) => Promise<number>;
   } {
     if (kind === 'long') {
       return this.prisma.longQuestion as never;
@@ -95,30 +96,43 @@ export class QuestionsService {
   private async assertUniqueStatement(
     kind: QuestionKind,
     statement: string,
+    chapterId: string,
     excludeId?: string,
   ): Promise<void> {
     const existing = await this.questionDelegate(kind).findFirst({
-      where: { question_text: statement },
+      where: { question_text: statement, chapterId },
     });
 
     if (existing && existing.id !== excludeId) {
-      throw new ConflictException('Question already exists');
+      throw new ConflictException(
+        'Question already exists in this chapter',
+      );
     }
   }
 
   private async createQuestion(
     kind: QuestionKind,
-    { statement, statementUr, chapterId }: CreateQuestionBaseDto,
+    {
+      statement,
+      statementUr,
+      chapterId,
+      marks,
+      difficulty,
+    }: CreateQuestionBaseDto,
     extra?: { options?: McqOptionDto[] },
   ) {
-    await this.assertUniqueStatement(kind, statement);
+    await this.assertUniqueStatement(kind, statement.trim(), chapterId);
 
     const chapter = await this.resolveChapter(chapterId);
+
+    const defaultMarks = kind === 'mcq' ? 1 : kind === 'short' ? 2 : 5;
 
     const data: Record<string, unknown> = {
       question_text: statement.trim(),
       questionTextUr: statementUr.trim(),
       chapterId: chapter.id,
+      marks: marks ?? defaultMarks,
+      difficulty: difficulty ?? 'medium',
     };
 
     if (extra?.options !== undefined) {
@@ -159,6 +173,8 @@ export class QuestionsService {
       question_text: question.question_text,
       questionTextUr: question.questionTextUr ?? null,
       type,
+      marks: (question as { marks?: number }).marks ?? null,
+      difficulty: (question as { difficulty?: string }).difficulty ?? null,
       classId: schoolClass?.id ?? null,
       className: schoolClass?.name ?? null,
       bookId: book?.id ?? null,
@@ -180,30 +196,70 @@ export class QuestionsService {
     return response;
   }
 
+  private buildQuestionWhere(query: {
+    chapterId?: string;
+    bookId?: string;
+    classId?: string;
+  }): Prisma.LongQuestionWhereInput {
+    if (query.chapterId) {
+      return { chapterId: query.chapterId };
+    }
+    if (query.bookId) {
+      return { chapter: { bookId: query.bookId } };
+    }
+    if (query.classId) {
+      return { chapter: { book: { classId: query.classId } } };
+    }
+    return {};
+  }
+
   private async findAllFromRepository(
     kind: QuestionKind,
     type: 'long' | 'short' | 'mcq',
+    query: {
+      chapterId?: string;
+      bookId?: string;
+      classId?: string;
+      page?: number;
+      limit?: number;
+    } = {},
   ) {
-    const questions = await this.questionDelegate(kind).findMany({
-      include: questionInclude,
-    });
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(200, Math.max(1, Number(query.limit) || 100));
+    const skip = (page - 1) * limit;
+    const where = this.buildQuestionWhere(query);
 
-    if (questions.length === 0) {
-      throw new NotFoundException('No questions found');
-    }
+    const [questions, total] = await Promise.all([
+      this.questionDelegate(kind).findMany({
+        where,
+        include: questionInclude,
+        orderBy: { createdAt: 'asc' },
+        skip,
+        take: limit,
+      }),
+      this.questionDelegate(kind).count({ where }),
+    ]);
 
-    return questions.map((question) =>
-      this.mapQuestionResponse(
-        question as unknown as QuestionWithNested,
-        type,
+    return {
+      data: questions.map((question) =>
+        this.mapQuestionResponse(
+          question as unknown as QuestionWithNested,
+          type,
+        ),
       ),
-    );
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+    };
   }
 
   private async removeFromRepository(
     kind: QuestionKind,
     id: string,
-  ): Promise<string> {
+  ): Promise<{ message: string }> {
     const result = await this.questionDelegate(kind).deleteMany({
       where: { id },
     });
@@ -212,7 +268,7 @@ export class QuestionsService {
       throw new NotFoundException('Question not found');
     }
 
-    return `This action removes a #${id} question`;
+    return { message: 'Question deleted' };
   }
 
   async createLongQuestion(dto: CreatelngQuestionDto) {
@@ -228,16 +284,34 @@ export class QuestionsService {
     return this.createQuestion('mcq', baseDto, { options });
   }
 
-  async findAlllngQuestions() {
-    return this.findAllFromRepository('long', 'long');
+  async findAlllngQuestions(query: {
+    chapterId?: string;
+    bookId?: string;
+    classId?: string;
+    page?: number;
+    limit?: number;
+  } = {}) {
+    return this.findAllFromRepository('long', 'long', query);
   }
 
-  async findAllmcqQuestions() {
-    return this.findAllFromRepository('mcq', 'mcq');
+  async findAllmcqQuestions(query: {
+    chapterId?: string;
+    bookId?: string;
+    classId?: string;
+    page?: number;
+    limit?: number;
+  } = {}) {
+    return this.findAllFromRepository('mcq', 'mcq', query);
   }
 
-  async findAllshortQuestions() {
-    return this.findAllFromRepository('short', 'short');
+  async findAllshortQuestions(query: {
+    chapterId?: string;
+    bookId?: string;
+    classId?: string;
+    page?: number;
+    limit?: number;
+  } = {}) {
+    return this.findAllFromRepository('short', 'short', query);
   }
 
   private async updateQuestion(
@@ -260,7 +334,7 @@ export class QuestionsService {
     const statement = dto.statement ?? question.question_text;
 
     if (statement !== question.question_text) {
-      await this.assertUniqueStatement(kind, statement, id);
+      await this.assertUniqueStatement(kind, statement, chapterId, id);
     }
 
     const chapter = await this.resolveChapter(chapterId);
@@ -269,6 +343,8 @@ export class QuestionsService {
       question_text: string;
       questionTextUr?: string | null;
       chapterId: string;
+      marks?: number;
+      difficulty?: string;
       options?: Prisma.InputJsonValue;
     } = {
       question_text: statement,
@@ -277,6 +353,14 @@ export class QuestionsService {
 
     if (dto.statementUr !== undefined) {
       data.questionTextUr = dto.statementUr.trim();
+    }
+
+    if (dto.marks !== undefined) {
+      data.marks = dto.marks;
+    }
+
+    if (dto.difficulty !== undefined) {
+      data.difficulty = dto.difficulty;
     }
 
     if (type === 'mcq' && dto.options) {
@@ -307,14 +391,6 @@ export class QuestionsService {
   async updateMcqQuestion(id: string, dto: UpdateMcqQuestionDto) {
     const { options, ...baseDto } = dto;
     return this.updateQuestion('mcq', id, { ...baseDto, options }, 'mcq');
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} question`;
-  }
-
-  update(id: number, updateQuestionDto: UpdateQuestionDto) {
-    return `This action updates a #${id} question`;
   }
 
   async removeLngQ(id: string) {

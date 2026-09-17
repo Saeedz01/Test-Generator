@@ -14,6 +14,8 @@ export const EMPTY = {
   classId: "",
   bookId: "",
   chapterId: "",
+  marks: "",
+  difficulty: "medium",
   options: EMPTY_MCQ_OPTIONS.map((option) => ({ ...option })),
 };
 

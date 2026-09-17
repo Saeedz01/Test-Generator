@@ -29,6 +29,7 @@ export function GenerateTestModal({
   const [copiesPerPage, setCopiesPerPage] = useState(1);
   const [headingFontSize, setHeadingFontSize] = useState(18);
   const [subtextFontSize, setSubtextFontSize] = useState(12);
+  const [paperLanguage, setPaperLanguage] = useState("en");
   const [errors, setErrors] = useState({ institute: "", time: "" });
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export function GenerateTestModal({
     setCopiesPerPage(saved.copiesPerPage || 1);
     setHeadingFontSize(saved.headingFontSize);
     setSubtextFontSize(saved.subtextFontSize);
+    setPaperLanguage(saved.paperLanguage || "en");
     setErrors({ institute: "", time: "" });
   }, [open]);
 
@@ -92,6 +94,9 @@ export function GenerateTestModal({
       copiesPerPage: Number(copiesPerPage) || 1,
       headingFontSize: Number(headingFontSize) || 18,
       subtextFontSize: Number(subtextFontSize) || 12,
+      paperLanguage: ["en", "ur", "both"].includes(paperLanguage)
+        ? paperLanguage
+        : "en",
     };
     saveTestSettings(settings);
 
@@ -153,6 +158,8 @@ export function GenerateTestModal({
           setShortMarks={setShortMarks}
           longMarks={longMarks}
           setLongMarks={setLongMarks}
+          paperLanguage={paperLanguage}
+          setPaperLanguage={setPaperLanguage}
           counts={counts}
           totalMarks={totalMarks}
           errors={errors}

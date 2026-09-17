@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui";
 
 /**
- * In-page HTML preview of the printable paper, before window.print.
+ * In-page HTML preview of the printable paper, before window.print / PDF download.
  */
-export function TestPaperPreview({ html, onPrint, onDismiss }) {
+export function TestPaperPreview({ html, onPrint, onDownload, onDismiss }) {
   const iframeRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -40,11 +41,29 @@ export function TestPaperPreview({ html, onPrint, onDismiss }) {
           </Button>
           <Button
             type="button"
+            variant="outline"
+            size="sm"
+            className="w-full sm:w-auto"
+            loading={downloading}
+            onClick={async () => {
+              if (!onDownload) return;
+              setDownloading(true);
+              try {
+                await onDownload();
+              } finally {
+                setDownloading(false);
+              }
+            }}
+          >
+            Download PDF
+          </Button>
+          <Button
+            type="button"
             size="sm"
             className="w-full sm:w-auto"
             onClick={onPrint}
           >
-            Print PDF
+            Print
           </Button>
         </div>
       </div>

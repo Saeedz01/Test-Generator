@@ -1,13 +1,13 @@
 /**
  * Builds a printable HTML test paper from selected questions.
- * Supports 1 / 2 / 4 identical tests per A4 page.
+ * Supports 1 / 2 / 4 identical tests per A4 page and EN / UR / Both language.
  */
 
 import { testPaperCss } from "./testPaperCss";
 import {
   TYPE_ORDER,
-  TYPE_TITLE,
   renderQuestion,
+  renderSectionHeading,
   renderTestBody,
   sortQuestions,
 } from "./testPaperRender";
@@ -15,11 +15,15 @@ import {
 /**
  * @param {object} meta
  * @param {1|2|4} [meta.copiesPerPage]
+ * @param {"en"|"ur"|"both"} [meta.paperLanguage]
  * @param {object[]} questions
  * @param {{ autoPrint?: boolean }} [options]
  */
 export function buildTestPaperHtml(meta, questions, options = {}) {
   const { autoPrint = false } = options;
+  const paperLanguage = ["en", "ur", "both"].includes(meta.paperLanguage)
+    ? meta.paperLanguage
+    : "en";
   const sorted = sortQuestions(questions);
   const totalMarks =
     meta.totalMarks ??
@@ -49,13 +53,23 @@ export function buildTestPaperHtml(meta, questions, options = {}) {
     const body = items
       .map((question) => {
         questionNumber += 1;
-        return renderQuestion(question, questionNumber, compact);
+        return renderQuestion(
+          question,
+          questionNumber,
+          compact,
+          paperLanguage,
+        );
       })
       .join("");
-    return `<section class="section"><h2>${TYPE_TITLE[type]}</h2>${body}</section>`;
+    return `<section class="section">${renderSectionHeading(type, paperLanguage)}${body}</section>`;
   }).join("");
 
-  const oneTest = renderTestBody(meta, sectionsHtml, totalMarks, sorted.length);
+  const oneTest = renderTestBody(
+    { ...meta, paperLanguage },
+    sectionsHtml,
+    totalMarks,
+    sorted.length,
+  );
   const cells = Array.from({ length: copiesPerPage }, (_, index) => {
     return `<div class="test-cell" data-copy="${index + 1}">${oneTest}</div>`;
   }).join("");
@@ -74,10 +88,13 @@ export function buildTestPaperHtml(meta, questions, options = {}) {
     detailPx,
     compact,
     copiesPerPage,
+    paperLanguage,
   });
 
+  const htmlLang = paperLanguage === "ur" ? "ur" : "en";
+
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${htmlLang}">
 <head>
   <meta charset="utf-8" />
   <title></title>

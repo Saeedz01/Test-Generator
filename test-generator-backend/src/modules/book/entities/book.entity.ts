@@ -10,9 +10,9 @@ export class Book {
 
   edition!: string | null;
 
-  created_At!: Date;
+  createdAt!: Date;
 
-  updated_At!: Date;
+  updatedAt!: Date;
 
   class!: schoolClass;
 

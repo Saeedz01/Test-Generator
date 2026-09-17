@@ -16,6 +16,8 @@ function normalizeClasses(response) {
     description: item.description ?? "",
     sortOrder: item.sortOrder ?? 0,
     booksCount: Number(item.booksCount ?? 0),
+    isArchived: Boolean(item.isArchived),
+    archivedAt: item.archivedAt ?? null,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
   }));
@@ -24,8 +26,10 @@ function normalizeClasses(response) {
 export const schoolclassApi = SplitApiSettings.injectEndpoints({
   endpoints: (builder) => ({
     getClasses: builder.query({
-      query: () => ({
-        url: API_ENDPOINTS.getClasses,
+      query: (includeArchived = false) => ({
+        url: includeArchived
+          ? `${API_ENDPOINTS.getClasses}?includeArchived=true`
+          : API_ENDPOINTS.getClasses,
         method: "GET",
       }),
       transformResponse: (response) => normalizeClasses(response),
@@ -49,7 +53,62 @@ export const schoolclassApi = SplitApiSettings.injectEndpoints({
         { type: "DashboardStats", id: "SUMMARY" },
       ],
     }),
+
+    updateClass: builder.mutation({
+      query: ({ id, ...payload }) => ({
+        url: API_ENDPOINTS.updateClass(id),
+        method: "PATCH",
+        body: payload,
+      }),
+      invalidatesTags: (_result, _error, { id }) => [
+        { type: "SchoolClass", id },
+        { type: "SchoolClass", id: "LIST" },
+        { type: "DashboardStats", id: "SUMMARY" },
+      ],
+    }),
+
+    archiveClass: builder.mutation({
+      query: (id) => ({
+        url: API_ENDPOINTS.archiveClass(id),
+        method: "POST",
+      }),
+      invalidatesTags: (_result, _error, id) => [
+        { type: "SchoolClass", id },
+        { type: "SchoolClass", id: "LIST" },
+        { type: "DashboardStats", id: "SUMMARY" },
+      ],
+    }),
+
+    unarchiveClass: builder.mutation({
+      query: (id) => ({
+        url: API_ENDPOINTS.unarchiveClass(id),
+        method: "POST",
+      }),
+      invalidatesTags: (_result, _error, id) => [
+        { type: "SchoolClass", id },
+        { type: "SchoolClass", id: "LIST" },
+        { type: "DashboardStats", id: "SUMMARY" },
+      ],
+    }),
+
+    deleteClass: builder.mutation({
+      query: (id) => ({
+        url: API_ENDPOINTS.deleteClass(id),
+        method: "DELETE",
+      }),
+      invalidatesTags: [
+        { type: "SchoolClass", id: "LIST" },
+        { type: "DashboardStats", id: "SUMMARY" },
+      ],
+    }),
   }),
 });
 
-export const { useGetClassesQuery, useAddClassMutation } = schoolclassApi;
+export const {
+  useGetClassesQuery,
+  useAddClassMutation,
+  useUpdateClassMutation,
+  useArchiveClassMutation,
+  useUnarchiveClassMutation,
+  useDeleteClassMutation,
+} = schoolclassApi;

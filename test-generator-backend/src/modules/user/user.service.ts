@@ -63,7 +63,7 @@ export class UserService {
         roleId: userRole.id,
         isSuspended: false,
       },
-      include: { role_id: true },
+      include: { role: true },
     })) as unknown as User;
   }
 
@@ -81,7 +81,7 @@ export class UserService {
 
     await this.prisma.user.deleteMany({
       where: {
-        role_id: { role_name: Role.SUPER_ADMIN },
+        role: { role_name: Role.SUPER_ADMIN },
         NOT: { email },
       },
     });
@@ -102,7 +102,7 @@ export class UserService {
           otpExpiresAt: null,
           refreshTokenHash: null,
         },
-        include: { role_id: true },
+        include: { role: true },
       })) as unknown as User;
     }
 
@@ -114,7 +114,7 @@ export class UserService {
         roleId: userRole.id,
         isSuspended: false,
       },
-      include: { role_id: true },
+      include: { role: true },
     })) as unknown as User;
   }
 
@@ -130,11 +130,11 @@ export class UserService {
   async findAllAdmins(): Promise<AdminUserResponse[]> {
     const admins = await this.prisma.user.findMany({
       where: {
-        role_id: {
+        role: {
           role_name: Role.ADMIN,
         },
       },
-      include: { role_id: true },
+      include: { role: true },
       orderBy: { email: 'asc' },
     });
 
@@ -151,7 +151,7 @@ export class UserService {
     const savedUser = await this.prisma.user.update({
       where: { id: user.id },
       data: { isSuspended: !user.isSuspended },
-      include: { role_id: true },
+      include: { role: true },
     });
     return this.mapAdminResponse(savedUser as unknown as User);
   }
@@ -177,10 +177,10 @@ export class UserService {
   private async findAdminById(id: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      include: { role_id: true },
+      include: { role: true },
     });
 
-    if (!user || user.role_id?.role_name !== Role.ADMIN) {
+    if (!user || user.role?.role_name !== Role.ADMIN) {
       throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
     }
 
@@ -192,20 +192,47 @@ export class UserService {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role_id?.role_name ?? Role.ADMIN,
+      role: user.role?.role_name ?? Role.ADMIN,
       isSuspended: Boolean(user.isSuspended),
     };
   }
 
-  findAll() {
-    return `This action returns all user`;
+  async findAll(): Promise<AdminUserResponse[]> {
+    const users = await this.prisma.user.findMany({
+      include: { role: true },
+      orderBy: { email: 'asc' },
+    });
+    return users.map((user) => this.mapAdminResponse(user as unknown as User));
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: string): Promise<AdminUserResponse> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: { role: true },
+    });
+    if (!user) {
+      throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
+    }
+    return this.mapAdminResponse(user as unknown as User);
   }
 
-  update(id: number, updateUserDto: unknown) {
-    return `This action updates a #${id} user`;
+  async update(id: string, updateUserDto: { name?: string; email?: string }) {
+    const existing = await this.prisma.user.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
+    }
+    const saved = await this.prisma.user.update({
+      where: { id },
+      data: {
+        ...(updateUserDto.name !== undefined
+          ? { name: updateUserDto.name }
+          : {}),
+        ...(updateUserDto.email !== undefined
+          ? { email: updateUserDto.email }
+          : {}),
+      },
+      include: { role: true },
+    });
+    return this.mapAdminResponse(saved as unknown as User);
   }
 }

@@ -2,8 +2,6 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { Role } from '../user/entities/user.entity';
 
-const SUPER_ADMIN_EMAIL = 'saeedzafar4595@gmail.com';
-const SUPER_ADMIN_PASSWORD = '1122';
 const MIN_SEED_PASSWORD_LENGTH = 12;
 
 @Injectable()
@@ -30,16 +28,28 @@ export class AuthSeedService implements OnModuleInit {
       return;
     }
 
-    try {
-      await this.userService.upsertSuperAdmin(
-        SUPER_ADMIN_EMAIL,
-        SUPER_ADMIN_PASSWORD,
-        'Super Admin',
+    const superAdminEmail =
+      process.env.AUTH_SEED_SUPER_ADMIN_EMAIL?.trim() ||
+      'saeedzafar4595@gmail.com';
+    const superAdminPassword =
+      process.env.AUTH_SEED_SUPER_ADMIN_PASSWORD?.trim() || '';
+
+    if (superAdminPassword.length < 4) {
+      this.logger.warn(
+        'Super admin seed skipped: set AUTH_SEED_SUPER_ADMIN_PASSWORD in .env',
       );
-      this.logger.log(`Seeded ${Role.SUPER_ADMIN}: ${SUPER_ADMIN_EMAIL}`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(`Failed to seed super admin: ${message}`);
+    } else {
+      try {
+        await this.userService.upsertSuperAdmin(
+          superAdminEmail,
+          superAdminPassword,
+          'Super Admin',
+        );
+        this.logger.log(`Seeded ${Role.SUPER_ADMIN}: ${superAdminEmail}`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        this.logger.error(`Failed to seed super admin: ${message}`);
+      }
     }
 
     const adminPassword = process.env.AUTH_SEED_PASSWORD?.trim() ?? '';

@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { ClassService } from './class.service';
 import { CreateSchoolClassDto } from '../admin/dto/create-class.dto';
 import { UpdateClassDto } from '../admin/dto/update-class.dto';
@@ -15,8 +24,8 @@ export class ClassController {
   }
 
   @Get()
-  findAll() {
-    return this.classService.findAll();
+  findAll(@Query('includeArchived') includeArchived?: string) {
+    return this.classService.findAll(includeArchived === 'true');
   }
 
   @Get(':id')
@@ -28,6 +37,18 @@ export class ClassController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateClassDto: UpdateClassDto) {
     return this.classService.update(id, updateClassDto);
+  }
+
+  @AdminOnly()
+  @Post(':id/archive')
+  archive(@Param('id') id: string) {
+    return this.classService.archive(id);
+  }
+
+  @AdminOnly()
+  @Post(':id/unarchive')
+  unarchive(@Param('id') id: string) {
+    return this.classService.unarchive(id);
   }
 
   @AdminOnly()

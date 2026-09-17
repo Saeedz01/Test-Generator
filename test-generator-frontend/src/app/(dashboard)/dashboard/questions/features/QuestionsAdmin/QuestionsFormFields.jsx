@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui";
-import { Field, TextSelect, TextTextarea } from "../../../features/AdminFormFields";
+import { Field, TextInput, TextSelect, TextTextarea } from "../../../features/AdminFormFields";
 import { McqOptionsFields } from "./McqOptionsFields";
 
 export function QuestionsFormFields({
@@ -59,6 +59,33 @@ export function QuestionsFormFields({
           <option value="long">Long</option>
         </TextSelect>
       </Field>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Marks">
+          <TextInput
+            type="number"
+            min="1"
+            max="100"
+            value={form.marks ?? ""}
+            onChange={(e) => setForm((f) => ({ ...f, marks: e.target.value }))}
+            placeholder={
+              form.type === "mcq" ? "1" : form.type === "short" ? "2" : "5"
+            }
+          />
+        </Field>
+        <Field label="Difficulty">
+          <TextSelect
+            value={form.difficulty || "medium"}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, difficulty: e.target.value }))
+            }
+          >
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </TextSelect>
+        </Field>
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="Class">

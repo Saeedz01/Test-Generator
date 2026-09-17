@@ -15,10 +15,11 @@ export const API_ENDPOINTS = {
   addSchoolClass: `${BASE_URL}/api/admin/createClass`,
   getClasses: `${BASE_URL}/api/schoolclasses`,
   getAdminDashboardStats: `${BASE_URL}/api/admin/dashboard/stats`,
-  // updateClass: (id) => `${BASE_URL}/api/admin/classes/${id}`,
-  // deleteClass: (id) => `${BASE_URL}/api/admin/classes/${id}`,
+  updateClass: (id) => `${BASE_URL}/api/schoolclasses/${id}`,
+  deleteClass: (id) => `${BASE_URL}/api/schoolclasses/${id}`,
+  archiveClass: (id) => `${BASE_URL}/api/schoolclasses/${id}/archive`,
+  unarchiveClass: (id) => `${BASE_URL}/api/schoolclasses/${id}/unarchive`,
   // getClasses: `${BASE_URL}/api/admin/classes`,
-
 
 //   ------------Books-----------------
   addBook: `${BASE_URL}/api/admin/createBook`,

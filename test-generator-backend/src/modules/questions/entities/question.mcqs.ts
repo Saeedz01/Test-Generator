@@ -9,6 +9,10 @@ export class McqQuestion {
 
   options!: Array<{ en: string; ur: string }>;
 
+  marks!: number;
+
+  difficulty!: 'easy' | 'medium' | 'hard';
+
   chapter!: Chapter;
 
   createdAt!: Date;

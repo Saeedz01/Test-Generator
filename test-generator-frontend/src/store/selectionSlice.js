@@ -3,12 +3,17 @@
  * store/selectionSlice.js
  * =============================================================================
  * Client selection state for the test-builder flow (class → book → chapter → questions).
- * Plain JS — swap hydration source to RTK Query later without changing consumers.
+ * Hydrated from localStorage on the client — never persisted to the database.
  */
 
 import { createSlice } from "@reduxjs/toolkit";
+import {
+  clearSelectionState,
+  loadSelectionState,
+  saveSelectionState,
+} from "./selectionStorage";
 
-const initialState = {
+const emptyState = {
   selectedClass: null,
   selectedBook: null,
   selectedChapter: null,
@@ -16,32 +21,58 @@ const initialState = {
   selectedQuestions: {},
 };
 
+function getInitialState() {
+  if (typeof window === "undefined") {
+    return { ...emptyState, selectedQuestions: {} };
+  }
+  return loadSelectionState() ?? { ...emptyState, selectedQuestions: {} };
+}
+
+const initialState = getInitialState();
+
+function persist(state) {
+  saveSelectionState(state);
+}
+
 const selectionSlice = createSlice({
   name: "selection",
   initialState,
   reducers: {
+    hydrateSelection(state) {
+      const stored = loadSelectionState();
+      if (!stored) return;
+      state.selectedClass = stored.selectedClass;
+      state.selectedBook = stored.selectedBook;
+      state.selectedChapter = stored.selectedChapter;
+      state.selectedQuestions = stored.selectedQuestions;
+    },
     selectClass(state, action) {
       const next = action.payload;
       if (state.selectedClass?.id === next?.id) {
         state.selectedClass = next;
+        persist(state);
         return;
       }
       state.selectedClass = next;
       state.selectedBook = null;
       state.selectedChapter = null;
       state.selectedQuestions = {};
+      persist(state);
     },
     selectBook(state, action) {
       const next = action.payload;
       if (state.selectedBook?.id === next?.id) {
         state.selectedBook = next;
+        persist(state);
         return;
       }
       state.selectedBook = next;
       state.selectedChapter = null;
+      persist(state);
     },
     selectChapter(state, action) {
       state.selectedChapter = action.payload;
+      persist(state);
     },
     toggleQuestion(state, action) {
       const question = action.payload;
@@ -51,6 +82,7 @@ const selectionSlice = createSlice({
       } else {
         state.selectedQuestions[question.id] = question;
       }
+      persist(state);
     },
     selectQuestions(state, action) {
       const questions = action.payload ?? [];
@@ -59,23 +91,28 @@ const selectionSlice = createSlice({
           state.selectedQuestions[question.id] = question;
         }
       });
+      persist(state);
     },
     deselectQuestions(state, action) {
       const ids = action.payload ?? [];
       ids.forEach((id) => {
         delete state.selectedQuestions[id];
       });
+      persist(state);
     },
     clearTest(state) {
       state.selectedQuestions = {};
+      persist(state);
     },
     clearSelection() {
-      return initialState;
+      clearSelectionState();
+      return { ...emptyState, selectedQuestions: {} };
     },
   },
 });
 
 export const {
+  hydrateSelection,
   selectClass,
   selectBook,
   selectChapter,

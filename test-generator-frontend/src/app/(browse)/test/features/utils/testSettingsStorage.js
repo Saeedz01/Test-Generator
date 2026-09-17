@@ -17,6 +17,8 @@ export const DEFAULT_TEST_SETTINGS = {
   headingFontSize: 18,
   /** Body / question / meta size in px (matches PDF default). */
   subtextFontSize: 12,
+  /** Paper medium: en | ur | both */
+  paperLanguage: "en",
 };
 
 function clampFontSize(value, fallback) {
@@ -55,6 +57,9 @@ export function loadTestSettings() {
         parsed.subtextFontSize,
         DEFAULT_TEST_SETTINGS.subtextFontSize,
       ),
+      paperLanguage: ["en", "ur", "both"].includes(parsed.paperLanguage)
+        ? parsed.paperLanguage
+        : DEFAULT_TEST_SETTINGS.paperLanguage,
     };
   } catch {
     return { ...DEFAULT_TEST_SETTINGS };
@@ -80,6 +85,9 @@ export function saveTestSettings(settings) {
       settings.subtextFontSize,
       DEFAULT_TEST_SETTINGS.subtextFontSize,
     ),
+    paperLanguage: ["en", "ur", "both"].includes(settings.paperLanguage)
+      ? settings.paperLanguage
+      : DEFAULT_TEST_SETTINGS.paperLanguage,
   };
   window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
 }

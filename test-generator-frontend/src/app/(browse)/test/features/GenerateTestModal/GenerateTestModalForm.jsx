@@ -22,6 +22,8 @@ export function GenerateTestModalForm({
   setShortMarks,
   longMarks,
   setLongMarks,
+  paperLanguage,
+  setPaperLanguage,
   counts,
   totalMarks,
   errors = { institute: "", time: "" },
@@ -30,6 +32,39 @@ export function GenerateTestModalForm({
 }) {
   return (
     <form className="space-y-4" onSubmit={onSubmit}>
+      <fieldset>
+        <legend className="text-caption font-medium text-neutral-600">
+          Paper language
+        </legend>
+        <div
+          className="mt-1.5 flex flex-wrap gap-2"
+          role="radiogroup"
+          aria-label="Paper language"
+        >
+          {[
+            { value: "en", label: "English" },
+            { value: "ur", label: "Urdu" },
+            { value: "both", label: "Both" },
+          ].map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={paperLanguage === option.value}
+              className={cn(
+                "rounded-[var(--radius-md)] border px-3 py-2 text-small font-medium transition-colors",
+                paperLanguage === option.value
+                  ? "border-primary-600 bg-primary-50 text-primary-800"
+                  : "border-neutral-300 bg-neutral-0 text-neutral-700 hover:bg-neutral-50",
+              )}
+              onClick={() => setPaperLanguage(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+
       <label className="block">
         <span className="text-caption font-medium text-neutral-600">
           Institute name
