@@ -3,6 +3,13 @@
  * Does not touch users / roles. Keeps the same three classes only.
  *
  * Run: npm run prisma:seed
+ *
+ * Safety (the wipe deletes ALL classes, books, chapters and questions):
+ * - Without --reset (or SEED_RESET=true) the seed only runs on an empty
+ *   curriculum and never deletes anything.
+ * - With --reset the curriculum is wiped first: npm run prisma:seed:reset
+ * - NODE_ENV=production refuses to run at all unless
+ *   SEED_ALLOW_DESTRUCTIVE=true (or --force) is also given.
  */
 
 import { PrismaClient, QuestionDifficulty } from '@prisma/client';
@@ -132,7 +139,11 @@ const curriculum: ClassSeed[] = [
               ),
             ],
             shorts: [
-              short('Define physical quantity.', 'طبیعی مقدار کی تعریف لکھیں۔', 'easy'),
+              short(
+                'Define physical quantity.',
+                'طبیعی مقدار کی تعریف لکھیں۔',
+                'easy',
+              ),
               short(
                 'Differentiate between base and derived units.',
                 'بنیادی اور مشتق اکائیوں میں فرق واضح کریں۔',
@@ -188,7 +199,10 @@ const curriculum: ClassSeed[] = [
               ),
             ],
             shorts: [
-              short('State the three equations of motion.', 'حرکت کی تین مساوات بیان کریں۔'),
+              short(
+                'State the three equations of motion.',
+                'حرکت کی تین مساوات بیان کریں۔',
+              ),
               short(
                 'Differentiate between speed and velocity.',
                 'رفتار اور سمت رفتار میں فرق لکھیں۔',
@@ -234,7 +248,10 @@ const curriculum: ClassSeed[] = [
                 'Action and reaction forces are always:',
                 'عمل اور رد عمل کی قوتیں ہمیشہ ہوتی ہیں:',
                 [
-                  ['Equal and in the same direction', 'برابر اور ایک ہی سمت میں'],
+                  [
+                    'Equal and in the same direction',
+                    'برابر اور ایک ہی سمت میں',
+                  ],
                   ['Unequal and opposite', 'غیر برابر اور مخالف'],
                   ['Equal and opposite', 'برابر اور مخالف'],
                   ['Zero', 'صفر'],
@@ -242,8 +259,15 @@ const curriculum: ClassSeed[] = [
               ),
             ],
             shorts: [
-              short('State Newton’s second law of motion.', 'نیوٹن کا دوسرا قانون حرکت بیان کریں۔'),
-              short('Define inertia with an example.', 'جڑت کی تعریف مثال کے ساتھ لکھیں۔', 'easy'),
+              short(
+                'State Newton’s second law of motion.',
+                'نیوٹن کا دوسرا قانون حرکت بیان کریں۔',
+              ),
+              short(
+                'Define inertia with an example.',
+                'جڑت کی تعریف مثال کے ساتھ لکھیں۔',
+                'easy',
+              ),
             ],
             longs: [
               long(
@@ -280,7 +304,11 @@ const curriculum: ClassSeed[] = [
               ),
             ],
             shorts: [
-              short('Define centre of gravity.', 'ثقل مرکز کی تعریف لکھیں۔', 'easy'),
+              short(
+                'Define centre of gravity.',
+                'ثقل مرکز کی تعریف لکھیں۔',
+                'easy',
+              ),
               short(
                 'State the conditions of equilibrium.',
                 'توازن کی شرائط بیان کریں۔',
@@ -379,7 +407,10 @@ const curriculum: ClassSeed[] = [
               ),
             ],
             shorts: [
-              short('Define isotope with an example.', 'آاسوٹوپ کی تعریف مثال کے ساتھ لکھیں۔'),
+              short(
+                'Define isotope with an example.',
+                'آاسوٹوپ کی تعریف مثال کے ساتھ لکھیں۔',
+              ),
               short(
                 'Write electronic configuration of sodium (Z = 11).',
                 'سوڈیم (Z = 11) کی الیکٹرانک ترتیب لکھیں۔',
@@ -489,7 +520,11 @@ const curriculum: ClassSeed[] = [
                 'Differentiate between breathing and respiration.',
                 'تنفس اور سانس لینے میں فرق واضح کریں۔',
               ),
-              short('What is the function of alveoli?', 'الویولی کا کام کیا ہے؟', 'easy'),
+              short(
+                'What is the function of alveoli?',
+                'الویولی کا کام کیا ہے؟',
+                'easy',
+              ),
             ],
             longs: [
               long(
@@ -526,7 +561,10 @@ const curriculum: ClassSeed[] = [
             ],
             shorts: [
               short('What is homeostasis?', 'ہومیوسٹیسس کیا ہے؟', 'easy'),
-              short('Name the main excretory organs in humans.', 'انسان کے اہم اخراجی اعضاء کے نام لکھیں۔'),
+              short(
+                'Name the main excretory organs in humans.',
+                'انسان کے اہم اخراجی اعضاء کے نام لکھیں۔',
+              ),
             ],
             longs: [
               long(
@@ -660,7 +698,11 @@ const curriculum: ClassSeed[] = [
             ],
             shorts: [
               short('Solve: x² − 5x + 6 = 0', 'حل کریں: x² − 5x + 6 = 0'),
-              short('Define discriminant of a quadratic equation.', 'مربعی مساوات کے ممیز کی تعریف لکھیں۔', 'easy'),
+              short(
+                'Define discriminant of a quadratic equation.',
+                'مربعی مساوات کے ممیز کی تعریف لکھیں۔',
+                'easy',
+              ),
             ],
             longs: [
               long(
@@ -731,7 +773,10 @@ const curriculum: ClassSeed[] = [
                 '2, 4, 6, 8, 10 کی اوسط معلوم کریں۔',
                 'easy',
               ),
-              short('Differentiate between mean, median, and mode.', 'اوسط، درمیانیہ اور کثرتیہ میں فرق لکھیں۔'),
+              short(
+                'Differentiate between mean, median, and mode.',
+                'اوسط، درمیانیہ اور کثرتیہ میں فرق لکھیں۔',
+              ),
             ],
             longs: [
               long(
@@ -781,23 +826,23 @@ const curriculum: ClassSeed[] = [
                 ],
                 'easy',
               ),
-              mcq(
-                'RAM is a type of:',
-                'ریم ایک قسم ہے:',
-                [
-                  ['Permanent storage', 'مستقل ذخیرہ'],
-                  ['Volatile memory', 'غیر پائیدار میموری'],
-                  ['Output device', 'آؤٹ پٹ ڈیوائس'],
-                  ['Network protocol', 'نیٹ ورک پروٹوکول'],
-                ],
-              ),
+              mcq('RAM is a type of:', 'ریم ایک قسم ہے:', [
+                ['Permanent storage', 'مستقل ذخیرہ'],
+                ['Volatile memory', 'غیر پائیدار میموری'],
+                ['Output device', 'آؤٹ پٹ ڈیوائس'],
+                ['Network protocol', 'نیٹ ورک پروٹوکول'],
+              ]),
             ],
             shorts: [
               short(
                 'Differentiate between hardware and software.',
                 'ہارڈویئر اور سافٹ ویئر میں فرق لکھیں۔',
               ),
-              short('What is system software?', 'سسٹم سافٹ ویئر کیا ہے؟', 'easy'),
+              short(
+                'What is system software?',
+                'سسٹم سافٹ ویئر کیا ہے؟',
+                'easy',
+              ),
             ],
             longs: [
               long(
@@ -874,8 +919,15 @@ const curriculum: ClassSeed[] = [
               ),
             ],
             shorts: [
-              short('Draw the truth table of OR gate.', 'OR گیٹ کا صداقت جدول بنائیں۔'),
-              short('State De Morgan’s theorems.', 'ڈی مورگن کے نظریات بیان کریں۔', 'hard'),
+              short(
+                'Draw the truth table of OR gate.',
+                'OR گیٹ کا صداقت جدول بنائیں۔',
+              ),
+              short(
+                'State De Morgan’s theorems.',
+                'ڈی مورگن کے نظریات بیان کریں۔',
+                'hard',
+              ),
             ],
             longs: [
               long(
@@ -899,16 +951,18 @@ const curriculum: ClassSeed[] = [
                 ],
                 'easy',
               ),
-              mcq(
-                'Multitasking OS can:',
-                'ملٹی ٹاسکنگ او ایس کر سکتا ہے:',
+              mcq('Multitasking OS can:', 'ملٹی ٹاسکنگ او ایس کر سکتا ہے:', [
+                ['Run only one program', 'صرف ایک پروگرام چلا سکتا ہے'],
                 [
-                  ['Run only one program', 'صرف ایک پروگرام چلا سکتا ہے'],
-                  ['Run multiple programs at once', 'ایک وقت میں کئی پروگرام چلا سکتا ہے'],
-                  ['Store data permanently only', 'صرف مستقل ڈیٹا محفوظ کر سکتا ہے'],
-                  ['Replace the CPU', 'سی پی یو بدل سکتا ہے'],
+                  'Run multiple programs at once',
+                  'ایک وقت میں کئی پروگرام چلا سکتا ہے',
                 ],
-              ),
+                [
+                  'Store data permanently only',
+                  'صرف مستقل ڈیٹا محفوظ کر سکتا ہے',
+                ],
+                ['Replace the CPU', 'سی پی یو بدل سکتا ہے'],
+              ]),
             ],
             shorts: [
               short(
@@ -958,7 +1012,10 @@ const curriculum: ClassSeed[] = [
             ],
             shorts: [
               short('State Coulomb’s law.', 'کولمب کا قانون بیان کریں۔'),
-              short('Define electric field intensity.', 'برقی میدان کی شدت کی تعریف لکھیں۔'),
+              short(
+                'Define electric field intensity.',
+                'برقی میدان کی شدت کی تعریف لکھیں۔',
+              ),
             ],
             longs: [
               long(
@@ -977,7 +1034,10 @@ const curriculum: ClassSeed[] = [
                 'اوہم کا قانون کہتا ہے کہ V، I کے متناسب ہے جب:',
                 [
                   ['Temperature changes freely', 'درجہ حرارت آزادانہ بدلے'],
-                  ['Physical conditions remain constant', 'طبیعی حالات مستقل رہیں'],
+                  [
+                    'Physical conditions remain constant',
+                    'طبیعی حالات مستقل رہیں',
+                  ],
                   ['Resistance is zero', 'مقاومت صفر ہو'],
                   ['Current is alternating only', 'کرنٹ صرف متبادل ہو'],
                 ],
@@ -995,7 +1055,11 @@ const curriculum: ClassSeed[] = [
               ),
             ],
             shorts: [
-              short('Define electric current.', 'برقی رو کی تعریف لکھیں۔', 'easy'),
+              short(
+                'Define electric current.',
+                'برقی رو کی تعریف لکھیں۔',
+                'easy',
+              ),
               short(
                 'Differentiate between series and parallel combination of resistors.',
                 'مزاحمتوں کے سلسلہ وار اور متوازی جوڑ میں فرق لکھیں۔',
@@ -1190,10 +1254,64 @@ async function seedCurriculum() {
   }
 }
 
+function hasFlag(flag: string): boolean {
+  return process.argv.slice(2).includes(flag);
+}
+
+function envTrue(name: string): boolean {
+  return (process.env[name] ?? '').trim().toLowerCase() === 'true';
+}
+
+export function seedGuard(options: {
+  nodeEnv: string | undefined;
+  reset: boolean;
+  force: boolean;
+  existingClasses: number;
+}): { action: 'refuse' | 'skip' | 'seed' | 'reset-and-seed'; reason?: string } {
+  if (options.nodeEnv === 'production' && !options.force) {
+    return {
+      action: 'refuse',
+      reason:
+        'Refusing to seed with NODE_ENV=production. Set SEED_ALLOW_DESTRUCTIVE=true (or pass --force) if you really mean it.',
+    };
+  }
+  if (options.reset) {
+    return { action: 'reset-and-seed' };
+  }
+  if (options.existingClasses > 0) {
+    return {
+      action: 'skip',
+      reason:
+        'Curriculum data already exists; nothing was changed. Run `npm run prisma:seed:reset` (seed with --reset) to WIPE all classes/books/chapters/questions and reseed.',
+    };
+  }
+  return { action: 'seed' };
+}
+
 async function main() {
-  console.log('Clearing curriculum (keeping same 3 classes on re-seed)...');
-  await clearCurriculum();
-  console.log('Seeding curriculum (first chapter of each book ≥5 MCQ / 6 short / 2 long)...');
+  const decision = seedGuard({
+    nodeEnv: process.env.NODE_ENV,
+    reset: hasFlag('--reset') || envTrue('SEED_RESET'),
+    force: hasFlag('--force') || envTrue('SEED_ALLOW_DESTRUCTIVE'),
+    existingClasses: await prisma.schoolClass.count(),
+  });
+
+  if (decision.action === 'refuse') {
+    console.error(decision.reason);
+    process.exitCode = 1;
+    return;
+  }
+  if (decision.action === 'skip') {
+    console.log(decision.reason);
+    return;
+  }
+  if (decision.action === 'reset-and-seed') {
+    console.log('Clearing curriculum (keeping same 3 classes on re-seed)...');
+    await clearCurriculum();
+  }
+  console.log(
+    'Seeding curriculum (first chapter of each book ≥5 MCQ / 6 short / 2 long)...',
+  );
   await seedCurriculum();
 
   const firstChapterStats = await prisma.chapter.findMany({

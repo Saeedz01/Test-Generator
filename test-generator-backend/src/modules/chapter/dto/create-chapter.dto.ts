@@ -1,4 +1,13 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsInt,
+  IsOptional,
+  IsUUID,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class CreateChapterDto {
   @IsUUID()
@@ -7,13 +16,17 @@ export class CreateChapterDto {
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   chapter_name: string;
 
-  @IsNumber()
+  @IsInt()
+  @Min(0)
+  @Max(100_000)
   @IsNotEmpty()
   order: number;
 
   @IsOptional()
   @IsString()
+  @MaxLength(2000)
   description?: string;
 }

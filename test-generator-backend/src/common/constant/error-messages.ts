@@ -17,7 +17,7 @@ export const ERROR_MESSAGES = {
 
   INTERNAL_SERVER_ERROR: 'Something went wrong. Please try again.',
   SERVICE_UNAVAILABLE:
-    'Sign-in is temporarily unavailable. Please try again in a few minutes.',
+    'The service is temporarily unavailable. Please try again in a few minutes.',
   OTP_SEND_FAILED:
     'We could not send the verification code. Please try again in a moment.',
 } as const;

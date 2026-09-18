@@ -31,3 +31,6 @@ export const TYPE_LABEL = {
   short: "Short",
   long: "Long",
 };
+
+/** Rows requested per question type for each admin table page. */
+export const QUESTIONS_PAGE_SIZE = 50;

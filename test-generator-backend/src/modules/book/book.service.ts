@@ -6,11 +6,8 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class BookService {
+  constructor(private readonly prisma: PrismaService) {}
 
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
-  
   // book service methods
   async createBook(createBookDto: CreateBookDto) {
     const schoolClassRecord = await this.prisma.schoolClass.findFirst({
@@ -64,25 +61,25 @@ export class BookService {
   }
 
   async findOne(id: string) {
-  const book = await this.prisma.book.findUnique({
-    where: { id },
-    include: { class: true },
-    // relations: {
-    //   chapters: true,
-    //   questions: true,
-    // },
-  });
+    const book = await this.prisma.book.findUnique({
+      where: { id },
+      include: { class: true },
+      // relations: {
+      //   chapters: true,
+      //   questions: true,
+      // },
+    });
 
-  if (!book) {
-    throw new NotFoundException(ERROR_MESSAGES.BOOK_NOT_FOUND);
+    if (!book) {
+      throw new NotFoundException(ERROR_MESSAGES.BOOK_NOT_FOUND);
+    }
+
+    return {
+      ...book,
+      classId: book.class?.id,
+      class_name: book.class?.name,
+    };
   }
-
-  return {
-    ...book,
-    classId: book.class?.id,
-    class_name: book.class?.name,
-  };
-}
 
   async update(id: string, updateBookDto: UpdateBookDto) {
     const book = await this.prisma.book.findUnique({
@@ -143,13 +140,12 @@ export class BookService {
   }
 
   async remove(id: string): Promise<void> {
-  const result = await this.prisma.book.deleteMany({
-    where: { id },
-  });
+    const result = await this.prisma.book.deleteMany({
+      where: { id },
+    });
 
-  if (result.count === 0) {
-    throw new NotFoundException(ERROR_MESSAGES.BOOK_NOT_FOUND);
+    if (result.count === 0) {
+      throw new NotFoundException(ERROR_MESSAGES.BOOK_NOT_FOUND);
+    }
   }
-}
-
 }

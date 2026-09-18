@@ -22,9 +22,7 @@ export class PrismaService
         },
       },
       log:
-        process.env.NODE_ENV === 'production'
-          ? ['error']
-          : ['error', 'warn'],
+        process.env.NODE_ENV === 'production' ? ['error'] : ['error', 'warn'],
     });
   }
 

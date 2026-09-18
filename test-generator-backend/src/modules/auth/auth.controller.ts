@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Req,
@@ -26,9 +27,17 @@ import { Roles } from 'src/common/decorator/roles.decorator';
 import { RolesGuard } from 'src/common/guards/role.guard';
 import { Role } from '../user/entities/user.entity';
 import {
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
   clearAuthCookies,
   setAuthCookies,
 } from 'src/common/utils/auth-cookies';
+
+function cookieValue(req: Request, name: string): string | undefined {
+  const cookies = req.cookies as Record<string, unknown> | undefined;
+  const value = cookies?.[name];
+  return typeof value === 'string' && value ? value : undefined;
+}
 
 @Controller('auth')
 export class AuthController {
@@ -39,9 +48,13 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() loginDto: LoginDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.login(loginDto);
+    const result = await this.authService.login(
+      loginDto,
+      req.get('user-agent'),
+    );
     if ('requiresOtp' in result) {
       return result;
     }
@@ -87,16 +100,24 @@ export class AuthController {
     return this.authService.resetPassword(req.user.id, dto);
   }
 
+  /**
+   * Public on purpose: must work with an expired access token. Revokes the
+   * session referenced by the refresh (or access) cookie and always clears
+   * the cookies. CSRF: TrustedOriginMiddleware rejects cross-origin mutating
+   * requests that carry auth cookies.
+   */
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Post('logout')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
-  async logout(
-    @Req() req: Request & { user: { id: string } },
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    await this.authService.logout(req.user.id);
-    clearAuthCookies(res);
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    try {
+      await this.authService.logout(
+        cookieValue(req, REFRESH_TOKEN_COOKIE),
+        cookieValue(req, ACCESS_TOKEN_COOKIE),
+      );
+    } finally {
+      clearAuthCookies(res);
+    }
     return { message: 'Logged out successfully' };
   }
 
@@ -108,7 +129,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const tokens = await this.authService.refreshToken(
-      req.cookies?.refresh_token,
+      cookieValue(req, REFRESH_TOKEN_COOKIE),
     );
     setAuthCookies(res, tokens);
     return { ok: true };
@@ -125,24 +146,20 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN)
   createAdmin(@Body() dto: CreateAdminDto) {
-    return this.authService.createAdmin(
-      dto.email,
-      dto.password,
-      dto.name,
-    );
+    return this.authService.createAdmin(dto.email, dto.password, dto.name);
   }
 
   @Patch('admins/:id/suspend')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN)
-  suspendAdmin(@Param('id') id: string) {
+  suspendAdmin(@Param('id', ParseUUIDPipe) id: string) {
     return this.authService.toggleAdminSuspension(id);
   }
 
   @Delete('admins/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN)
-  deleteAdmin(@Param('id') id: string) {
+  deleteAdmin(@Param('id', ParseUUIDPipe) id: string) {
     return this.authService.deleteAdmin(id);
   }
 }

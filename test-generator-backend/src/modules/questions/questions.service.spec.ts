@@ -59,6 +59,7 @@ describe('QuestionsService list filters', () => {
         where: { chapterId: 'ch1' },
         skip: 0,
         take: 10,
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       }),
     );
     expect(result.data).toHaveLength(1);
@@ -68,5 +69,49 @@ describe('QuestionsService list filters', () => {
       difficulty: 'medium',
       chapterId: 'ch1',
     });
+  });
+
+  it('rejects moving a question into a chapter that already has the same text', async () => {
+    longQuestion.findUnique.mockResolvedValue({
+      id: 'q1',
+      question_text: 'What is force?',
+      chapter: { id: 'ch1', chapter_name: 'Motion', book: null },
+    });
+    longQuestion.findFirst.mockResolvedValue({ id: 'q2' });
+
+    await expect(
+      service.updateLongQuestion('q1', {
+        chapterId: '00000000-0000-4000-8000-000000000002',
+      }),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(longQuestion.findFirst).toHaveBeenCalledWith({
+      where: {
+        question_text: 'What is force?',
+        chapterId: '00000000-0000-4000-8000-000000000002',
+      },
+    });
+    expect(longQuestion.update).not.toHaveBeenCalled();
+  });
+
+  it('trims the statement on update', async () => {
+    longQuestion.findUnique.mockResolvedValue({
+      id: 'q1',
+      question_text: 'Old',
+      chapter: { id: 'ch1', chapter_name: 'Motion', book: null },
+    });
+    longQuestion.findFirst.mockResolvedValue(null);
+    prisma.chapter.findUnique.mockResolvedValue({ id: 'ch1' });
+    longQuestion.update.mockResolvedValue({
+      id: 'q1',
+      question_text: 'New',
+      chapter: { id: 'ch1', chapter_name: 'Motion', book: null },
+    });
+
+    await service.updateLongQuestion('q1', { statement: '  New  ' });
+    expect(longQuestion.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ question_text: 'New' }),
+      }),
+    );
   });
 });

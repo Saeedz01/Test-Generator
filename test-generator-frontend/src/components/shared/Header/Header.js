@@ -12,7 +12,11 @@ import { MobileNav } from "@/components/shared/Header/MobileNav";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { buttonVariants, Container, Typography } from "@/components/ui";
 import { ROLES, ROUTES } from "@/constants";
-import { useGetMeQuery, useLogoutMutation } from "@/services/api/auth.api";
+import {
+  authApi,
+  useGetMeQuery,
+  useLogoutMutation,
+} from "@/services/api/auth.api";
 import { clearUser, setUser } from "@/store/authSlice";
 import { cn } from "@/utils";
 
@@ -51,7 +55,9 @@ export default function Header() {
       dispatch(clearUser());
       toast.success("Signed out");
     } catch {
+      // Always sign out locally; drop the cached session so the header updates.
       dispatch(clearUser());
+      dispatch(authApi.util.invalidateTags([{ type: "Auth", id: "ME" }]));
       toast.success("Signed out");
     }
   };

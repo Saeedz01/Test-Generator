@@ -1,3 +1,5 @@
+import { nastaliqFontFaceCss } from "./paperFonts";
+
 /**
  * Returns the printable test paper CSS string.
  * Includes Noto Nastaliq Urdu for Urdu / bilingual papers.
@@ -10,12 +12,13 @@ export function testPaperCss({
   compact,
   copiesPerPage,
   paperLanguage = "en",
+  fontOrigin,
 }) {
   const useUrduFont = paperLanguage === "ur" || paperLanguage === "both";
   const isBoth = paperLanguage === "both";
 
   return `
-    @import url("https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap");
+    ${nastaliqFontFaceCss(fontOrigin)}
 
     :root { color-scheme: light; }
     * { box-sizing: border-box; }
@@ -125,7 +128,7 @@ export function testPaperCss({
     .student-row .line {
       display: inline-block;
       border-bottom: 1px solid #1a1a18;
-      min-width: ${compact ? "3.5rem" : "8rem"};
+      min-width: ${(compact ? 3.5 : 8) * subtextPx}px; /* = 3.5rem / 8rem at root size */
       width: 65%;
       margin-left: 3px;
       vertical-align: baseline;

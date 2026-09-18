@@ -15,6 +15,7 @@ export { default as AdminSidebar } from "./AdminSidebar/AdminSidebar";
 export { ChapterSidebar } from "./ChapterSidebar/ChapterSidebar";
 export { ChapterSwitcher } from "./ChapterSidebar/ChapterSwitcher";
 export { Breadcrumb } from "./Breadcrumb";
+export { StatusPage } from "./StatusPage";
 export {
   CardGridSkeleton,
   QuestionListSkeleton,

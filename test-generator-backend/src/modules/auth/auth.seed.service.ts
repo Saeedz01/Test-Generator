@@ -3,7 +3,14 @@ import { UserService } from '../user/user.service';
 import { Role } from '../user/entities/user.entity';
 
 const MIN_SEED_PASSWORD_LENGTH = 12;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+$/;
 
+/**
+ * Ensures the role rows exist and, in development only (AUTH_SEED=true),
+ * creates missing seed accounts. Seeding is create-only: it never deletes
+ * other super admins, never resets an existing password and never revokes
+ * existing sessions. Missing/invalid seed config only logs a warning.
+ */
 @Injectable()
 export class AuthSeedService implements OnModuleInit {
   private readonly logger = new Logger(AuthSeedService.name);
@@ -28,54 +35,85 @@ export class AuthSeedService implements OnModuleInit {
       return;
     }
 
-    const superAdminEmail =
-      process.env.AUTH_SEED_SUPER_ADMIN_EMAIL?.trim() ||
-      'saeedzafar4595@gmail.com';
-    const superAdminPassword =
-      process.env.AUTH_SEED_SUPER_ADMIN_PASSWORD?.trim() || '';
+    await this.seedSuperAdmin();
+    await this.seedAdmin();
+  }
 
-    if (superAdminPassword.length < 4) {
+  private readSeedCredentials(
+    label: string,
+    emailKey: string,
+    passwordKey: string,
+  ): { email: string; password: string } | null {
+    const email = process.env[emailKey]?.trim() ?? '';
+    const password = process.env[passwordKey]?.trim() ?? '';
+
+    if (!EMAIL_RE.test(email)) {
       this.logger.warn(
-        'Super admin seed skipped: set AUTH_SEED_SUPER_ADMIN_PASSWORD in .env',
+        `${label} seed skipped: set ${emailKey} to a valid email`,
       );
-    } else {
-      try {
-        await this.userService.upsertSuperAdmin(
-          superAdminEmail,
-          superAdminPassword,
-          'Super Admin',
-        );
-        this.logger.log(`Seeded ${Role.SUPER_ADMIN}: ${superAdminEmail}`);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        this.logger.error(`Failed to seed super admin: ${message}`);
-      }
+      return null;
     }
-
-    const adminPassword = process.env.AUTH_SEED_PASSWORD?.trim() ?? '';
-    if (adminPassword.length < MIN_SEED_PASSWORD_LENGTH) {
+    if (password.length < MIN_SEED_PASSWORD_LENGTH) {
       this.logger.warn(
-        `Admin seed skipped: AUTH_SEED_PASSWORD must be at least ${MIN_SEED_PASSWORD_LENGTH} characters`,
+        `${label} seed skipped: ${passwordKey} must be at least ${MIN_SEED_PASSWORD_LENGTH} characters`,
       );
+      return null;
+    }
+    return { email, password };
+  }
+
+  private async seedSuperAdmin() {
+    const credentials = this.readSeedCredentials(
+      'Super admin',
+      'AUTH_SEED_SUPER_ADMIN_EMAIL',
+      'AUTH_SEED_SUPER_ADMIN_PASSWORD',
+    );
+    if (!credentials) {
       return;
     }
 
-    const adminEmail = process.env.AUTH_SEED_ADMIN_EMAIL || 'admin@localhost';
+    try {
+      const { created } = await this.userService.createSuperAdminIfMissing(
+        credentials.email,
+        credentials.password,
+        'Super Admin',
+      );
+      this.logger.log(
+        created
+          ? `Seeded ${Role.SUPER_ADMIN}: ${credentials.email}`
+          : `Seed skipped (exists, left unchanged): ${credentials.email}`,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to seed super admin: ${message}`);
+    }
+  }
+
+  private async seedAdmin() {
+    const credentials = this.readSeedCredentials(
+      'Admin',
+      'AUTH_SEED_ADMIN_EMAIL',
+      'AUTH_SEED_PASSWORD',
+    );
+    if (!credentials) {
+      return;
+    }
+
     try {
       await this.userService.createWithRole(
-        adminEmail,
-        adminPassword,
+        credentials.email,
+        credentials.password,
         Role.ADMIN,
         'Admin',
       );
-      this.logger.log(`Seeded ${Role.ADMIN}: ${adminEmail}`);
+      this.logger.log(`Seeded ${Role.ADMIN}: ${credentials.email}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (message.includes('already exists')) {
-        this.logger.log(`Seed skipped (exists): ${adminEmail}`);
+        this.logger.log(`Seed skipped (exists): ${credentials.email}`);
         return;
       }
-      this.logger.error(`Failed to seed ${adminEmail}: ${message}`);
+      this.logger.error(`Failed to seed ${credentials.email}: ${message}`);
     }
   }
 }

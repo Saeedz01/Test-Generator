@@ -8,7 +8,7 @@ import { BrandLogo } from "@/components/shared/BrandLogo";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { buttonVariants, Container } from "@/components/ui";
 import { ROUTES } from "@/constants";
-import { useLogoutMutation } from "@/services/api/auth.api";
+import { authApi, useLogoutMutation } from "@/services/api/auth.api";
 import { useDispatch, useSelector } from "react-redux";
 import { clearUser, selectAuthUser } from "@/store/authSlice";
 import { cn } from "@/utils";
@@ -26,7 +26,9 @@ export default function DashboardHeader({ onMenuClick, menuOpen = false }) {
       toast.success("Signed out");
       router.push(ROUTES.LOGIN);
     } catch (error) {
+      // Always sign out locally even if the request failed.
       dispatch(clearUser());
+      dispatch(authApi.util.invalidateTags([{ type: "Auth", id: "ME" }]));
       toast.error(error?.data?.message || error?.error || "Signed out locally");
       router.push(ROUTES.LOGIN);
     }

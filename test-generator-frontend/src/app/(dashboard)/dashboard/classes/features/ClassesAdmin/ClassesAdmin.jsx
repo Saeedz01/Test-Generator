@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { Button, EmptyState } from "@/components/ui";
 import { deleteWithToast } from "../../../features/deleteWithToast";
@@ -15,6 +16,7 @@ import {
   useUnarchiveClassMutation,
   useUpdateClassMutation,
 } from "@/services/api/classes.api";
+import { selectIsSuperAdmin } from "@/store/authSlice";
 
 const EMPTY = {
   name: "",
@@ -30,6 +32,9 @@ export function ClassesAdmin() {
   const [archiveClassMutation] = useArchiveClassMutation();
   const [unarchiveClassMutation] = useUnarchiveClassMutation();
   const [showArchived, setShowArchived] = useState(false);
+  // Deleting a class cascades to its books/chapters/questions; the API only
+  // allows super admins (others get 403), so only they see the action.
+  const canDelete = useSelector(selectIsSuperAdmin);
 
   const {
     data: classes = [],
@@ -56,12 +61,14 @@ export function ClassesAdmin() {
           });
           setOpen(true);
         },
-        onDelete: () =>
-          deleteWithToast({
-            entityLabel: "Class",
-            entityName: item.name,
-            onDelete: () => deleteClassMutation(item.id).unwrap(),
-          }),
+        onDelete: canDelete
+          ? () =>
+              deleteWithToast({
+                entityLabel: "Class",
+                entityName: item.name,
+                onDelete: () => deleteClassMutation(item.id).unwrap(),
+              })
+          : undefined,
         onArchive: () => {
           const run = item.isArchived
             ? () => unarchiveClassMutation(item.id).unwrap()
@@ -83,6 +90,7 @@ export function ClassesAdmin() {
       })),
     [
       classes,
+      canDelete,
       deleteClassMutation,
       archiveClassMutation,
       unarchiveClassMutation,

@@ -39,6 +39,7 @@ model Book {
   class       SchoolClass? @relation(fields: [classId], references: [id], onDelete: Cascade)
   chapters    Chapter[]
 
+  @@index([classId])
   @@map("books")
 }
 
@@ -55,75 +56,102 @@ model Chapter {
   shortQuestions ShortQuestion[]
   mcqQuestions   McqQuestion[]
 
+  @@index([bookId])
   @@map("chapters")
 }
 
 model LongQuestion {
-  id             String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  question_text  String              @db.Text
-  questionTextUr String?             @db.Text
-  marks          Int                 @default(5)
-  difficulty     QuestionDifficulty  @default(medium)
-  createdAt      DateTime            @default(now()) @db.Timestamp(6)
-  updatedAt      DateTime            @default(now()) @updatedAt @db.Timestamp(6)
-  chapterId      String              @db.Uuid
-  chapter        Chapter             @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  id             String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  question_text  String             @db.Text
+  questionTextUr String?            @db.Text
+  marks          Int                @default(5)
+  difficulty     QuestionDifficulty @default(medium)
+  createdAt      DateTime           @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime           @default(now()) @updatedAt @db.Timestamp(6)
+  chapterId      String             @db.Uuid
+  chapter        Chapter            @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   @@unique([chapterId, question_text])
   @@map("long_questions")
 }
 
 model ShortQuestion {
-  id             String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  question_text  String              @db.Text
-  questionTextUr String?             @db.Text
-  marks          Int                 @default(2)
-  difficulty     QuestionDifficulty  @default(medium)
-  createdAt      DateTime            @default(now()) @db.Timestamp(6)
-  updatedAt      DateTime            @default(now()) @updatedAt @db.Timestamp(6)
-  chapterId      String              @db.Uuid
-  chapter        Chapter             @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  id             String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  question_text  String             @db.Text
+  questionTextUr String?            @db.Text
+  marks          Int                @default(2)
+  difficulty     QuestionDifficulty @default(medium)
+  createdAt      DateTime           @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime           @default(now()) @updatedAt @db.Timestamp(6)
+  chapterId      String             @db.Uuid
+  chapter        Chapter            @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   @@unique([chapterId, question_text])
   @@map("short_questions")
 }
 
 model McqQuestion {
-  id             String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  question_text  String              @db.Text
-  questionTextUr String?             @db.Text
+  id             String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  question_text  String             @db.Text
+  questionTextUr String?            @db.Text
   options        Json
-  marks          Int                 @default(1)
-  difficulty     QuestionDifficulty  @default(medium)
-  createdAt      DateTime            @default(now()) @db.Timestamp(6)
-  updatedAt      DateTime            @default(now()) @updatedAt @db.Timestamp(6)
-  chapterId      String              @db.Uuid
-  chapter        Chapter             @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  marks          Int                @default(1)
+  difficulty     QuestionDifficulty @default(medium)
+  createdAt      DateTime           @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime           @default(now()) @updatedAt @db.Timestamp(6)
+  chapterId      String             @db.Uuid
+  chapter        Chapter            @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   @@unique([chapterId, question_text])
   @@map("mcq_questions")
 }
 
 model User {
-  id                 String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name               String    @db.VarChar(255)
-  email              String    @unique @db.VarChar(255)
-  password           String    @db.VarChar(255)
-  otp                String?   @db.VarChar(255)
-  otpExpiresAt       DateTime? @db.Timestamptz(6)
-  resetOtp           String?   @db.VarChar(255)
-  resetOtpExpiresAt  DateTime? @db.Timestamptz(6)
-  refreshTokenHash   String?   @db.VarChar(64)
-  roleId             String?   @db.Uuid
-  isSuspended        Boolean   @default(false)
-  role               UserRole? @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  id                String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name              String        @db.VarChar(255)
+  email             String        @unique @db.VarChar(255)
+  password          String        @db.VarChar(255)
+  otp               String?       @db.VarChar(255)
+  otpExpiresAt      DateTime?     @db.Timestamptz(6)
+  /// Failed login-OTP attempts since the last OTP was issued / lockout ended.
+  otpFailedAttempts Int           @default(0)
+  otpLockedUntil    DateTime?     @db.Timestamptz(6)
+  resetOtp          String?       @db.VarChar(255)
+  resetOtpExpiresAt DateTime?     @db.Timestamptz(6)
+  /// Failed password-reset code attempts for the current reset code.
+  resetOtpAttempts  Int           @default(0)
+  roleId            String?       @db.Uuid
+  isSuspended       Boolean       @default(false)
+  role              UserRole?     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  sessions          AuthSession[]
 
   @@map("user")
 }
 
+/// One row per signed-in device/browser. The refresh token rotates inside the
+/// session; presenting an older (already rotated) token outside the grace
+/// window is treated as token theft and revokes the whole session.
+model AuthSession {
+  id                String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId            String    @db.Uuid
+  tokenHash         String    @db.VarChar(64)
+  previousTokenHash String?   @db.VarChar(64)
+  previousRotatedAt DateTime? @db.Timestamptz(6)
+  expiresAt         DateTime  @db.Timestamptz(6)
+  revokedAt         DateTime? @db.Timestamptz(6)
+  revokedReason     String?   @db.VarChar(50)
+  userAgent         String?   @db.VarChar(255)
+  createdAt         DateTime  @default(now()) @db.Timestamptz(6)
+  lastUsedAt        DateTime  @default(now()) @db.Timestamptz(6)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("auth_sessions")
+}
+
 model UserRole {
   id        String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  role_name String @db.VarChar(255)
+  role_name String @unique @db.VarChar(255)
   users     User[]
 
   @@map("user_role")

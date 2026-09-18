@@ -7,7 +7,8 @@ import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 @Global()
 @Module({
-  imports: [ MailerModule.forRootAsync({
+  imports: [
+    MailerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService): MailerOptions => {
@@ -33,7 +34,8 @@ import type SMTPTransport from 'nodemailer/lib/smtp-transport';
         const host = configService.get<string>('mail.host');
         const user = configService.get<string>('mail.user');
         const password = configService.get<string>('mail.password');
-        const isProduction = configService.get<string>('app.nodeEnv') === 'production';
+        const isProduction =
+          configService.get<string>('app.nodeEnv') === 'production';
 
         if (isProduction && (!host || !user || !password)) {
           throw new Error(

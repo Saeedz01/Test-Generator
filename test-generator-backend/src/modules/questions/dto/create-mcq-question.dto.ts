@@ -5,6 +5,7 @@ import {
   ArrayMaxSize,
   IsString,
   IsNotEmpty,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 import { CreateQuestionBaseDto } from './create-question-base.dto';
@@ -12,10 +13,12 @@ import { CreateQuestionBaseDto } from './create-question-base.dto';
 export class McqOptionDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(500)
   en: string;
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(500)
   ur: string;
 }
 

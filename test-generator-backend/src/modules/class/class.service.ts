@@ -21,13 +21,21 @@ export class ClassService {
       throw new ConflictException('Class name already exists');
     }
 
+    const code =
+      dto.code?.trim() ||
+      dto.name.trim().toLowerCase().replace(/\s+/g, '-').slice(0, 50);
+    const existingCode = await this.prisma.schoolClass.findFirst({
+      where: { code },
+    });
+    if (existingCode) {
+      throw new ConflictException('Class code already exists');
+    }
+
     return (await this.prisma.schoolClass.create({
       data: {
         name: dto.name,
         description: dto.description ?? null,
-        code:
-          dto.code?.trim() ||
-          dto.name.trim().toLowerCase().replace(/\s+/g, '-').slice(0, 50),
+        code,
         sortOrder: 0,
       },
     })) as unknown as schoolClass;
@@ -79,6 +87,18 @@ export class ClassService {
       });
       if (conflict) {
         throw new ConflictException('Class name already exists');
+      }
+    }
+
+    if (
+      updateClassDto.code !== undefined &&
+      updateClassDto.code !== existing.code
+    ) {
+      const codeConflict = await this.prisma.schoolClass.findFirst({
+        where: { code: updateClassDto.code, NOT: { id } },
+      });
+      if (codeConflict) {
+        throw new ConflictException('Class code already exists');
       }
     }
 

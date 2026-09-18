@@ -4,14 +4,11 @@
  * =============================================================================
  * Client selection state for the test-builder flow (class → book → chapter → questions).
  * Hydrated from localStorage on the client — never persisted to the database.
+ * Reducers stay pure: storage reads/writes live in providers.jsx and
+ * selectionPersistence.js.
  */
 
-import { createSlice, current } from "@reduxjs/toolkit";
-import {
-  clearSelectionState,
-  loadSelectionState,
-  saveSelectionState,
-} from "./selectionStorage";
+import { createSlice } from "@reduxjs/toolkit";
 
 const emptyState = {
   selectedClass: null,
@@ -21,26 +18,18 @@ const emptyState = {
   selectedQuestions: {},
 };
 
-function getInitialState() {
-  if (typeof window === "undefined") {
-    return { ...emptyState, selectedQuestions: {} };
-  }
-  return loadSelectionState() ?? { ...emptyState, selectedQuestions: {} };
-}
-
-const initialState = getInitialState();
-
-function persist(state) {
-  // `current()` unwraps the Immer draft so localStorage gets a plain snapshot
-  saveSelectionState(current(state));
-}
+// Always start empty so server and first client render match; the client
+// restores localStorage via `hydrateSelection()` after mount (see providers.jsx).
+// Persistence happens in `selectionPersistence.js` (store listener), not here.
+const initialState = { ...emptyState, selectedQuestions: {} };
 
 const selectionSlice = createSlice({
   name: "selection",
   initialState,
   reducers: {
-    hydrateSelection(state) {
-      const stored = loadSelectionState();
+    /** Payload: the snapshot from `loadSelectionState()` (or null). */
+    hydrateSelection(state, action) {
+      const stored = action.payload;
       if (!stored) return;
       state.selectedClass = stored.selectedClass;
       state.selectedBook = stored.selectedBook;
@@ -51,29 +40,24 @@ const selectionSlice = createSlice({
       const next = action.payload;
       if (state.selectedClass?.id === next?.id) {
         state.selectedClass = next;
-        persist(state);
         return;
       }
       state.selectedClass = next;
       state.selectedBook = null;
       state.selectedChapter = null;
       state.selectedQuestions = {};
-      persist(state);
     },
     selectBook(state, action) {
       const next = action.payload;
       if (state.selectedBook?.id === next?.id) {
         state.selectedBook = next;
-        persist(state);
         return;
       }
       state.selectedBook = next;
       state.selectedChapter = null;
-      persist(state);
     },
     selectChapter(state, action) {
       state.selectedChapter = action.payload;
-      persist(state);
     },
     toggleQuestion(state, action) {
       const question = action.payload;
@@ -83,7 +67,6 @@ const selectionSlice = createSlice({
       } else {
         state.selectedQuestions[question.id] = question;
       }
-      persist(state);
     },
     selectQuestions(state, action) {
       const questions = action.payload ?? [];
@@ -92,27 +75,17 @@ const selectionSlice = createSlice({
           state.selectedQuestions[question.id] = question;
         }
       });
-      persist(state);
     },
     deselectQuestions(state, action) {
       const ids = action.payload ?? [];
       ids.forEach((id) => {
         delete state.selectedQuestions[id];
       });
-      persist(state);
     },
     clearTest(state) {
       state.selectedQuestions = {};
-      const snapshot = current(state);
-      saveSelectionState({
-        selectedClass: snapshot.selectedClass,
-        selectedBook: snapshot.selectedBook,
-        selectedChapter: snapshot.selectedChapter,
-        selectedQuestions: {},
-      });
     },
     clearSelection() {
-      clearSelectionState();
       return { ...emptyState, selectedQuestions: {} };
     },
   },

@@ -2,73 +2,68 @@
 
 import { useMemo, useState } from "react";
 import { deleteWithToast } from "../../../features/deleteWithToast";
-import toast from "react-hot-toast";
 import { useGetBooksQuery } from "@/services/api/books.api";
 import { useGetChaptersQuery } from "@/services/api/chapters.api";
 import { useGetClassesQuery } from "@/services/api/classes.api";
 import {
-  useCreateLongQuestionMutation,
-  useCreateMcqQuestionMutation,
-  useCreateShortQuestionMutation,
   useDeleteLongQuestionMutation,
   useDeleteMcqQuestionMutation,
   useDeleteShortQuestionMutation,
-  useGetQuestionsQuery,
-  useUpdateLongQuestionMutation,
-  useUpdateMcqQuestionMutation,
-  useUpdateShortQuestionMutation,
+  useGetQuestionsPageQuery,
 } from "@/services/api/questions.api";
 import { AdminCrudPage } from "../../../features/AdminCrudPage";
 import { AdminModal } from "../../../features/AdminModal";
-import { EMPTY, EMPTY_FILTERS } from "./questionsAdminData";
+import { EMPTY, EMPTY_FILTERS, QUESTIONS_PAGE_SIZE } from "./questionsAdminData";
 import { buildQuestionColumns } from "./QuestionsAdminColumns";
 import { QuestionsFilters } from "./QuestionsFilters";
 import { QuestionsFormFields } from "./QuestionsFormFields";
-import {
-  buildCreatePayload,
-  buildMcqOptions,
-  buildQuestionFormFromItem,
-  normalizeChapter,
-} from "./questionsAdminHelpers";
+import { QuestionsPagination } from "./QuestionsPagination";
+import { buildQuestionFormFromItem, normalizeChapter } from "./questionsAdminHelpers";
 import { QuestionsAdminError, QuestionsAdminLoading } from "./QuestionsAdminStates";
+import { useSaveQuestion } from "./useSaveQuestion";
+
+const NO_QUESTIONS = [];
 
 export function QuestionsAdmin() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [page, setPage] = useState(1);
+
+  // Any filter change starts again from the first page.
+  const updateFilters = (update) => {
+    setFilters(update);
+    setPage(1);
+  };
 
   const questionScope = useMemo(() => {
-    if (filters.chapterId) return { chapterId: filters.chapterId, limit: 200 };
-    if (filters.bookId) return { bookId: filters.bookId, limit: 200 };
-    if (filters.classId) return { classId: filters.classId, limit: 200 };
-    return { limit: 200 };
-  }, [filters.chapterId, filters.bookId, filters.classId]);
+    const paging = {
+      type: filters.type || undefined,
+      page,
+      limit: QUESTIONS_PAGE_SIZE,
+    };
+    if (filters.chapterId) return { chapterId: filters.chapterId, ...paging };
+    if (filters.bookId) return { bookId: filters.bookId, ...paging };
+    if (filters.classId) return { classId: filters.classId, ...paging };
+    return paging;
+  }, [filters.chapterId, filters.bookId, filters.classId, filters.type, page]);
 
   const {
-    data: questions = [],
+    data: questionPage,
     isLoading: questionsLoading,
+    isFetching: questionsFetching,
     isError: questionsError,
     error: questionsQueryError,
     refetch: refetchQuestions,
-  } = useGetQuestionsQuery(questionScope);
+  } = useGetQuestionsPageQuery(questionScope);
+  const questions = questionPage?.items ?? NO_QUESTIONS;
+  const questionsMeta = questionPage?.meta;
 
   const { data: classes = [], isLoading: classesLoading } = useGetClassesQuery();
   const { data: books = [], isLoading: booksLoading } = useGetBooksQuery();
   const { data: rawChapters = [], isLoading: chaptersLoading } = useGetChaptersQuery();
 
-  const [createLongQuestion, { isLoading: creatingLong }] =
-    useCreateLongQuestionMutation();
-  const [createShortQuestion, { isLoading: creatingShort }] =
-    useCreateShortQuestionMutation();
-  const [createMcqQuestion, { isLoading: creatingMcq }] =
-    useCreateMcqQuestionMutation();
   const [deleteLongQuestion] = useDeleteLongQuestionMutation();
   const [deleteShortQuestion] = useDeleteShortQuestionMutation();
   const [deleteMcqQuestion] = useDeleteMcqQuestionMutation();
-  const [updateLongQuestion, { isLoading: updatingLong }] =
-    useUpdateLongQuestionMutation();
-  const [updateShortQuestion, { isLoading: updatingShort }] =
-    useUpdateShortQuestionMutation();
-  const [updateMcqQuestion, { isLoading: updatingMcq }] =
-    useUpdateMcqQuestionMutation();
 
   const chapters = useMemo(
     () => rawChapters.map(normalizeChapter),
@@ -79,13 +74,6 @@ export function QuestionsAdmin() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
 
-  const isSaving =
-    creatingLong ||
-    creatingShort ||
-    creatingMcq ||
-    updatingLong ||
-    updatingShort ||
-    updatingMcq;
   const isLoading = questionsLoading || classesLoading || booksLoading || chaptersLoading;
 
   const classNameById = useMemo(
@@ -182,88 +170,7 @@ export function QuestionsAdmin() {
     setForm(EMPTY);
   };
 
-  const submit = async (event) => {
-    event.preventDefault();
-
-    if (
-      !form.statement.trim() ||
-      !form.statementUr?.trim() ||
-      !form.classId ||
-      !form.bookId ||
-      !form.chapterId
-    ) {
-      toast.error("English and Urdu statements, class, book, and chapter are required");
-      return;
-    }
-
-    if (editing) {
-      const payload = buildCreatePayload(form);
-
-      try {
-        if (editing.type === "mcq") {
-          const options = buildMcqOptions(form.options);
-          if (
-            options.length !== 4 ||
-            options.some((option) => !option.en || !option.ur)
-          ) {
-            toast.error("All four MCQ options require English and Urdu text");
-            return;
-          }
-
-          await updateMcqQuestion({
-            id: editing.id,
-            ...payload,
-            options,
-          }).unwrap();
-        } else if (editing.type === "short") {
-          await updateShortQuestion({
-            id: editing.id,
-            ...payload,
-          }).unwrap();
-        } else {
-          await updateLongQuestion({
-            id: editing.id,
-            ...payload,
-          }).unwrap();
-        }
-
-        toast.success("Question updated");
-        close();
-      } catch (err) {
-        toast.error(err?.data?.message || err?.error || "Failed to update question");
-      }
-      return;
-    }
-
-    const payload = buildCreatePayload(form);
-
-    try {
-      if (form.type === "mcq") {
-        const options = buildMcqOptions(form.options);
-        if (
-          options.length !== 4 ||
-          options.some((option) => !option.en || !option.ur)
-        ) {
-          toast.error("All four MCQ options require English and Urdu text");
-          return;
-        }
-
-        await createMcqQuestion({
-          ...payload,
-          options,
-        }).unwrap();
-      } else if (form.type === "short") {
-        await createShortQuestion(payload).unwrap();
-      } else {
-        await createLongQuestion(payload).unwrap();
-      }
-
-      toast.success("Question added");
-      close();
-    } catch (err) {
-      toast.error(err?.data?.message || err?.error || "Failed to add question");
-    }
-  };
+  const { submit, isSaving } = useSaveQuestion({ form, editing, onSaved: close });
 
   const columns = useMemo(
     () =>
@@ -316,17 +223,25 @@ export function QuestionsAdmin() {
         toolbar={
           <QuestionsFilters
             filters={filters}
-            setFilters={setFilters}
+            setFilters={updateFilters}
             classes={classes}
             filterBooks={filterBooks}
             filterChapters={filterChapters}
             shownCount={rows.length}
-            totalCount={questions.length}
+            totalCount={questionsMeta?.total ?? questions.length}
             hasActiveFilters={hasActiveFilters}
           />
         }
         columns={columns}
         rows={rows}
+        footer={
+          <QuestionsPagination
+            page={page}
+            totalPages={questionsMeta?.totalPages ?? 1}
+            isFetching={questionsFetching}
+            onPageChange={setPage}
+          />
+        }
       />
 
       <AdminModal

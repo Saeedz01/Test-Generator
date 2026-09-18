@@ -18,10 +18,11 @@ import {
  * @param {"en"|"ur"|"both"} [meta.paperLanguage]
  * @param {boolean} [meta.showPaperHeader]
  * @param {object[]} questions
- * @param {{ autoPrint?: boolean }} [options]
+ * @param {{ autoPrint?: boolean, fontOrigin?: string }} [options]
+ *   `fontOrigin` prefixes the self-hosted font URLs (defaults to the page origin).
  */
 export function buildTestPaperHtml(meta, questions, options = {}) {
-  const { autoPrint = false } = options;
+  const { autoPrint = false, fontOrigin } = options;
   const paperLanguage = ["en", "ur", "both"].includes(meta.paperLanguage)
     ? meta.paperLanguage
     : "en";
@@ -101,6 +102,7 @@ export function buildTestPaperHtml(meta, questions, options = {}) {
     compact,
     copiesPerPage,
     paperLanguage,
+    fontOrigin,
   });
 
   const htmlLang = paperLanguage === "ur" ? "ur" : "en";

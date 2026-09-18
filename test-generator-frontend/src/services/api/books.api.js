@@ -48,6 +48,7 @@ export const booksApi = SplitApiSettings.injectEndpoints({
       }),
       invalidatesTags: [
         { type: "Book", id: "LIST" },
+        { type: "SchoolClass", id: "LIST" },
         { type: "DashboardStats", id: "SUMMARY" },
       ],
     }),
@@ -58,9 +59,12 @@ export const booksApi = SplitApiSettings.injectEndpoints({
         method: "PATCH",
         body: payload,
       }),
+      // Chapters and questions embed the book name.
       invalidatesTags: (_result, _error, { id }) => [
         { type: "Book", id },
         { type: "Book", id: "LIST" },
+        { type: "Chapter", id: "LIST" },
+        { type: "Question", id: "LIST" },
         { type: "DashboardStats", id: "SUMMARY" },
       ],
     }),
@@ -73,7 +77,9 @@ export const booksApi = SplitApiSettings.injectEndpoints({
       invalidatesTags: (_result, _error, id) => [
         { type: "Book", id },
         { type: "Book", id: "LIST" },
+        { type: "SchoolClass", id: "LIST" },
         { type: "Chapter", id: "LIST" },
+        { type: "Question", id: "LIST" },
         { type: "DashboardStats", id: "SUMMARY" },
       ],
     }),

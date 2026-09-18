@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -21,22 +22,26 @@ export interface AdminUserResponse {
 
 @Injectable()
 export class UserService {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async ensureRole(roleName: string): Promise<UserRole> {
-    let role = await this.prisma.userRole.findFirst({
+    // role_name is unique, so concurrent boots cannot create duplicate roles.
+    const role = await this.prisma.userRole.upsert({
       where: { role_name: roleName },
+      update: {},
+      create: { role_name: roleName },
     });
 
-    if (!role) {
-      role = await this.prisma.userRole.create({
-        data: { role_name: roleName },
-      });
-    }
-
     return role as unknown as UserRole;
+  }
+
+  /** Revokes every refresh session of the user (all devices). */
+  async revokeAllSessions(userId: string, reason: string): Promise<number> {
+    const result = await this.prisma.authSession.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date(), revokedReason: reason.slice(0, 50) },
+    });
+    return result.count;
   }
 
   async createWithRole(
@@ -68,54 +73,30 @@ export class UserService {
   }
 
   /**
-   * Replaces any other super_admin accounts and upserts this one.
-   * Password is bcrypt-hashed before storage.
+   * Development seed helper: creates the super admin only if no user with
+   * that email exists. Never deletes other super admins and never resets an
+   * existing account's password or sessions.
    */
-  async upsertSuperAdmin(
+  async createSuperAdminIfMissing(
     email: string,
     password: string,
     name?: string,
-  ): Promise<User> {
-    const userRole = await this.ensureRole(Role.SUPER_ADMIN);
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    await this.prisma.user.deleteMany({
-      where: {
-        role: { role_name: Role.SUPER_ADMIN },
-        NOT: { email },
-      },
-    });
-
+  ): Promise<{ created: boolean; user: User }> {
     const existing = await this.prisma.user.findUnique({
       where: { email },
+      include: { role: true },
     });
-
     if (existing) {
-      return (await this.prisma.user.update({
-        where: { id: existing.id },
-        data: {
-          name: name?.trim() || email.split('@')[0],
-          password: hashedPassword,
-          roleId: userRole.id,
-          isSuspended: false,
-          otp: null,
-          otpExpiresAt: null,
-          refreshTokenHash: null,
-        },
-        include: { role: true },
-      })) as unknown as User;
+      return { created: false, user: existing as unknown as User };
     }
 
-    return (await this.prisma.user.create({
-      data: {
-        name: name?.trim() || email.split('@')[0],
-        email,
-        password: hashedPassword,
-        roleId: userRole.id,
-        isSuspended: false,
-      },
-      include: { role: true },
-    })) as unknown as User;
+    const user = await this.createWithRole(
+      email,
+      password,
+      Role.SUPER_ADMIN,
+      name,
+    );
+    return { created: true, user };
   }
 
   async create(createUserDto: CreateUserDto) {
@@ -153,6 +134,9 @@ export class UserService {
       data: { isSuspended: !user.isSuspended },
       include: { role: true },
     });
+    if (savedUser.isSuspended) {
+      await this.revokeAllSessions(savedUser.id, 'suspended');
+    }
     return this.mapAdminResponse(savedUser as unknown as User);
   }
 
@@ -164,7 +148,28 @@ export class UserService {
     return { message: 'Admin deleted successfully' };
   }
 
-  async remove(id: string) {
+  async remove(id: string, currentUserId?: string) {
+    if (currentUserId && id === currentUserId) {
+      throw new BadRequestException('You cannot delete your own account');
+    }
+
+    const target = await this.prisma.user.findUnique({
+      where: { id },
+      include: { role: true },
+    });
+    if (!target) {
+      throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
+    }
+
+    if (target.role?.role_name === Role.SUPER_ADMIN) {
+      const superAdmins = await this.prisma.user.count({
+        where: { role: { role_name: Role.SUPER_ADMIN } },
+      });
+      if (superAdmins <= 1) {
+        throw new BadRequestException('Cannot delete the last super admin');
+      }
+    }
+
     const user = await this.prisma.user.deleteMany({
       where: { id },
     });
@@ -220,6 +225,17 @@ export class UserService {
     const existing = await this.prisma.user.findUnique({ where: { id } });
     if (!existing) {
       throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
+    }
+    if (
+      updateUserDto.email !== undefined &&
+      updateUserDto.email !== existing.email
+    ) {
+      const conflict = await this.prisma.user.findUnique({
+        where: { email: updateUserDto.email },
+      });
+      if (conflict) {
+        throw new ConflictException(ERROR_MESSAGES.USER_ALREADY_EXISTS);
+      }
     }
     const saved = await this.prisma.user.update({
       where: { id },

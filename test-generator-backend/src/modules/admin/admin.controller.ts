@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CreateSchoolClassDto } from './dto/create-class.dto';
 import { BookService } from '../book/book.service';
@@ -40,12 +50,15 @@ export class AdminController {
   }
 
   @Patch('updateBook/:id')
-  updateBook(@Param('id') id: string, @Body() dto: UpdateBookDto) {
+  updateBook(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateBookDto,
+  ) {
     return this.bookService.update(id, dto);
   }
 
   @Delete('deleteBook/:id')
-  deleteBook(@Param('id') id: string) {
+  deleteBook(@Param('id', ParseUUIDPipe) id: string) {
     return this.bookService.remove(id);
   }
 
@@ -55,12 +68,15 @@ export class AdminController {
   }
 
   @Patch('updateChapter/:id')
-  updateChapter(@Param('id') id: string, @Body() dto: UpdateChapterDto) {
+  updateChapter(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateChapterDto,
+  ) {
     return this.chapterService.update(id, dto);
   }
 
   @Delete('deleteChapter/:id')
-  deleteChapter(@Param('id') id: string) {
+  deleteChapter(@Param('id', ParseUUIDPipe) id: string) {
     return this.chapterService.remove(id);
   }
 
@@ -80,32 +96,41 @@ export class AdminController {
   }
 
   @Patch('updateLongQuestion/:id')
-  updateLongQuestion(@Param('id') id: string, @Body() dto: UpdateQuestionDto) {
+  updateLongQuestion(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateQuestionDto,
+  ) {
     return this.questionsService.updateLongQuestion(id, dto);
   }
 
   @Patch('updateShortQuestion/:id')
-  updateShortQuestion(@Param('id') id: string, @Body() dto: UpdateQuestionDto) {
+  updateShortQuestion(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateQuestionDto,
+  ) {
     return this.questionsService.updateShortQuestion(id, dto);
   }
 
   @Patch('updateMcqQuestion/:id')
-  updateMcqQuestion(@Param('id') id: string, @Body() dto: UpdateMcqQuestionDto) {
+  updateMcqQuestion(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateMcqQuestionDto,
+  ) {
     return this.questionsService.updateMcqQuestion(id, dto);
   }
 
   @Delete('deleteLongQuestion/:id')
-  deleteLongQuestion(@Param('id') id: string) {
+  deleteLongQuestion(@Param('id', ParseUUIDPipe) id: string) {
     return this.questionsService.removeLngQ(id);
   }
 
   @Delete('deleteShortQuestion/:id')
-  deleteShortQuestion(@Param('id') id: string) {
+  deleteShortQuestion(@Param('id', ParseUUIDPipe) id: string) {
     return this.questionsService.removeShortQ(id);
   }
 
   @Delete('deleteMcqQuestion/:id')
-  deleteMcqQuestion(@Param('id') id: string) {
+  deleteMcqQuestion(@Param('id', ParseUUIDPipe) id: string) {
     return this.questionsService.removeMcqQ(id);
   }
 

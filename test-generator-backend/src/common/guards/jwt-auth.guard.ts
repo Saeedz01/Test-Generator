@@ -1,12 +1,14 @@
-import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ERROR_MESSAGES } from 'src/common/constant/error-messages';
-
 
 //AuthGuard call the jwt strategy from the passport registry and validate the token
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-
   // When a request arrives at a protected route, this method tells Passport
   // to start the JWT authentication process (extract token, verify it,
   // and run the JWT strategy). Without this, the authentication flow
@@ -25,8 +27,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         message: ERROR_MESSAGES.INVALID_CREDENTIALS,
       });
     }
-  // If everything is valid, the authenticated user is passed forward.
-  // NestJS then attaches this user to req.user for the controller to use.
+    // If everything is valid, the authenticated user is passed forward.
+    // NestJS then attaches this user to req.user for the controller to use.
     return user;
   }
 }

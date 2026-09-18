@@ -11,3 +11,11 @@ export function AdminOnly() {
     Roles(Role.ADMIN, Role.SUPER_ADMIN),
   );
 }
+
+/** JWT + super_admin only, for destructive operations. */
+export function SuperAdminOnly() {
+  return applyDecorators(
+    UseGuards(JwtAuthGuard, RolesGuard),
+    Roles(Role.SUPER_ADMIN),
+  );
+}

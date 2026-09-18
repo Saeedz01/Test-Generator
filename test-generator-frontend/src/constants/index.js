@@ -19,4 +19,4 @@
 
 export { ROUTES } from "./routes";
 export { ROLES } from "./roles";
-export { BRAND_NAME } from "./brand";
+export { BRAND_NAME, BRAND_SOCIAL_LINKS } from "./brand";

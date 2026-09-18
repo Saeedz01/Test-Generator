@@ -25,6 +25,108 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Testora backend — operations guide
+
+### Environment
+
+Copy `.env.example` to `.env`. Configuration is validated at boot
+(`src/config/env.validation.ts`); the app refuses to start and lists every
+problem if something is missing or unsafe. Highlights:
+
+- `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` are required everywhere, must be
+  at least 32 characters and different from each other. Generate each with
+  `openssl rand -hex 32`. Production also rejects human-chosen values.
+- `CORS_ORIGINS` is required in production.
+- `MAIL_ENABLED` must be `true` in production (OTP login and password reset
+  are email based); `MAIL_HOST`, `MAIL_USER`, `MAIL_PASSWORD`, `MAIL_FROM` are
+  then required. With mail disabled in development the login OTP is printed to
+  the server log (never in production).
+- `NODE_ENV` must be `development`, `production` or `test`.
+
+### Build and run
+
+```bash
+npm ci
+npm run build              # prisma generate && nest build -> dist/main.js
+npm run migrate:deploy     # prisma migrate deploy
+npm run start:prod         # node dist/main
+```
+
+The `prisma` CLI is a runtime dependency so `npm run migrate:deploy` works in a
+production image installed with `npm ci --omit=dev`.
+
+### Database migrations
+
+`prisma migrate deploy` builds the full schema on an empty database: the
+`0_init` baseline creates the tables that originally came from TypeORM, and
+the later migrations apply on top.
+
+**Existing databases** (created before `0_init` existed, e.g. a developer DB
+or production) must record the baseline as applied once, without running it:
+
+```bash
+npx prisma migrate resolve --applied 0_init
+npx prisma migrate deploy
+```
+
+(`0_init` is also guarded — if the `user` table already exists it does
+nothing — so an accidental deploy without `resolve` is harmless.)
+`20260918120000_reconcile_legacy_constraints` renames the legacy TypeORM
+constraint names to Prisma's conventions, so afterwards
+`npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma`
+reports no drift.
+
+`20260918120100_auth_sessions_and_hardening` replaces the single refresh-token
+column with the `auth_sessions` table, so every user is signed out once when
+it is deployed.
+
+### Seeding
+
+- `npm run prisma:seed` — seeds sample curriculum only if there is none yet.
+- `npm run prisma:seed:reset` — **wipes all classes/books/chapters/questions**
+  and reseeds (development).
+- With `NODE_ENV=production` the seed refuses to run unless
+  `SEED_ALLOW_DESTRUCTIVE=true` (or `--force`) is set.
+- `AUTH_SEED=true` (development only) creates the seed super admin / admin
+  accounts from `AUTH_SEED_*` if they do not exist. It never changes existing
+  accounts. Seed passwords must be at least 12 characters.
+
+### Auth sessions
+
+Each login creates a row in `auth_sessions` (one per device). The refresh
+token rotates on every `POST /api/auth/refresh`; the previous token stays valid
+for 30 seconds (concurrent tabs), after which presenting it is treated as token
+theft and revokes that session. Logout revokes the current session (works with
+an expired access token). Password reset/change and suspension revoke all of
+the user's sessions, and access tokens are rejected as soon as their session
+is revoked.
+
+### Deployment notes
+
+- **Cookies / domains.** Auth uses `httpOnly` cookies with `SameSite=lax` by
+  default, so the browser must see the API as *same-site* with the frontend:
+  - Recommended: proxy the API through the frontend (Next.js rewrite of
+    `/api/*` to this backend) and point `NEXT_PUBLIC_API_URL` at the frontend
+    origin. Cookies are then first-party; leave `COOKIE_DOMAIN` empty. The
+    browser's `Origin` is the frontend origin, so it must be listed in
+    `CORS_ORIGINS` (the CSRF origin check uses that list).
+  - Or host both on the same registrable domain (e.g. `app.example.com` and
+    `api.example.com`) and set `COOKIE_DOMAIN=example.com` if the frontend
+    needs to send the cookies to the API host.
+  - `COOKIE_SAMESITE=none` (fully cross-site) is supported but not
+    recommended; third-party-cookie blocking will break it in many browsers.
+- The refresh cookie is scoped to `/api/auth` (only sent to refresh/logout).
+- **Reverse proxy.** Set `TRUST_PROXY` to the number of proxies in front of
+  the API (default 1), or `false` if it is exposed directly.
+- **Rate limiting** uses an in-memory store (per process). With several
+  instances the effective limit is multiplied by the instance count; use a
+  shared store (e.g. `@nest-lab/throttler-storage-redis`) or rate-limit at the
+  proxy if that matters. The global default is `THROTTLE_LIMIT`/min per IP
+  (300); auth endpoints have stricter fixed limits.
+- **Compression / access logs** are expected to be handled by the reverse
+  proxy (nginx, load balancer, platform router).
+- The API accepts JSON bodies only (no urlencoded form posts).
+
 ## Project setup
 
 ```bash

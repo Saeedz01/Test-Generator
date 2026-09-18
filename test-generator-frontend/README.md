@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Testora — frontend
 
-## Getting Started
+Next.js (App Router, JavaScript) frontend for Testora: teachers browse classes → books →
+chapters → questions, build a test paper, and print or download it as a PDF (English, Urdu,
+or both). It also includes a banner designer and a staff dashboard for managing the question
+bank. Data comes from the NestJS API in `../test-generator-backend` through RTK Query
+(`src/services/`).
 
-First, run the development server:
+## Requirements
+
+- Node.js 20.9+ (the version Next.js 16 requires)
+- The backend API running and reachable from the browser
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install          # postinstall copies the PDF engine to public/libhtml2realpdf.wasm
+# create .env.local with the variables below (optional for local dev)
+npm run dev          # http://localhost:3000 (webpack dev server, PWA disabled)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Scripts
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+| Script          | What it does                                            |
+| --------------- | ------------------------------------------------------- |
+| `npm run dev`   | Development server (`next dev --webpack`)               |
+| `npm run build` | Production build (`next build --webpack`) + service worker |
+| `npm start`     | Serve the production build (`next start`)               |
+| `npm run lint`  | ESLint (Next + React Compiler rules)                    |
+| `npm test`      | Unit tests (Vitest)                                     |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment variables
 
-## Learn More
+All of these are read at **build time**. `NEXT_PUBLIC_*` values are inlined into the
+client bundle, so changing them requires a rebuild — setting them only on the running
+server has no effect.
 
-To learn more about Next.js, take a look at the following resources:
+| Variable               | Required            | Purpose |
+| ---------------------- | ------------------- | ------- |
+| `NEXT_PUBLIC_API_URL`  | Yes (production)    | Origin the browser uses for the API, without `/api` (e.g. `https://api.example.com`). If unset, the app falls back to `http://localhost:5000`, which only works for local development. Also used to build the `connect-src` entry of the Content-Security-Policy. |
+| `API_PROXY_TARGET`     | No                  | Server-side only. When set, the app rewrites `/api/*` to `${API_PROXY_TARGET}/api/*` (see [Same-site cookies](#same-site-cookies-and-the-api-proxy)). |
+| `NEXT_PUBLIC_SITE_URL` | Recommended         | Public origin of this frontend, used for absolute URLs in `/sitemap.xml` and `/robots.txt`. Defaults to `http://localhost:3000`. |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Same-site cookies and the API proxy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The backend authenticates with HTTP-only cookies set with `SameSite=Lax` by default. Browsers
+only send those cookies on API requests when the frontend and the API are on the **same
+site** (same registrable domain, e.g. `app.example.com` and `api.example.com`). If they are
+on different sites (e.g. `testora.vercel.app` and `api.example.com`), login appears to
+succeed but every following request is unauthenticated, so staff get bounced back to the
+login page.
 
-## Deploy on Vercel
+Pick one deployment shape:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Same site (recommended).** Serve the frontend and API under one domain, e.g.
+   `app.example.com` + `api.example.com`. Set `NEXT_PUBLIC_API_URL=https://api.example.com`,
+   add the frontend origin to the backend's `CORS_ORIGINS`, and (optionally) set the
+   backend's `COOKIE_DOMAIN` if both hosts should share cookies.
+2. **Proxy through the frontend.** Build with
+   `API_PROXY_TARGET=https://api.example.com` and
+   `NEXT_PUBLIC_API_URL=https://app.example.com` (the frontend's own origin). The browser
+   then calls `https://app.example.com/api/...`, Next.js forwards it to the backend, and the
+   cookies are first-party. The backend still sees the original request cookies; make sure
+   it trusts the proxy (`X-Forwarded-*`) if it relies on client IPs (e.g. rate limiting).
+3. **Cross-site cookies.** Only if neither option works: set the backend's
+   `COOKIE_SAMESITE=none` (forces `Secure`, requires HTTPS on both sides). Third-party
+   cookie blocking in some browsers can still break this, so prefer 1 or 2.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deploying
+
+```bash
+NEXT_PUBLIC_API_URL=https://api.example.com \
+NEXT_PUBLIC_SITE_URL=https://app.example.com \
+npm run build
+npm start   # or run behind your process manager / platform of choice
+```
+
+- Build with the same environment you will run with; the API URL, proxy rewrite, and CSP
+  are fixed at build time.
+- Security headers (CSP, `X-Frame-Options`, HSTS in production, …) are set in
+  `next.config.mjs → headers()`. The CSP allows `'unsafe-inline'` scripts (Next.js inline
+  bootstrap + the theme boot script) and `'wasm-unsafe-eval'` (the PDF engine is
+  WebAssembly). If you add third-party scripts, fonts, or APIs, extend the policy there.
+- `/robots.txt` disallows `/dashboard` and `/login`; both route groups also send
+  `noindex` metadata.
+
+## PWA / service worker
+
+The service worker is generated by `@ducanh2912/next-pwa` during `npm run build` into
+`public/sw.js`, `public/workbox-*.js`, and `public/fallback-*.js` (git-ignored). It is
+disabled in `npm run dev`.
+
+- **API responses are never cached**: `/api/*` (same origin, proxy mode) and every request
+  to the `NEXT_PUBLIC_API_URL` origin are `NetworkOnly`.
+- **Small first install**: the PDF engine (`/libhtml2realpdf.wasm`, ~8.5 MB), the Urdu
+  fonts in `public/fonts/`, and banner photos are excluded from precache. The wasm and
+  fonts are cached (`CacheFirst`) the first time they are used.
+- **Offline**: navigations that fail fall back to `/offline`.
+- After deploying a new build, clients pick up the new worker on their next visit. If you
+  ever need to reset a client, unregister the worker in DevTools → Application.
+
+## Project layout
+
+See `AGENTS.md` for the conventions every change must follow (feature folders, the
+`src/services/` RTK Query layer, typography, 300-line file limit).
+
+```text
+src/app/            routes (route groups: marketing, browse, banner, auth, dashboard)
+src/components/     ui/ primitives and shared/ cross-page components
+src/services/       RTK Query API layer (SplitApiSetting.js + api/*.api.js)
+src/store/          Redux store, selection slice (persisted to localStorage), auth slice
+public/fonts/       self-hosted Noto Nastaliq Urdu (paper preview, print, and PDF)
+```

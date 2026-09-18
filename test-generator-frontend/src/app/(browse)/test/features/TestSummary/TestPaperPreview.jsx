@@ -70,6 +70,9 @@ export function TestPaperPreview({ html, onPrint, onDownload, onDismiss }) {
       <iframe
         ref={iframeRef}
         title="Test paper preview"
+        // Display only: no scripts, forms, or popups. Same-origin is needed so
+        // the blob document can load the self-hosted Urdu fonts.
+        sandbox="allow-same-origin"
         className="h-[min(70vh,40rem)] w-full rounded-[var(--radius-card)] border border-neutral-200 bg-neutral-0"
       />
     </section>

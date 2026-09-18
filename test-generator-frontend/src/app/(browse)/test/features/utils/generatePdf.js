@@ -5,12 +5,13 @@
 
 import { createRenderer } from "@imggion/html2realpdf";
 import { buildTestPaperHtml } from "./buildTestPaperHtml";
+import { NASTALIQ_FAMILY, NASTALIQ_FONT_FILES } from "./paperFonts";
+import { scopePaperCss } from "./scopePaperCss";
 
 const FRAME_ID = "test-generator-print-frame";
-
-/** Local TTF copies used so PDF Urdu stays selectable Nastaliq (not a page image). */
-const NASTALIQ_REGULAR_URL = "/fonts/NotoNastaliqUrdu-Regular.ttf";
-const NASTALIQ_BOLD_URL = "/fonts/NotoNastaliqUrdu-Bold.ttf";
+const PAPER_HOST_CLASS = "testora-paper-host";
+/** Upper bound on waiting for web fonts before printing anyway. */
+const FONT_WAIT_MS = 5000;
 
 /** @type {ReturnType<typeof createRenderer> | null} */
 let rendererPromise = null;
@@ -23,6 +24,9 @@ function getPrintFrame() {
     iframe.id = FRAME_ID;
     iframe.title = "Printable test paper";
     iframe.setAttribute("aria-hidden", "true");
+    // Same-origin keeps the blob document scriptable from here (print, fonts);
+    // modals is what lets print() open the dialog. Scripts stay disabled.
+    iframe.setAttribute("sandbox", "allow-same-origin allow-modals");
     Object.assign(iframe.style, {
       position: "fixed",
       right: "0",
@@ -40,18 +44,23 @@ function getPrintFrame() {
 }
 
 function waitForFonts(doc) {
-  if (doc?.fonts?.ready) {
-    return doc.fonts.ready.catch(() => undefined);
-  }
-  return Promise.resolve();
+  if (!doc?.fonts?.ready) return Promise.resolve();
+  return Promise.race([
+    doc.fonts.ready.catch(() => undefined),
+    new Promise((resolve) => window.setTimeout(resolve, FONT_WAIT_MS)),
+  ]);
 }
 
 /**
  * Mounts the paper HTML off-screen so layout/fonts match the preview.
+ * The paper's document-level CSS (html/body/:root/*) is rewritten to target
+ * the host, and every other rule is scoped under it, so the live app is not
+ * restyled while the PDF renders.
  * @param {string} html
  */
 function mountPaperHost(html) {
   const host = document.createElement("div");
+  host.className = PAPER_HOST_CLASS;
   Object.assign(host.style, {
     position: "fixed",
     left: "-10000px",
@@ -63,7 +72,12 @@ function mountPaperHost(html) {
 
   const parsed = new DOMParser().parseFromString(html, "text/html");
   for (const styleEl of parsed.querySelectorAll("style")) {
-    host.appendChild(document.importNode(styleEl, true));
+    const scoped = document.createElement("style");
+    scoped.textContent = scopePaperCss(
+      styleEl.textContent || "",
+      `.${PAPER_HOST_CLASS}`,
+    );
+    host.appendChild(scoped);
   }
   for (const child of [...parsed.body.childNodes]) {
     host.appendChild(document.importNode(child, true));
@@ -86,24 +100,15 @@ async function getPdfRenderer() {
     rendererPromise = (async () => {
       const fonts = [];
       try {
-        const [regular, bold] = await Promise.all([
-          fetchFontBytes(NASTALIQ_REGULAR_URL),
-          fetchFontBytes(NASTALIQ_BOLD_URL),
-        ]);
-        fonts.push(
-          {
-            family: "Noto Nastaliq Urdu",
-            data: regular,
-            weight: 400,
+        const files = await Promise.all(
+          NASTALIQ_FONT_FILES.map(async ({ weight, path }) => ({
+            family: NASTALIQ_FAMILY,
+            data: await fetchFontBytes(path),
+            weight,
             style: "normal",
-          },
-          {
-            family: "Noto Nastaliq Urdu",
-            data: bold,
-            weight: 700,
-            style: "normal",
-          },
+          })),
         );
+        fonts.push(...files);
       } catch {
         // Built-in Arabic shaping still works; Nastaliq embedding is best-effort.
       }
@@ -147,12 +152,14 @@ export function generatePdf(meta, questions) {
       URL.revokeObjectURL(blobUrl);
     };
 
-    const triggerPrint = () => {
+    const triggerPrint = async () => {
       const frameWindow = iframe.contentWindow;
       if (!frameWindow) {
         cleanup();
         return;
       }
+      // Urdu (Nastaliq) must be loaded before the print snapshot is taken.
+      await waitForFonts(frameWindow.document);
       try {
         frameWindow.document.title = " ";
       } catch {
@@ -164,6 +171,7 @@ export function generatePdf(meta, questions) {
     };
 
     iframe.onload = () => {
+      iframe.onload = null;
       window.setTimeout(triggerPrint, 100);
     };
     iframe.src = blobUrl;

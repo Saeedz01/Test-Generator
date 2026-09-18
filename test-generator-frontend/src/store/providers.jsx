@@ -7,24 +7,23 @@
 
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Provider } from "react-redux";
 import { Toaster } from "react-hot-toast";
 import { makeStore } from "./index";
 import { hydrateSelection } from "./selectionSlice";
+import { loadSelectionState } from "./selectionStorage";
 
 export function StoreProvider({ children }) {
-  const storeRef = useRef(null);
-  if (!storeRef.current) {
-    storeRef.current = makeStore();
-  }
+  // Lazy initializer: one store per mounted provider (per request on the server).
+  const [store] = useState(makeStore);
 
   useEffect(() => {
-    storeRef.current?.dispatch(hydrateSelection());
-  }, []);
+    store.dispatch(hydrateSelection(loadSelectionState()));
+  }, [store]);
 
   return (
-    <Provider store={storeRef.current}>
+    <Provider store={store}>
       {children}
       <Toaster
         position="top-right"

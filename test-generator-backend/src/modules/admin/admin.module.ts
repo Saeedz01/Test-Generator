@@ -6,11 +6,7 @@ import { ChapterModule } from '../chapter/chapter.module';
 import { QuestionsModule } from '../questions/questions.module';
 
 @Module({
-  imports: [
-    BookModule,
-    ChapterModule,
-    QuestionsModule,
-  ],
+  imports: [BookModule, ChapterModule, QuestionsModule],
   controllers: [AdminController],
   providers: [AdminService],
 })

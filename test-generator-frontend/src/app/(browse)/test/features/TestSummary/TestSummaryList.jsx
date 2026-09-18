@@ -8,6 +8,7 @@ const TYPE_LABEL = {
   long: "Long",
 };
 
+/** Groups by chapter and assigns running paper numbers (1-based). */
 function groupQuestionsByChapter(questions) {
   const groups = [];
   const indexByKey = new Map();
@@ -25,7 +26,15 @@ function groupQuestionsByChapter(questions) {
     groups[indexByKey.get(key)].questions.push(question);
   });
 
-  return groups;
+  // Number in display order (group by group), continuing across groups.
+  let number = 0;
+  return groups.map((group) => ({
+    ...group,
+    questions: group.questions.map((question) => {
+      number += 1;
+      return { question, number };
+    }),
+  }));
 }
 
 /**
@@ -34,7 +43,6 @@ function groupQuestionsByChapter(questions) {
 export function TestSummaryList({ questions, onRemove }) {
   const groups = groupQuestionsByChapter(questions);
   const showHeadings = groups.length > 1;
-  let number = 0;
 
   return (
     <div className="overflow-hidden rounded-[var(--radius-card)] border border-neutral-200 bg-neutral-0">
@@ -46,8 +54,7 @@ export function TestSummaryList({ questions, onRemove }) {
             </h3>
           ) : null}
           <ul className="divide-y divide-neutral-100">
-            {group.questions.map((question) => {
-              number += 1;
+            {group.questions.map(({ question, number }) => {
               return (
                 <li
                   key={question.id}

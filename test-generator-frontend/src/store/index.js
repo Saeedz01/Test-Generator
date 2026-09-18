@@ -8,6 +8,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import selectionReducer from "./selectionSlice";
 import authReducer from "./authSlice";
+import { createSelectionPersistence } from "./selectionPersistence";
 import { SplitApiSettings } from "../services/SplitApiSetting";
 // Ensure RTK Query endpoints are injected into the store.
 import "../services/api/classes.api";
@@ -25,9 +26,9 @@ export function makeStore() {
       [SplitApiSettings.reducerPath]: SplitApiSettings.reducer,
     },
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware().concat(SplitApiSettings.middleware),
+      getDefaultMiddleware()
+        .prepend(createSelectionPersistence())
+        .concat(SplitApiSettings.middleware),
     devTools: process.env.NODE_ENV !== "production",
   });
 }
-
-export const store = makeStore();

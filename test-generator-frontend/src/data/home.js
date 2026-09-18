@@ -10,66 +10,6 @@ export const homeQuote = {
 };
 
 
-export const featuredClasses = [
-  {
-    id: "feat-9",
-    name: "9th",
-    subtitle: "Secondary foundation",
-    booksCount: 8,
-    icon: "graduation",
-    href: "/classes/class-9/books",
-  },
-  {
-    id: "feat-10",
-    name: "10th",
-    subtitle: "Board preparation",
-    booksCount: 10,
-    icon: "book",
-    href: "/classes/class-10/books",
-  },
-  {
-    id: "feat-11",
-    name: "11th",
-    subtitle: "Pre-college track",
-    booksCount: 12,
-    icon: "flask",
-    href: "/classes/class-11/books",
-  },
-  {
-    id: "feat-12",
-    name: "12th",
-    subtitle: "Final secondary year",
-    booksCount: 14,
-    icon: "graduation",
-    href: "/classes/class-12/books",
-  },
-  {
-    id: "feat-ics",
-    name: "ICS",
-    subtitle: "Computer science group",
-    booksCount: 9,
-    icon: "laptop",
-    href: "/classes/class-ics/books",
-  },
-  {
-    id: "feat-icom",
-    name: "ICOM",
-    subtitle: "Commerce group",
-    booksCount: 7,
-    icon: "briefcase",
-    href: "/classes/class-icom/books",
-  },
-  {
-    id: "feat-fa",
-    name: "FA",
-    subtitle: "Arts & humanities",
-    booksCount: 6,
-    icon: "palette",
-    href: "/classes/class-fa/books",
-  },
-];
-
-
 export const platformFeatures = [
   {
     id: "feat-smart",

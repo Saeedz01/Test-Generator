@@ -6,6 +6,7 @@ import {
   Param,
   Delete,
   Query,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { QuestionsService } from './questions.service';
 import { UpdateQuestionDto } from './dto/update-question.dto';
@@ -52,19 +53,19 @@ export class QuestionsController {
   // Delete Endpoints
   @AdminOnly()
   @Delete('delLng/:id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.questionsService.removeLngQ(id);
   }
 
   @AdminOnly()
   @Delete('delShort/:id')
-  removeShort(@Param('id') id: string) {
+  removeShort(@Param('id', ParseUUIDPipe) id: string) {
     return this.questionsService.removeShortQ(id);
   }
 
   @AdminOnly()
   @Delete('delMcq/:id')
-  removeMcq(@Param('id') id: string) {
+  removeMcq(@Param('id', ParseUUIDPipe) id: string) {
     return this.questionsService.removeMcqQ(id);
   }
 
@@ -72,7 +73,7 @@ export class QuestionsController {
   @AdminOnly()
   @Patch('long/:id')
   updateLong(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateQuestionDto: UpdateQuestionDto,
   ) {
     return this.questionsService.updateLongQuestion(id, updateQuestionDto);
@@ -81,7 +82,7 @@ export class QuestionsController {
   @AdminOnly()
   @Patch('short/:id')
   updateShort(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateQuestionDto: UpdateQuestionDto,
   ) {
     return this.questionsService.updateShortQuestion(id, updateQuestionDto);
@@ -90,7 +91,7 @@ export class QuestionsController {
   @AdminOnly()
   @Patch('mcq/:id')
   updateMcq(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateMcqQuestionDto: UpdateMcqQuestionDto,
   ) {
     return this.questionsService.updateMcqQuestion(id, updateMcqQuestionDto);

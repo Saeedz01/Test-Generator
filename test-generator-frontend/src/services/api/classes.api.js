@@ -60,9 +60,13 @@ export const schoolclassApi = SplitApiSettings.injectEndpoints({
         method: "PATCH",
         body: payload,
       }),
+      // Books, chapters, and questions embed the class name.
       invalidatesTags: (_result, _error, { id }) => [
         { type: "SchoolClass", id },
         { type: "SchoolClass", id: "LIST" },
+        { type: "Book", id: "LIST" },
+        { type: "Chapter", id: "LIST" },
+        { type: "Question", id: "LIST" },
         { type: "DashboardStats", id: "SUMMARY" },
       ],
     }),
@@ -96,8 +100,13 @@ export const schoolclassApi = SplitApiSettings.injectEndpoints({
         url: API_ENDPOINTS.deleteClass(id),
         method: "DELETE",
       }),
-      invalidatesTags: [
+      // Deleting a class cascades to its books, chapters, and questions.
+      invalidatesTags: (_result, _error, id) => [
+        { type: "SchoolClass", id },
         { type: "SchoolClass", id: "LIST" },
+        { type: "Book", id: "LIST" },
+        { type: "Chapter", id: "LIST" },
+        { type: "Question", id: "LIST" },
         { type: "DashboardStats", id: "SUMMARY" },
       ],
     }),

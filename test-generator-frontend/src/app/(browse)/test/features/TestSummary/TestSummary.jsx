@@ -88,8 +88,14 @@ export function TestSummary() {
     setPrintMeta({ meta, questions: scored });
     setPreviewHtml(buildTestPaperHtml(meta, scored, { autoPrint: false }));
     setSettingsOpen(false);
-    saveGeneratedPaper({ meta, questions: scored });
-    toast.success("Paper saved on this device.");
+    if (saveGeneratedPaper({ meta, questions: scored })) {
+      toast.success("Paper saved on this device.");
+    } else {
+      // Preview, print, and download still work; only local history failed.
+      toast.error(
+        "Paper is ready, but this browser's storage is full so it wasn't saved to your history.",
+      );
+    }
   };
 
   const handlePrint = () => {

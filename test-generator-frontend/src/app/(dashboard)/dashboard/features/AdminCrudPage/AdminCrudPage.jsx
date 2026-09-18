@@ -14,6 +14,7 @@ export function AdminCrudPage({
   columns,
   rows,
   toolbar,
+  footer,
   emptyTitle = "No items yet",
   emptyDescription = "Add your first item to get started.",
   emptyAction,
@@ -127,6 +128,8 @@ export function AdminCrudPage({
           </div>
         </Card>
       )}
+
+      {footer ? <div>{footer}</div> : null}
     </div>
   );
 }

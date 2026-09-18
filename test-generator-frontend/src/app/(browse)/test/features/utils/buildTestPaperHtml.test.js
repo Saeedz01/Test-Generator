@@ -1,7 +1,10 @@
-/**
- * @jest-environment jsdom
- */
+import { describe, expect, it } from 'vitest';
 import { buildTestPaperHtml } from './buildTestPaperHtml';
+
+/** Rendered markup only — the <style> block also mentions class names. */
+function bodyMarkup(html) {
+  return html.replace(/<style>[\s\S]*?<\/style>/g, '');
+}
 
 describe('buildTestPaperHtml language', () => {
   const questions = [
@@ -66,11 +69,12 @@ describe('buildTestPaperHtml language', () => {
       { ...meta, showPaperHeader: false },
       questions,
     );
-    expect(html).toContain('sheet-questions-only');
-    expect(html).not.toContain('Test School');
-    expect(html).not.toContain('student-row');
-    expect(html).not.toContain('Time Allowed');
-    expect(html).toContain('What is force?');
+    const markup = bodyMarkup(html);
+    expect(markup).toContain('sheet-questions-only');
+    expect(markup).not.toContain('Test School');
+    expect(markup).not.toContain('class="student-row"');
+    expect(markup).not.toContain('Time Allowed');
+    expect(markup).toContain('What is force?');
   });
 
   it('prints class/book/chapter line under the institute name', () => {

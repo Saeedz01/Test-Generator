@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, FileText, Plus, RotateCcw, Trash2 } from "lucide-react";
@@ -11,9 +11,10 @@ import { ROUTES } from "@/constants";
 import { generatePdf } from "@/app/(browse)/test/features/utils/generatePdf";
 import {
   deleteSavedPaper,
-  loadSavedPapers,
+  getSavedPapersSnapshot,
   paperDateLabel,
   paperLabel,
+  parseSavedPapers,
   subscribeSavedPapers,
 } from "@/app/(browse)/test/features/utils/savedPapersStorage";
 import { clearSelection, selectSelectedQuestionCount } from "@/store/selectionSlice";
@@ -27,16 +28,14 @@ export function TeacherMenu({ layout = "dropdown" }) {
   const dispatch = useDispatch();
   const selectedCount = useSelector(selectSelectedQuestionCount);
   const [open, setOpen] = useState(false);
-  const [papers, setPapers] = useState([]);
+  const savedPapersRaw = useSyncExternalStore(
+    subscribeSavedPapers,
+    getSavedPapersSnapshot,
+    () => null,
+  );
+  const papers = useMemo(() => parseSavedPapers(savedPapersRaw), [savedPapersRaw]);
   const rootRef = useRef(null);
   const isStack = layout === "stack";
-
-  const refresh = () => setPapers(loadSavedPapers());
-
-  useEffect(() => {
-    refresh();
-    return subscribeSavedPapers(refresh);
-  }, []);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -168,7 +167,6 @@ export function TeacherMenu({ layout = "dropdown" }) {
                       aria-label={`Delete ${paperLabel(paper)}`}
                       onClick={() => {
                         deleteSavedPaper(paper.id);
-                        refresh();
                         toast.success("Paper removed from this device.");
                       }}
                     >

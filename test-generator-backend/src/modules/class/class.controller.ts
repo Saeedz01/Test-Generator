@@ -7,11 +7,15 @@ import {
   Param,
   Delete,
   Query,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ClassService } from './class.service';
 import { CreateSchoolClassDto } from '../admin/dto/create-class.dto';
 import { UpdateClassDto } from '../admin/dto/update-class.dto';
-import { AdminOnly } from 'src/common/decorator/admin-only.decorator';
+import {
+  AdminOnly,
+  SuperAdminOnly,
+} from 'src/common/decorator/admin-only.decorator';
 
 @Controller('schoolclasses')
 export class ClassController {
@@ -29,31 +33,36 @@ export class ClassController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.classService.findOne(id);
   }
 
   @AdminOnly()
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateClassDto: UpdateClassDto) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateClassDto: UpdateClassDto,
+  ) {
     return this.classService.update(id, updateClassDto);
   }
 
   @AdminOnly()
   @Post(':id/archive')
-  archive(@Param('id') id: string) {
+  archive(@Param('id', ParseUUIDPipe) id: string) {
     return this.classService.archive(id);
   }
 
   @AdminOnly()
   @Post(':id/unarchive')
-  unarchive(@Param('id') id: string) {
+  unarchive(@Param('id', ParseUUIDPipe) id: string) {
     return this.classService.unarchive(id);
   }
 
-  @AdminOnly()
+  // Deleting a class cascades to all of its books, chapters and questions,
+  // so it is restricted to super admins (admins can archive instead).
+  @SuperAdminOnly()
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.classService.remove(id);
   }
 }

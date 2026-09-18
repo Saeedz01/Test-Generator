@@ -1,18 +1,23 @@
 /**
- * Public footer — logo, navigation, social placeholders, copyright.
+ * Public footer — logo, navigation, configured social links, copyright.
  */
 import Link from "next/link";
 import { Globe, MessageCircle, Share2 } from "lucide-react";
 import { Container } from "@/components/ui";
 import { BrandLogo } from "@/components/shared/BrandLogo";
-import { BRAND_NAME, ROUTES } from "@/constants";
+import { BRAND_NAME, BRAND_SOCIAL_LINKS, ROUTES } from "@/constants";
 import { footerNav } from "@/data/home";
 
+// Only links with a configured URL (constants/brand.js) are rendered.
 const SOCIAL = [
-  { label: "Community", href: "#", Icon: MessageCircle },
-  { label: "Share", href: "#", Icon: Share2 },
-  { label: "Website", href: "#", Icon: Globe },
-];
+  {
+    label: "Community",
+    href: BRAND_SOCIAL_LINKS.community,
+    Icon: MessageCircle,
+  },
+  { label: "Share", href: BRAND_SOCIAL_LINKS.share, Icon: Share2 },
+  { label: "Website", href: BRAND_SOCIAL_LINKS.website, Icon: Globe },
+].filter((item) => Boolean(item.href));
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -52,24 +57,26 @@ export default function Footer() {
             </ul>
           </nav>
 
-          <div>
-            <p className="text-caption font-semibold tracking-wide text-neutral-500 uppercase">
-              Connect
-            </p>
-            <ul className="mt-3 flex items-center gap-2">
-              {SOCIAL.map(({ label, href, Icon }) => (
-                <li key={label}>
-                  <a
-                    href={href}
-                    aria-label={label}
-                    className="inline-flex size-10 items-center justify-center rounded-[var(--radius-md)] border border-neutral-200 bg-neutral-0 text-neutral-600 transition-[color,border-color,background-color] duration-150 hover:border-primary-300 hover:text-primary-700"
-                  >
-                    <Icon className="size-4" aria-hidden="true" />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {SOCIAL.length > 0 ? (
+            <div>
+              <p className="text-caption font-semibold tracking-wide text-neutral-500 uppercase">
+                Connect
+              </p>
+              <ul className="mt-3 flex items-center gap-2">
+                {SOCIAL.map(({ label, href, Icon }) => (
+                  <li key={label}>
+                    <a
+                      href={href}
+                      aria-label={label}
+                      className="inline-flex size-10 items-center justify-center rounded-[var(--radius-md)] border border-neutral-200 bg-neutral-0 text-neutral-600 transition-[color,border-color,background-color] duration-150 hover:border-primary-300 hover:text-primary-700"
+                    >
+                      <Icon className="size-4" aria-hidden="true" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-10 flex flex-col gap-3 border-t border-neutral-200 pt-6 sm:flex-row sm:items-center sm:justify-between">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { getBannerPalette } from "../bannerPalettes";
 
@@ -61,10 +61,11 @@ export function ColorField({
   const kind = mode || (fill ? "fill" : "text");
   const palette = getBannerPalette(paletteId);
   const hex = toHex(value);
-  const [draft, setDraft] = useState(hex);
-  useEffect(() => {
-    setDraft(hex);
-  }, [hex]);
+  // The typed draft only applies while `value` is unchanged; a new value from
+  // outside (picker, chips, undo) resets the field to that color.
+  const [draftState, setDraftState] = useState({ source: hex, text: hex });
+  const draft = draftState.source === hex ? draftState.text : hex;
+  const setDraft = (text) => setDraftState({ source: hex, text });
   const chips = kind === "text" ? TEXT_ROLES : FILL_ROLES;
   const [copied, setCopied] = useState(false);
 

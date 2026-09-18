@@ -22,7 +22,11 @@ export class User {
 
   resetOtpExpiresAt?: Date | null;
 
-  refreshTokenHash?: string | null;
+  otpFailedAttempts?: number;
+
+  otpLockedUntil?: Date | null;
+
+  resetOtpAttempts?: number;
 
   isSuspended!: boolean;
 

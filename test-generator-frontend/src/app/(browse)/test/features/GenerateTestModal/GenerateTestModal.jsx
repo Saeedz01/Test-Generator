@@ -13,53 +13,48 @@ import { GenerateTestModalForm } from "./GenerateTestModalForm";
 
 /**
  * Collects printable test settings before PDF generation.
+ * The dialog body mounts on each open, so saved settings are re-read every time.
  */
-export function GenerateTestModal({
-  open,
+export function GenerateTestModal({ open, ...props }) {
+  if (!open) return null;
+  return <GenerateTestModalDialog {...props} />;
+}
+
+function loadInitialSettings() {
+  return { saved: loadTestSettings(), history: loadInstitutes() };
+}
+
+function GenerateTestModalDialog({
   onClose,
   questions,
   defaultClassName = "",
   onConfirm,
 }) {
-  const [timeAllowed, setTimeAllowed] = useState("1 hour 30 minutes");
-  const [mcqMarks, setMcqMarks] = useState(1);
-  const [shortMarks, setShortMarks] = useState(2);
-  const [longMarks, setLongMarks] = useState(5);
-  const [instituteName, setInstituteName] = useState("");
-  const [institutes, setInstitutes] = useState([]);
-  const [copiesPerPage, setCopiesPerPage] = useState(1);
-  const [headingFontSize, setHeadingFontSize] = useState(22);
-  const [subtextFontSize, setSubtextFontSize] = useState(14);
-  const [paperLanguage, setPaperLanguage] = useState("en");
-  const [showPaperHeader, setShowPaperHeader] = useState(true);
+  const [{ saved, history }] = useState(loadInitialSettings);
+  const [timeAllowed, setTimeAllowed] = useState(saved.timeAllowed);
+  const [mcqMarks, setMcqMarks] = useState(saved.mcqMarks);
+  const [shortMarks, setShortMarks] = useState(saved.shortMarks);
+  const [longMarks, setLongMarks] = useState(saved.longMarks);
+  const [instituteName, setInstituteName] = useState(
+    saved.lastInstitute || history[0] || "",
+  );
+  const [institutes, setInstitutes] = useState(history);
+  const [copiesPerPage, setCopiesPerPage] = useState(saved.copiesPerPage || 1);
+  const [headingFontSize, setHeadingFontSize] = useState(saved.headingFontSize);
+  const [subtextFontSize, setSubtextFontSize] = useState(saved.subtextFontSize);
+  const [paperLanguage, setPaperLanguage] = useState(saved.paperLanguage || "en");
+  const [showPaperHeader, setShowPaperHeader] = useState(
+    saved.showPaperHeader !== false,
+  );
   const [errors, setErrors] = useState({ institute: "", time: "" });
 
   useEffect(() => {
-    if (!open) return;
-    const saved = loadTestSettings();
-    const history = loadInstitutes();
-    setInstitutes(history);
-    setTimeAllowed(saved.timeAllowed);
-    setMcqMarks(saved.mcqMarks);
-    setShortMarks(saved.shortMarks);
-    setLongMarks(saved.longMarks);
-    setInstituteName(saved.lastInstitute || history[0] || "");
-    setCopiesPerPage(saved.copiesPerPage || 1);
-    setHeadingFontSize(saved.headingFontSize);
-    setSubtextFontSize(saved.subtextFontSize);
-    setPaperLanguage(saved.paperLanguage || "en");
-    setShowPaperHeader(saved.showPaperHeader !== false);
-    setErrors({ institute: "", time: "" });
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return undefined;
     const onKey = (event) => {
       if (event.key === "Escape") onClose?.();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [onClose]);
 
   const { totalMarks, counts } = useMemo(
     () =>
@@ -70,8 +65,6 @@ export function GenerateTestModal({
       }),
     [questions, mcqMarks, shortMarks, longMarks],
   );
-
-  if (!open) return null;
 
   const submit = (event) => {
     event.preventDefault();

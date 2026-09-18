@@ -1,8 +1,4 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NestMiddleware,
-} from '@nestjs/common';
+import { ForbiddenException, Injectable, NestMiddleware } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { NextFunction, Request, Response } from 'express';
 
@@ -26,8 +22,7 @@ export class TrustedOriginMiddleware implements NestMiddleware {
       return;
     }
 
-    const allowed =
-      this.configService.get<string[]>('app.cors.origins') ?? [];
+    const allowed = this.configService.get<string[]>('app.cors.origins') ?? [];
     const origin = this.requestOrigin(req);
     if (origin && allowed.includes(origin)) {
       next();

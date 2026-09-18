@@ -21,17 +21,19 @@ export class RolesGuard implements CanActivate {
 
   // it fetch the roles from the decorator(Roles) that are registered in metadata(setMetadata) by the decorator(Roles)
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (!requiredRoles?.length) {
       return true;
     }
 
-    const { user } = context.switchToHttp().getRequest<{ user?: AuthenticatedUser }>();
-    
+    const { user } = context
+      .switchToHttp()
+      .getRequest<{ user?: AuthenticatedUser }>();
+
     if (!user?.role) {
       throw new ForbiddenException(ERROR_MESSAGES.PERMISSION_DENIED);
     }

@@ -4,6 +4,9 @@ import toast from "react-hot-toast";
 import { requestConfirm } from "./ConfirmDialog/ConfirmDialog";
 
 function getErrorMessage(error, fallback) {
+  if (error?.status === 403) {
+    return "You don't have permission to do this. Ask a super admin.";
+  }
   return error?.data?.message || error?.error || fallback;
 }
 

@@ -1,133 +1,96 @@
 import { API_ENDPOINTS } from "../apiEnpoint";
 import { SplitApiSettings } from "../SplitApiSetting";
+import {
+  MAX_PAGE_SIZE,
+  fetchAllQuestionPages,
+  fetchQuestionPage,
+} from "./questionsPaging";
 
-function isEmptyQuestionsError(error) {
-  if (!error) return false;
-  if (error.status === 404) return true;
-  const message = String(error?.data?.message || error?.error || "").toLowerCase();
-  return message.includes("no questions found");
-}
+const QUESTION_TYPES = [
+  { type: "long", url: API_ENDPOINTS.getLongQuestions },
+  { type: "short", url: API_ENDPOINTS.getShortQuestions },
+  { type: "mcq", url: API_ENDPOINTS.getMcqQuestions },
+];
 
-function normalizeQuestion(item, type) {
-  const options = Array.isArray(item.options)
-    ? item.options.map((option) => {
-        if (typeof option === "string") {
-          return { en: option, ur: "" };
-        }
-        return {
-          en: String(option?.en ?? ""),
-          ur: String(option?.ur ?? ""),
-        };
-      })
-    : [];
-
+function questionScopeParams(arg) {
+  const params = typeof arg === "string" ? { chapterId: arg } : arg || {};
   return {
-    id: item.id,
-    type: item.type ?? type,
-    statement: item.question_text ?? item.statement ?? "",
-    statementUr: item.questionTextUr ?? item.statementUr ?? "",
-    marks: Number(item.marks) || 0,
-    difficulty: item.difficulty ?? "medium",
-    classId: item.classId ?? item.class?.id ?? "",
-    bookId: item.bookId ?? item.book?.id ?? "",
-    chapterId: item.chapterId ?? item.chapter?.id ?? "",
-    className: item.className ?? item.class?.name ?? "",
-    bookName: item.bookName ?? item.book?.book_name ?? item.book?.name ?? "",
-    chapterName:
-      item.chapterName ?? item.chapter?.chapter_name ?? item.chapter?.name ?? "",
-    options,
+    chapterId: params.chapterId,
+    bookId: params.bookId,
+    classId: params.classId,
   };
 }
 
-function unwrapQuestionList(response) {
-  if (Array.isArray(response)) return response;
-  if (Array.isArray(response?.data)) return response.data;
-  return [];
-}
-
-function normalizeQuestionList(response, type) {
-  return unwrapQuestionList(response).map((item) =>
-    normalizeQuestion(item, type),
-  );
-}
-
-function buildQuestionsUrl(baseUrl, params = {}) {
-  const search = new URLSearchParams();
-  if (params.chapterId) search.set("chapterId", params.chapterId);
-  if (params.bookId) search.set("bookId", params.bookId);
-  if (params.classId) search.set("classId", params.classId);
-  if (params.page) search.set("page", String(params.page));
-  if (params.limit) search.set("limit", String(params.limit));
-  const query = search.toString();
-  if (!query) return baseUrl;
-  const separator = baseUrl.includes("?") ? "&" : "?";
-  return `${baseUrl}${separator}${query}`;
-}
-
-async function fetchQuestionType(baseQuery, url, type) {
-  const result = await baseQuery({ url, method: "GET" });
-
-  if (result.error) {
-    if (isEmptyQuestionsError(result.error)) {
-      return { data: [] };
-    }
-    return { error: result.error };
-  }
-
-  return { data: normalizeQuestionList(result.data, type) };
+function questionListTags(items, arg) {
+  const scope =
+    (typeof arg === "object" &&
+      (arg?.chapterId || arg?.bookId || arg?.classId)) ||
+    "ALL";
+  return [
+    ...(items ?? []).map((item) => ({ type: "Question", id: item.id })),
+    { type: "Question", id: "LIST" },
+    { type: "Question", id: `SCOPE-${scope}` },
+  ];
 }
 
 export const questionsApi = SplitApiSettings.injectEndpoints({
   endpoints: (builder) => ({
+    /** Every question in scope (all pages of long, short, and MCQ). */
     getQuestions: builder.query({
       async queryFn(arg = {}, _queryApi, _extraOptions, baseQuery) {
-        const params = typeof arg === "string" ? { chapterId: arg } : arg || {};
-        const [longResult, shortResult, mcqResult] = await Promise.all([
-          fetchQuestionType(
-            baseQuery,
-            buildQuestionsUrl(API_ENDPOINTS.getLongQuestions, params),
-            "long",
+        const params = questionScopeParams(arg);
+        const results = await Promise.all(
+          QUESTION_TYPES.map(({ type, url }) =>
+            fetchAllQuestionPages(baseQuery, url, params, type),
           ),
-          fetchQuestionType(
-            baseQuery,
-            buildQuestionsUrl(API_ENDPOINTS.getShortQuestions, params),
-            "short",
-          ),
-          fetchQuestionType(
-            baseQuery,
-            buildQuestionsUrl(API_ENDPOINTS.getMcqQuestions, params),
-            "mcq",
-          ),
-        ]);
+        );
 
-        if (longResult.error) return { error: longResult.error };
-        if (shortResult.error) return { error: shortResult.error };
-        if (mcqResult.error) return { error: mcqResult.error };
+        const failed = results.find((result) => result.error);
+        if (failed) return { error: failed.error };
 
+        return { data: results.flatMap((result) => result.data) };
+      },
+      providesTags: (result, _error, arg) => questionListTags(result, arg),
+    }),
+
+    /**
+     * One page per question type (optionally a single `type`), merged.
+     * `meta.total` sums backend totals; `meta.totalPages` is the largest type's.
+     */
+    getQuestionsPage: builder.query({
+      async queryFn(arg = {}, _queryApi, _extraOptions, baseQuery) {
+        const params = {
+          ...questionScopeParams(arg),
+          page: Math.max(1, Number(arg?.page) || 1),
+          limit: Math.min(MAX_PAGE_SIZE, Number(arg?.limit) || 50),
+        };
+        const types = QUESTION_TYPES.filter(
+          ({ type }) => !arg?.type || arg.type === type,
+        );
+        const results = await Promise.all(
+          types.map(({ type, url }) =>
+            fetchQuestionPage(baseQuery, url, params, type),
+          ),
+        );
+
+        const failed = results.find((result) => result.error);
+        if (failed) return { error: failed.error };
+
+        const metas = results.map((result) => result.data.meta);
         return {
-          data: [
-            ...longResult.data,
-            ...shortResult.data,
-            ...mcqResult.data,
-          ],
+          data: {
+            items: results.flatMap((result) => result.data.items),
+            meta: {
+              total: metas.reduce((sum, meta) => sum + meta.total, 0),
+              page: params.page,
+              limit: params.limit,
+              totalPages: Math.max(1, ...metas.map((meta) => meta.totalPages)),
+            },
+          },
         };
       },
-      providesTags: (result, _error, arg) => {
-        const scope =
-          (typeof arg === "object" &&
-            (arg?.chapterId || arg?.bookId || arg?.classId)) ||
-          "ALL";
-        return result?.length
-          ? [
-              ...result.map((item) => ({ type: "Question", id: item.id })),
-              { type: "Question", id: "LIST" },
-              { type: "Question", id: `SCOPE-${scope}` },
-            ]
-          : [
-              { type: "Question", id: "LIST" },
-              { type: "Question", id: `SCOPE-${scope}` },
-            ];
-      },
+      providesTags: (result, _error, arg) =>
+        questionListTags(result?.items, arg),
     }),
 
     createLongQuestion: builder.mutation({
@@ -239,6 +202,7 @@ export const questionsApi = SplitApiSettings.injectEndpoints({
 
 export const {
   useGetQuestionsQuery,
+  useGetQuestionsPageQuery,
   useCreateLongQuestionMutation,
   useCreateShortQuestionMutation,
   useCreateMcqQuestionMutation,

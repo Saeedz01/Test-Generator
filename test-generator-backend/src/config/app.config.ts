@@ -1,18 +1,17 @@
 import { registerAs } from '@nestjs/config';
 import { randomBytes } from 'crypto';
 
+// Secrets are validated at boot by src/config/env.validation.ts.
 function jwtSecret(name: string): string {
   const value = process.env[name]?.trim();
   if (value) {
-    if (process.env.NODE_ENV === 'production' && value.length < 32) {
-      throw new Error(`${name} must be at least 32 characters`);
-    }
     return value;
   }
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error(`${name} is required`);
+  // Random per-process secrets are only acceptable for automated tests.
+  if (process.env.NODE_ENV === 'test') {
+    return randomBytes(32).toString('hex');
   }
-  return randomBytes(32).toString('hex');
+  throw new Error(`${name} is required (generate with: openssl rand -hex 32)`);
 }
 
 function corsOrigins(): string[] {
@@ -36,9 +35,40 @@ function cookieSameSite(): 'lax' | 'strict' | 'none' {
   return 'lax';
 }
 
+/**
+ * Express "trust proxy" setting. Defaults to 1 hop (one reverse proxy /
+ * load balancer in front of the API). Use 0/false when the API is exposed
+ * directly, otherwise clients can spoof X-Forwarded-For and dodge rate limits.
+ */
+export function trustProxySetting(
+  raw = process.env.TRUST_PROXY,
+): boolean | number | string {
+  const value = raw?.trim();
+  if (!value) {
+    return 1;
+  }
+  if (/^false$/i.test(value)) {
+    return false;
+  }
+  if (/^true$/i.test(value)) {
+    return true;
+  }
+  if (/^\d+$/.test(value)) {
+    const hops = parseInt(value, 10);
+    return hops === 0 ? false : hops;
+  }
+  return value;
+}
+
+function positiveInt(raw: string | undefined, fallback: number): number {
+  const parsed = parseInt(raw ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 export default registerAs('app', () => ({
   port: parseInt(process.env.PORT || '5000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
+  trustProxy: trustProxySetting(),
   jwt: {
     accessSecret: jwtSecret('JWT_ACCESS_SECRET'),
     refreshSecret: jwtSecret('JWT_REFRESH_SECRET'),
@@ -46,14 +76,15 @@ export default registerAs('app', () => ({
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },
   otp: {
-    expiresInMinutes: parseInt(process.env.OTP_EXPIRES_IN_MINUTES || '5', 10),
+    expiresInMinutes: positiveInt(process.env.OTP_EXPIRES_IN_MINUTES, 5),
   },
   cookie: {
     sameSite: cookieSameSite(),
+    domain: process.env.COOKIE_DOMAIN?.trim() || undefined,
   },
-  cache: {
-    statsTtl: 300,
-    listTtl: 600,
+  throttle: {
+    ttlMs: positiveInt(process.env.THROTTLE_TTL_MS, 60_000),
+    limit: positiveInt(process.env.THROTTLE_LIMIT, 300),
   },
   cors: {
     origins: corsOrigins(),

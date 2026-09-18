@@ -1,12 +1,8 @@
 import { registerAs } from '@nestjs/config';
-
-function parseMailEnabled(value: string | undefined): boolean {
-  const normalized = String(value ?? 'true').toLowerCase().trim();
-  return !['false', '0', 'no', 'off'].includes(normalized);
-}
+import { isMailEnabled } from './env.validation';
 
 function parseMailSecure(value: string | undefined, port: number): boolean {
-  if (value !== undefined) {
+  if (value !== undefined && value.trim() !== '') {
     return value.toLowerCase().trim() === 'true';
   }
 
@@ -18,7 +14,8 @@ export default registerAs('mail', () => {
   const rawPassword = process.env.MAIL_PASSWORD ?? '';
 
   return {
-    enabled: parseMailEnabled(process.env.MAIL_ENABLED),
+    // Defaults to true in production (where it is mandatory) and false elsewhere.
+    enabled: isMailEnabled(process.env.MAIL_ENABLED, process.env.NODE_ENV),
     host: process.env.MAIL_HOST,
     port,
     secure: parseMailSecure(process.env.MAIL_SECURE, port),

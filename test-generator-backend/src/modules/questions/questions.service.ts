@@ -1,8 +1,15 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { CreatelngQuestionDto } from './dto/create-lng-question.dto';
 import { CreateShortQuestionDto } from './dto/create-short-question.dto';
-import { CreateMcqQuestionDto, McqOptionDto } from './dto/create-mcq-question.dto';
+import {
+  CreateMcqQuestionDto,
+  McqOptionDto,
+} from './dto/create-mcq-question.dto';
 import { CreateQuestionBaseDto } from './dto/create-question-base.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { UpdateMcqQuestionDto } from './dto/update-mcq-question.dto';
@@ -104,9 +111,7 @@ export class QuestionsService {
     });
 
     if (existing && existing.id !== excludeId) {
-      throw new ConflictException(
-        'Question already exists in this chapter',
-      );
+      throw new ConflictException('Question already exists in this chapter');
     }
   }
 
@@ -136,9 +141,7 @@ export class QuestionsService {
     };
 
     if (extra?.options !== undefined) {
-      data.options = this.normalizeMcqOptions(
-        extra.options,
-      ) as unknown as Prisma.InputJsonValue;
+      data.options = this.normalizeMcqOptions(extra.options);
     }
 
     if (kind === 'mcq') {
@@ -233,7 +236,8 @@ export class QuestionsService {
       this.questionDelegate(kind).findMany({
         where,
         include: questionInclude,
-        orderBy: { createdAt: 'asc' },
+        // id as tiebreaker: rows sharing createdAt must page deterministically
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
         skip,
         take: limit,
       }),
@@ -284,33 +288,39 @@ export class QuestionsService {
     return this.createQuestion('mcq', baseDto, { options });
   }
 
-  async findAlllngQuestions(query: {
-    chapterId?: string;
-    bookId?: string;
-    classId?: string;
-    page?: number;
-    limit?: number;
-  } = {}) {
+  async findAlllngQuestions(
+    query: {
+      chapterId?: string;
+      bookId?: string;
+      classId?: string;
+      page?: number;
+      limit?: number;
+    } = {},
+  ) {
     return this.findAllFromRepository('long', 'long', query);
   }
 
-  async findAllmcqQuestions(query: {
-    chapterId?: string;
-    bookId?: string;
-    classId?: string;
-    page?: number;
-    limit?: number;
-  } = {}) {
+  async findAllmcqQuestions(
+    query: {
+      chapterId?: string;
+      bookId?: string;
+      classId?: string;
+      page?: number;
+      limit?: number;
+    } = {},
+  ) {
     return this.findAllFromRepository('mcq', 'mcq', query);
   }
 
-  async findAllshortQuestions(query: {
-    chapterId?: string;
-    bookId?: string;
-    classId?: string;
-    page?: number;
-    limit?: number;
-  } = {}) {
+  async findAllshortQuestions(
+    query: {
+      chapterId?: string;
+      bookId?: string;
+      classId?: string;
+      page?: number;
+      limit?: number;
+    } = {},
+  ) {
     return this.findAllFromRepository('short', 'short', query);
   }
 
@@ -330,10 +340,20 @@ export class QuestionsService {
     }
 
     const nested = question as QuestionWithNested;
-    const chapterId = dto.chapterId ?? nested.chapter!.id;
-    const statement = dto.statement ?? question.question_text;
+    const currentChapterId =
+      nested.chapter?.id ?? (question as { chapterId?: string }).chapterId;
+    const chapterId = dto.chapterId ?? currentChapterId;
+    const statement =
+      dto.statement !== undefined
+        ? dto.statement.trim()
+        : question.question_text;
 
-    if (statement !== question.question_text) {
+    // Re-check uniqueness when either the text or the chapter changes
+    // (moving a question into a chapter that already has it must 409).
+    if (
+      statement !== question.question_text ||
+      chapterId !== currentChapterId
+    ) {
       await this.assertUniqueStatement(kind, statement, chapterId, id);
     }
 
@@ -364,9 +384,7 @@ export class QuestionsService {
     }
 
     if (type === 'mcq' && dto.options) {
-      data.options = this.normalizeMcqOptions(
-        dto.options,
-      ) as unknown as Prisma.InputJsonValue;
+      data.options = this.normalizeMcqOptions(dto.options);
     }
 
     const savedQuestion = await this.questionDelegate(kind).update({
@@ -374,10 +392,7 @@ export class QuestionsService {
       data,
       include: questionInclude,
     });
-    return this.mapQuestionResponse(
-      savedQuestion as unknown as QuestionWithNested,
-      type,
-    );
+    return this.mapQuestionResponse(savedQuestion, type);
   }
 
   async updateLongQuestion(id: string, dto: UpdateQuestionDto) {

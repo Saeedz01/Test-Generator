@@ -26,11 +26,23 @@ export function subscribeSavedPapers(onChange) {
   };
 }
 
-export function loadSavedPapers() {
-  if (!canUseStorage()) return [];
+/**
+ * Raw stored JSON (a stable string) for `useSyncExternalStore` snapshots.
+ * @returns {string | null}
+ */
+export function getSavedPapersSnapshot() {
+  if (!canUseStorage()) return null;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
+    return window.localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/** @param {string | null} raw */
+export function parseSavedPapers(raw) {
+  if (!raw) return [];
+  try {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
@@ -38,14 +50,44 @@ export function loadSavedPapers() {
   }
 }
 
-function persist(papers) {
-  if (!canUseStorage()) return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(papers));
-  notify();
+export function loadSavedPapers() {
+  return parseSavedPapers(getSavedPapersSnapshot());
+}
+
+function isQuotaError(error) {
+  return (
+    error?.name === "QuotaExceededError" ||
+    error?.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+    error?.code === 22 ||
+    error?.code === 1014
+  );
+}
+
+/**
+ * Writes the list; when storage is full, drops the oldest papers and retries.
+ * `keepAtLeast` papers (newest first) must fit or the write fails.
+ * @returns {boolean} whether the list was stored
+ */
+function persist(papers, keepAtLeast = 0) {
+  if (!canUseStorage()) return false;
+  let list = papers;
+  for (;;) {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      notify();
+      return true;
+    } catch (error) {
+      if (!isQuotaError(error) || list.length <= keepAtLeast) {
+        return false;
+      }
+      list = list.slice(0, -1);
+    }
+  }
 }
 
 /**
  * @param {{ meta: object, questions: object[] }} paper
+ * @returns {object | null} the saved record, or null if it could not be stored
  */
 export function saveGeneratedPaper({ meta, questions }) {
   if (!questions?.length) return null;
@@ -64,8 +106,7 @@ export function saveGeneratedPaper({ meta, questions }) {
   };
 
   const next = [record, ...loadSavedPapers()].slice(0, MAX_PAPERS);
-  persist(next);
-  return record;
+  return persist(next, 1) ? record : null;
 }
 
 export function deleteSavedPaper(id) {
