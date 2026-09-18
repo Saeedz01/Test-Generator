@@ -6,7 +6,7 @@
  * Hydrated from localStorage on the client — never persisted to the database.
  */
 
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, current } from "@reduxjs/toolkit";
 import {
   clearSelectionState,
   loadSelectionState,
@@ -31,7 +31,8 @@ function getInitialState() {
 const initialState = getInitialState();
 
 function persist(state) {
-  saveSelectionState(state);
+  // `current()` unwraps the Immer draft so localStorage gets a plain snapshot
+  saveSelectionState(current(state));
 }
 
 const selectionSlice = createSlice({
@@ -102,7 +103,13 @@ const selectionSlice = createSlice({
     },
     clearTest(state) {
       state.selectedQuestions = {};
-      persist(state);
+      const snapshot = current(state);
+      saveSelectionState({
+        selectedClass: snapshot.selectedClass,
+        selectedBook: snapshot.selectedBook,
+        selectedChapter: snapshot.selectedChapter,
+        selectedQuestions: {},
+      });
     },
     clearSelection() {
       clearSelectionState();

@@ -54,5 +54,38 @@ describe('buildTestPaperHtml language', () => {
     expect(html).toContain('قوت کیا ہے؟');
     expect(html).toContain('Push');
     expect(html).toContain('دھکا');
+    expect(html).toContain('q-text-bilingual');
+    expect(html).toContain('question-both');
+    expect(html).toContain('section-title-both');
+    expect(html).toContain('options-both');
+    expect(html).toContain('grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)');
+  });
+
+  it('omits header when showPaperHeader is false', () => {
+    const html = buildTestPaperHtml(
+      { ...meta, showPaperHeader: false },
+      questions,
+    );
+    expect(html).toContain('sheet-questions-only');
+    expect(html).not.toContain('Test School');
+    expect(html).not.toContain('student-row');
+    expect(html).not.toContain('Time Allowed');
+    expect(html).toContain('What is force?');
+  });
+
+  it('prints class/book/chapter line under the institute name', () => {
+    const html = buildTestPaperHtml(
+      {
+        ...meta,
+        className: '9th Grade',
+        bookName: 'Chemistry',
+        chapterName: 'Fundamentals of Chemistry',
+      },
+      questions,
+    );
+    expect(html).toContain('9th Grade');
+    expect(html).toContain('Chemistry');
+    expect(html).toContain('Fundamentals of Chemistry');
+    expect(html).toContain('class="meta"');
   });
 });

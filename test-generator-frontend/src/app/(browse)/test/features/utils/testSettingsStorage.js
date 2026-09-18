@@ -13,12 +13,14 @@ export const DEFAULT_TEST_SETTINGS = {
   longMarks: 5,
   lastInstitute: "",
   copiesPerPage: 1,
-  /** Institute / title size in px (matches PDF default). */
-  headingFontSize: 18,
-  /** Body / question / meta size in px (matches PDF default). */
-  subtextFontSize: 12,
+  /** Institute / title size in px (one paper per page default). */
+  headingFontSize: 22,
+  /** Body / question / meta size in px (one paper per page default). */
+  subtextFontSize: 14,
   /** Paper medium: en | ur | both */
   paperLanguage: "en",
+  /** Show institute / student fields / summary badges on the paper */
+  showPaperHeader: true,
 };
 
 function clampFontSize(value, fallback) {
@@ -60,6 +62,10 @@ export function loadTestSettings() {
       paperLanguage: ["en", "ur", "both"].includes(parsed.paperLanguage)
         ? parsed.paperLanguage
         : DEFAULT_TEST_SETTINGS.paperLanguage,
+      showPaperHeader:
+        typeof parsed.showPaperHeader === "boolean"
+          ? parsed.showPaperHeader
+          : DEFAULT_TEST_SETTINGS.showPaperHeader,
     };
   } catch {
     return { ...DEFAULT_TEST_SETTINGS };
@@ -88,6 +94,10 @@ export function saveTestSettings(settings) {
     paperLanguage: ["en", "ur", "both"].includes(settings.paperLanguage)
       ? settings.paperLanguage
       : DEFAULT_TEST_SETTINGS.paperLanguage,
+    showPaperHeader:
+      typeof settings.showPaperHeader === "boolean"
+        ? settings.showPaperHeader
+        : DEFAULT_TEST_SETTINGS.showPaperHeader,
   };
   window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
 }

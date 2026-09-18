@@ -46,14 +46,14 @@ export function StickyGenerateBar() {
             aria-disabled="true"
             title="Select at least one question"
           >
-            Generate Test
+            Next
           </span>
         ) : (
           <Link
             href={ROUTES.TEST_SUMMARY}
             className={cn(buttonVariants({ variant: "primary", size: "md" }), "w-full sm:w-auto")}
           >
-            Generate Test
+            Next
           </Link>
         )}
       </div>

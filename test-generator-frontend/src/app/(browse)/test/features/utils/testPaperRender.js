@@ -34,8 +34,8 @@ function renderBilingualText(resolved, language) {
     const ur = escapeHtml(resolved.ur);
     return `
       <div class="q-text-bilingual">
-        ${en ? `<p class="q-text q-text-en" lang="en" dir="ltr">${en}</p>` : ""}
-        ${ur ? `<p class="q-text q-text-ur" lang="ur" dir="rtl">${ur}</p>` : ""}
+        <p class="q-text q-text-en" lang="en" dir="ltr">${en || "&nbsp;"}</p>
+        <p class="q-text q-text-ur" lang="ur" dir="rtl">${ur || "&nbsp;"}</p>
       </div>
     `;
   }
@@ -49,48 +49,46 @@ function renderOptions(question, language, compact) {
     return "";
   }
 
+  const both = language === "both";
   const optionsHtml = question.options
     .map((option, optIndex) => {
       const label = String.fromCharCode(65 + optIndex);
       const resolved = resolveOptionText(option, language);
 
-      if (language === "both" && resolved && typeof resolved === "object") {
-        return `<span class="option option-both">
-          <strong>${label})</strong>
-          <span class="opt-en" lang="en" dir="ltr">${escapeHtml(resolved.en)}</span>
-          ${resolved.ur ? `<span class="opt-ur" lang="ur" dir="rtl">${escapeHtml(resolved.ur)}</span>` : ""}
-        </span>`;
+      if (both && resolved && typeof resolved === "object") {
+        return `<div class="option option-both">
+          <strong class="opt-label">${label})</strong>
+          <div class="opt-body">
+            <span class="opt-en" lang="en" dir="ltr">${escapeHtml(resolved.en)}</span>
+            ${resolved.ur ? `<span class="opt-ur" lang="ur" dir="rtl">${escapeHtml(resolved.ur)}</span>` : ""}
+          </div>
+        </div>`;
       }
 
       const isUr = language === "ur";
-      return `<span class="option"${isUr ? ' lang="ur" dir="rtl"' : ""}><strong>${label})</strong> ${escapeHtml(resolved)}</span>`;
+      return `<div class="option"${isUr ? ' lang="ur" dir="rtl"' : ""}><strong class="opt-label">${label})</strong> <span class="opt-body">${escapeHtml(resolved)}</span></div>`;
     })
     .join("");
 
-  return `<div class="options-inline${compact ? " compact" : ""}">${optionsHtml}</div>`;
+  return `<div class="options-inline${both ? " options-both" : ""}${compact ? " compact" : ""}">${optionsHtml}</div>`;
 }
 
 export function renderQuestion(question, index, compact, language = "en") {
   const marks = Number(question.marks) || 0;
   const statement = resolveStatement(question, language);
   const optionsHtml = renderOptions(question, language, compact);
-
-  const answerSpace =
-    question.type === "short"
-      ? `<div class="answer-space answer-space-short${compact ? " compact" : ""}"></div>`
-      : question.type === "long"
-        ? `<div class="answer-space answer-space-long${compact ? " compact" : ""}"></div>`
-        : "";
+  const both = language === "both";
 
   return `
-    <article class="question">
-      <header>
+    <article class="question question-${question.type}${both ? " question-both" : ""}">
+      <div class="q-main">
         <span class="q-no">Q${index}.</span>
+        <div class="q-body">
+          ${renderBilingualText(statement, language)}
+          ${optionsHtml}
+        </div>
         <span class="q-marks">[${marks}]</span>
-      </header>
-      ${renderBilingualText(statement, language)}
-      ${optionsHtml}
-      ${answerSpace}
+      </div>
     </article>
   `;
 }
@@ -98,8 +96,8 @@ export function renderQuestion(question, index, compact, language = "en") {
 export function renderSectionHeading(type, language = "en") {
   const title = sectionTitle(type, language);
   if (language === "both" && title && typeof title === "object") {
-    return `<h2 class="section-title">
-      <span lang="en" dir="ltr">${escapeHtml(title.en)}</span>
+    return `<h2 class="section-title section-title-both">
+      <span class="section-title-en" lang="en" dir="ltr">${escapeHtml(title.en)}</span>
       <span class="section-title-ur" lang="ur" dir="rtl">${escapeHtml(title.ur)}</span>
     </h2>`;
   }
@@ -112,27 +110,32 @@ export function renderTestBody(meta, questionsHtml, totalMarks, questionCount) {
   const language = meta.paperLanguage || "en";
   const sheetDir = language === "ur" ? "rtl" : "ltr";
   const sheetLang = language === "ur" ? "ur" : "en";
+  const showHeader = meta.showPaperHeader !== false;
 
-  return `
-    <div class="sheet" lang="${sheetLang}" dir="${sheetDir}" data-language="${language}">
+  const headerHtml = showHeader
+    ? `
       <h1 class="institute">${escapeHtml(institute)}</h1>
       <p class="meta">
         ${escapeHtml(meta.className || "—")}
         ${meta.bookName ? ` · ${escapeHtml(meta.bookName)}` : ""}
         ${meta.chapterName ? ` · ${escapeHtml(meta.chapterName)}` : ""}
       </p>
-
       <div class="student-row">
         <span class="field">Name<span class="line"></span></span>
         <span class="field">Section<span class="line"></span></span>
         <span class="field">Class<span class="line"></span></span>
       </div>
-
       <div class="summary">
         <span>Questions: ${questionCount}</span>
         <span>Total Marks: ${totalMarks}</span>
         <span>Time Allowed: ${escapeHtml(meta.timeAllowed || "________")}</span>
       </div>
+    `
+    : "";
+
+  return `
+    <div class="sheet${showHeader ? "" : " sheet-questions-only"}" lang="${sheetLang}" dir="${sheetDir}" data-language="${language}">
+      ${headerHtml}
       ${questionsHtml}
     </div>
   `;

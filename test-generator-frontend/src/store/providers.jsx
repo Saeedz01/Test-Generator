@@ -7,16 +7,21 @@
 
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Provider } from "react-redux";
 import { Toaster } from "react-hot-toast";
 import { makeStore } from "./index";
+import { hydrateSelection } from "./selectionSlice";
 
 export function StoreProvider({ children }) {
   const storeRef = useRef(null);
   if (!storeRef.current) {
     storeRef.current = makeStore();
   }
+
+  useEffect(() => {
+    storeRef.current?.dispatch(hydrateSelection());
+  }, []);
 
   return (
     <Provider store={storeRef.current}>

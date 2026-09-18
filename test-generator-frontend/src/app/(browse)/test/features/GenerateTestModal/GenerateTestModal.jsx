@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   applyMarksConfig,
+  DEFAULT_TEST_SETTINGS,
   loadInstitutes,
   loadTestSettings,
   rememberInstitute,
@@ -27,9 +28,10 @@ export function GenerateTestModal({
   const [instituteName, setInstituteName] = useState("");
   const [institutes, setInstitutes] = useState([]);
   const [copiesPerPage, setCopiesPerPage] = useState(1);
-  const [headingFontSize, setHeadingFontSize] = useState(18);
-  const [subtextFontSize, setSubtextFontSize] = useState(12);
+  const [headingFontSize, setHeadingFontSize] = useState(22);
+  const [subtextFontSize, setSubtextFontSize] = useState(14);
   const [paperLanguage, setPaperLanguage] = useState("en");
+  const [showPaperHeader, setShowPaperHeader] = useState(true);
   const [errors, setErrors] = useState({ institute: "", time: "" });
 
   useEffect(() => {
@@ -46,6 +48,7 @@ export function GenerateTestModal({
     setHeadingFontSize(saved.headingFontSize);
     setSubtextFontSize(saved.subtextFontSize);
     setPaperLanguage(saved.paperLanguage || "en");
+    setShowPaperHeader(saved.showPaperHeader !== false);
     setErrors({ institute: "", time: "" });
   }, [open]);
 
@@ -73,30 +76,35 @@ export function GenerateTestModal({
   const submit = (event) => {
     event.preventDefault();
     const name = instituteName.trim();
+    const time = timeAllowed.trim();
     const nextErrors = {
-      institute: name ? "" : "Enter an institute name.",
-      time: timeAllowed.trim() ? "" : "Enter the time allowed.",
+      institute:
+        showPaperHeader && !name ? "Enter an institute name." : "",
+      time: showPaperHeader && !time ? "Enter the time allowed." : "",
     };
     setErrors(nextErrors);
     if (nextErrors.institute || nextErrors.time) {
       return;
     }
 
-    const nextInstitutes = rememberInstitute(name);
-    setInstitutes(nextInstitutes);
+    if (name) {
+      const nextInstitutes = rememberInstitute(name);
+      setInstitutes(nextInstitutes);
+    }
 
     const settings = {
-      timeAllowed: timeAllowed.trim(),
+      timeAllowed: time || DEFAULT_TEST_SETTINGS.timeAllowed,
       mcqMarks: Number(mcqMarks) || 1,
       shortMarks: Number(shortMarks) || 1,
       longMarks: Number(longMarks) || 1,
       lastInstitute: name,
       copiesPerPage: Number(copiesPerPage) || 1,
-      headingFontSize: Number(headingFontSize) || 18,
-      subtextFontSize: Number(subtextFontSize) || 12,
+      headingFontSize: Number(headingFontSize) || DEFAULT_TEST_SETTINGS.headingFontSize,
+      subtextFontSize: Number(subtextFontSize) || DEFAULT_TEST_SETTINGS.subtextFontSize,
       paperLanguage: ["en", "ur", "both"].includes(paperLanguage)
         ? paperLanguage
         : "en",
+      showPaperHeader,
     };
     saveTestSettings(settings);
 
@@ -160,6 +168,8 @@ export function GenerateTestModal({
           setLongMarks={setLongMarks}
           paperLanguage={paperLanguage}
           setPaperLanguage={setPaperLanguage}
+          showPaperHeader={showPaperHeader}
+          setShowPaperHeader={setShowPaperHeader}
           counts={counts}
           totalMarks={totalMarks}
           errors={errors}

@@ -24,6 +24,8 @@ export function GenerateTestModalForm({
   setLongMarks,
   paperLanguage,
   setPaperLanguage,
+  showPaperHeader,
+  setShowPaperHeader,
   counts,
   totalMarks,
   errors = { institute: "", time: "" },
@@ -65,65 +67,87 @@ export function GenerateTestModalForm({
         </div>
       </fieldset>
 
-      <label className="block">
-        <span className="text-caption font-medium text-neutral-600">
-          Institute name
-        </span>
+      <label className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-md)] border border-neutral-200 bg-neutral-50 px-3 py-3">
         <input
-          list="institute-history"
-          value={instituteName}
-          onChange={(e) => setInstituteName(e.target.value)}
-          placeholder="e.g. Crescent Public School"
-          className={fieldClass}
-          aria-invalid={Boolean(errors.institute) || undefined}
+          type="checkbox"
+          className="mt-0.5 size-4 shrink-0 rounded border-neutral-300 text-primary-600 focus:ring-primary-500/30"
+          checked={showPaperHeader}
+          onChange={(e) => setShowPaperHeader(e.target.checked)}
         />
-        {errors.institute ? (
-          <p className="mt-1.5 text-caption text-error-600" role="alert">
-            {errors.institute}
-          </p>
-        ) : null}
-        <datalist id="institute-history">
-          {institutes.map((name) => (
-            <option key={name} value={name} />
-          ))}
-        </datalist>
-        {institutes.length > 0 ? (
-          <select
-            className={cn(fieldClass, "mt-2")}
-            value={institutes.includes(instituteName) ? instituteName : ""}
-            onChange={(e) => {
-              if (e.target.value) setInstituteName(e.target.value);
-            }}
-            aria-label="Select saved institute"
-          >
-            <option value="">Select saved institute…</option>
-            {institutes.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        ) : null}
+        <span>
+          <span className="block text-small font-medium text-neutral-800">
+            Include paper header
+          </span>
+          <span className="mt-0.5 block text-caption text-neutral-500">
+            School name, student fields, and marks/time summary. Turn off to
+            print questions only.
+          </span>
+        </span>
       </label>
 
-      <label className="block">
-        <span className="text-caption font-medium text-neutral-600">
-          Total time
-        </span>
-        <input
-          type="text"
-          value={timeAllowed}
-          onChange={(e) => setTimeAllowed(e.target.value)}
-          placeholder="e.g. 2 hours"
-          className={fieldClass}
-          aria-invalid={Boolean(errors.time) || undefined}
-        />
-        {errors.time ? (
-          <p className="mt-1.5 text-caption text-error-600" role="alert">
-            {errors.time}
-          </p>
-        ) : null}
-      </label>
+      {showPaperHeader ? (
+        <>
+          <label className="block">
+            <span className="text-caption font-medium text-neutral-600">
+              Institute name
+            </span>
+            <input
+              list="institute-history"
+              value={instituteName}
+              onChange={(e) => setInstituteName(e.target.value)}
+              placeholder="e.g. Crescent Public School"
+              className={fieldClass}
+              aria-invalid={Boolean(errors.institute) || undefined}
+            />
+            {errors.institute ? (
+              <p className="mt-1.5 text-caption text-error-600" role="alert">
+                {errors.institute}
+              </p>
+            ) : null}
+            <datalist id="institute-history">
+              {institutes.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
+            {institutes.length > 0 ? (
+              <select
+                className={cn(fieldClass, "mt-2")}
+                value={institutes.includes(instituteName) ? instituteName : ""}
+                onChange={(e) => {
+                  if (e.target.value) setInstituteName(e.target.value);
+                }}
+                aria-label="Select saved institute"
+              >
+                <option value="">Select saved institute…</option>
+                {institutes.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            ) : null}
+          </label>
+
+          <label className="block">
+            <span className="text-caption font-medium text-neutral-600">
+              Total time
+            </span>
+            <input
+              type="text"
+              value={timeAllowed}
+              onChange={(e) => setTimeAllowed(e.target.value)}
+              placeholder="e.g. 2 hours"
+              className={fieldClass}
+              aria-invalid={Boolean(errors.time) || undefined}
+            />
+            {errors.time ? (
+              <p className="mt-1.5 text-caption text-error-600" role="alert">
+                {errors.time}
+              </p>
+            ) : null}
+          </label>
+        </>
+      ) : null}
 
       <label className="block">
         <span className="text-caption font-medium text-neutral-600">
@@ -163,7 +187,7 @@ export function GenerateTestModalForm({
             required
           />
           <span className="mt-1 block text-caption text-neutral-500">
-            Institute title — default 18px
+            Institute title — default 22px
           </span>
         </label>
         <label className="block">
@@ -181,7 +205,7 @@ export function GenerateTestModalForm({
             required
           />
           <span className="mt-1 block text-caption text-neutral-500">
-            Questions &amp; details — default 12px
+            Questions &amp; details — default 14px
           </span>
         </label>
       </div>

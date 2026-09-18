@@ -60,14 +60,21 @@ export function TestSummary() {
   });
 
   const handleConfirmSettings = (settings) => {
-    const { scored, totalMarks } = applyMarksConfig(ordered, settings);
+    const sourceQuestions =
+      ordered.length > 0 ? ordered : (printMeta?.questions ?? []);
+    if (!sourceQuestions.length) return;
+
+    const sourceChapterCount = new Set(
+      sourceQuestions.map((q) => q.chapterId).filter(Boolean),
+    ).size;
+    const { scored, totalMarks } = applyMarksConfig(sourceQuestions, settings);
     const meta = {
       instituteName: settings.lastInstitute,
       className: schoolClass?.name,
       bookName: book?.name,
       chapterName:
-        chapterCount > 1
-          ? `${chapterCount} chapters`
+        sourceChapterCount > 1
+          ? `${sourceChapterCount} chapters`
           : chapter?.name,
       timeAllowed: settings.timeAllowed,
       totalMarks,
@@ -75,6 +82,7 @@ export function TestSummary() {
       headingFontSize: settings.headingFontSize,
       subtextFontSize: settings.subtextFontSize,
       paperLanguage: settings.paperLanguage || "en",
+      showPaperHeader: settings.showPaperHeader !== false,
     };
 
     setPrintMeta({ meta, questions: scored });
@@ -91,6 +99,8 @@ export function TestSummary() {
       toast.error(result.error || "Could not generate PDF.");
       return;
     }
+    // Paper is finalized — clear selection so chapter visits start fresh
+    dispatch(clearTest());
     toast.success(
       "Print dialog opened — turn off “Headers and footers” to hide date/URL.",
     );
@@ -103,10 +113,16 @@ export function TestSummary() {
       toast.error(result.error || "Could not download PDF.");
       return;
     }
+    // Paper is finalized — clear selection so chapter visits start fresh
+    dispatch(clearTest());
     toast.success("PDF downloaded.");
   };
 
-  if (count === 0) {
+  const previewQuestions = printMeta?.questions ?? ordered;
+  const displayCount = previewQuestions.length;
+  const displayMarks = printMeta?.meta?.totalMarks ?? marks;
+
+  if (count === 0 && !previewHtml) {
     return (
       <EmptyState
         title="No questions selected"
@@ -137,12 +153,14 @@ export function TestSummary() {
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Card className="text-center">
-          <p className="text-h3 font-semibold text-primary-700">{count}</p>
+          <p className="text-h3 font-semibold text-primary-700">{displayCount}</p>
           <p className="text-caption text-neutral-500">Questions</p>
         </Card>
         <Card className="text-center">
-          <p className="text-h3 font-semibold text-primary-700">{marks}</p>
-          <p className="text-caption text-neutral-500">Bank marks</p>
+          <p className="text-h3 font-semibold text-primary-700">{displayMarks}</p>
+          <p className="text-caption text-neutral-500">
+            {printMeta ? "Total marks" : "Bank marks"}
+          </p>
         </Card>
         <Card className="text-center">
           <p className="text-h5 font-semibold text-neutral-900">
@@ -152,21 +170,18 @@ export function TestSummary() {
         </Card>
       </div>
 
-      {(book || chapter || chapterCount > 1) && (
+      {(book || chapter || chapterCount > 1 || printMeta) && (
         <p className="text-small text-neutral-600">
           {book?.name}
-          {chapterCount > 1
-            ? ` · ${chapterCount} chapters`
-            : chapter
-              ? ` · ${chapter.name}`
-              : ""}
+          {printMeta?.meta?.chapterName
+            ? ` · ${printMeta.meta.chapterName}`
+            : chapterCount > 1
+              ? ` · ${chapterCount} chapters`
+              : chapter
+                ? ` · ${chapter.name}`
+                : ""}
         </p>
       )}
-
-      <TestSummaryList
-        questions={ordered}
-        onRemove={(question) => dispatch(toggleQuestion(question))}
-      />
 
       {previewHtml ? (
         <TestPaperPreview
@@ -178,7 +193,12 @@ export function TestSummary() {
             setPrintMeta(null);
           }}
         />
-      ) : null}
+      ) : (
+        <TestSummaryList
+          questions={ordered}
+          onRemove={(question) => dispatch(toggleQuestion(question))}
+        />
+      )}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Button
@@ -211,7 +231,7 @@ export function TestSummary() {
             onClick={() => setSettingsOpen(true)}
           >
             <FileDown className="size-4" aria-hidden="true" />
-            {previewHtml ? "Update preview" : "Preview paper"}
+            {previewHtml ? "Update preview" : "Next"}
           </Button>
         </div>
       </div>
@@ -219,7 +239,7 @@ export function TestSummary() {
       <GenerateTestModal
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
-        questions={ordered}
+        questions={previewQuestions}
         defaultClassName={schoolClass?.name || ""}
         onConfirm={handleConfirmSettings}
       />

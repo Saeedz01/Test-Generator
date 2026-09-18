@@ -36,6 +36,14 @@ const securityHeaders = [
 const nextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
+  transpilePackages: ["@imggion/html2realpdf"],
+  webpack: (config) => {
+    config.experiments = {
+      ...config.experiments,
+      asyncWebAssembly: true,
+    };
+    return config;
+  },
   async headers() {
     return [
       {

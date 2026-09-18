@@ -16,6 +16,7 @@ import {
  * @param {object} meta
  * @param {1|2|4} [meta.copiesPerPage]
  * @param {"en"|"ur"|"both"} [meta.paperLanguage]
+ * @param {boolean} [meta.showPaperHeader]
  * @param {object[]} questions
  * @param {{ autoPrint?: boolean }} [options]
  */
@@ -36,13 +37,24 @@ export function buildTestPaperHtml(meta, questions, options = {}) {
 
   const headingPx = (() => {
     const n = Number(meta.headingFontSize);
-    if (Number.isFinite(n)) return Math.min(48, Math.max(8, Math.round(n)));
-    return compact ? 12 : 18;
+    if (compact) {
+      // Multi-copy: keep prior defaults (18), don't inherit the larger one-paper size
+      if (!Number.isFinite(n)) return 12;
+      if (n === 22) return 18;
+      return Math.min(48, Math.max(8, Math.round(n)));
+    }
+    if (!Number.isFinite(n) || n === 18) return 22;
+    return Math.min(48, Math.max(8, Math.round(n)));
   })();
   const subtextPx = (() => {
     const n = Number(meta.subtextFontSize);
-    if (Number.isFinite(n)) return Math.min(48, Math.max(8, Math.round(n)));
-    return compact ? 9.5 : 12;
+    if (compact) {
+      if (!Number.isFinite(n)) return 9.5;
+      if (n === 14) return 12;
+      return Math.min(48, Math.max(8, Math.round(n)));
+    }
+    if (!Number.isFinite(n) || n === 12) return 14;
+    return Math.min(48, Math.max(8, Math.round(n)));
   })();
   const detailPx = Math.max(8, Math.round(subtextPx * 0.9));
 

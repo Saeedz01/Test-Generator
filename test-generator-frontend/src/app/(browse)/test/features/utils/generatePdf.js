@@ -1,12 +1,19 @@
 /**
- * Prints a test paper via a hidden iframe, and downloads a real PDF via html-to-image + jsPDF.
+ * Prints a test paper via a hidden iframe, and downloads a text/vector PDF
+ * from the same HTML/CSS used by the on-screen preview (not a page screenshot).
  */
 
-import { toPng } from "html-to-image";
-import { jsPDF } from "jspdf";
+import { createRenderer } from "@imggion/html2realpdf";
 import { buildTestPaperHtml } from "./buildTestPaperHtml";
 
 const FRAME_ID = "test-generator-print-frame";
+
+/** Local TTF copies used so PDF Urdu stays selectable Nastaliq (not a page image). */
+const NASTALIQ_REGULAR_URL = "/fonts/NotoNastaliqUrdu-Regular.ttf";
+const NASTALIQ_BOLD_URL = "/fonts/NotoNastaliqUrdu-Bold.ttf";
+
+/** @type {ReturnType<typeof createRenderer> | null} */
+let rendererPromise = null;
 
 function getPrintFrame() {
   let iframe = document.getElementById(FRAME_ID);
@@ -37,6 +44,80 @@ function waitForFonts(doc) {
     return doc.fonts.ready.catch(() => undefined);
   }
   return Promise.resolve();
+}
+
+/**
+ * Mounts the paper HTML off-screen so layout/fonts match the preview.
+ * @param {string} html
+ */
+function mountPaperHost(html) {
+  const host = document.createElement("div");
+  Object.assign(host.style, {
+    position: "fixed",
+    left: "-10000px",
+    top: "0",
+    width: "210mm",
+    background: "#fff",
+    zIndex: "-1",
+  });
+
+  const parsed = new DOMParser().parseFromString(html, "text/html");
+  for (const styleEl of parsed.querySelectorAll("style")) {
+    host.appendChild(document.importNode(styleEl, true));
+  }
+  for (const child of [...parsed.body.childNodes]) {
+    host.appendChild(document.importNode(child, true));
+  }
+
+  document.body.appendChild(host);
+  return host;
+}
+
+async function fetchFontBytes(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Font download failed (${response.status})`);
+  }
+  return new Uint8Array(await response.arrayBuffer());
+}
+
+async function getPdfRenderer() {
+  if (!rendererPromise) {
+    rendererPromise = (async () => {
+      const fonts = [];
+      try {
+        const [regular, bold] = await Promise.all([
+          fetchFontBytes(NASTALIQ_REGULAR_URL),
+          fetchFontBytes(NASTALIQ_BOLD_URL),
+        ]);
+        fonts.push(
+          {
+            family: "Noto Nastaliq Urdu",
+            data: regular,
+            weight: 400,
+            style: "normal",
+          },
+          {
+            family: "Noto Nastaliq Urdu",
+            data: bold,
+            weight: 700,
+            style: "normal",
+          },
+        );
+      } catch {
+        // Built-in Arabic shaping still works; Nastaliq embedding is best-effort.
+      }
+      return createRenderer({
+        fonts,
+        execution: "main",
+        wasmUrl: "/libhtml2realpdf.wasm",
+      });
+    })().catch((error) => {
+      rendererPromise = null;
+      throw error;
+    });
+  }
+  return rendererPromise;
 }
 
 /**
@@ -93,8 +174,17 @@ export function generatePdf(meta, questions) {
   }
 }
 
+function buildDownloadFilename(meta) {
+  const safeName = String(meta.instituteName || "testora-paper")
+    .trim()
+    .replace(/[^\w\-]+/g, "-")
+    .slice(0, 40);
+  return `${safeName || "testora-paper"}.pdf`;
+}
+
 /**
- * Downloads an A4 PDF file of the paper (client-side).
+ * Downloads an A4 PDF built from the same HTML/CSS as the preview.
+ * Output is selectable text/vectors (not a full-page PNG embedded in jsPDF).
  * @param {object} meta
  * @param {object[]} questions
  * @returns {Promise<{ ok: boolean, error?: string }>}
@@ -110,70 +200,52 @@ export async function downloadPdfFile(meta, questions) {
     };
   }
 
+  let host = null;
+  let pdf = null;
+
   try {
     const html = buildTestPaperHtml(meta, questions, { autoPrint: false });
-    const host = document.createElement("div");
-    Object.assign(host.style, {
-      position: "fixed",
-      left: "-10000px",
-      top: "0",
-      width: "210mm",
-      background: "#fff",
-      zIndex: "-1",
-    });
-    host.innerHTML = html;
-    document.body.appendChild(host);
-
+    host = mountPaperHost(html);
     const page = host.querySelector(".page") || host;
+
     await waitForFonts(document);
-    // Allow Nastaliq webfont + layout to settle
     await new Promise((resolve) => window.setTimeout(resolve, 400));
 
-    const dataUrl = await toPng(page, {
-      cacheBust: true,
-      pixelRatio: 2,
-      backgroundColor: "#ffffff",
+    const renderer = await getPdfRenderer();
+    pdf = await renderer.render(page, {
+      cssProfile: "web",
+      mediaType: "print",
+      layoutContext: "page",
+      unsupportedCss: "ignore",
+      fallback: "rasterize-subtree",
+      page: {
+        format: "a4",
+        orientation: "portrait",
+        unit: "mm",
+        // Matches paper @page { margin: 5mm 3mm } — [vertical, horizontal]
+        margin: [5, 3],
+      },
+      pageBreak: {
+        avoid: [".question"],
+      },
+      metadata: {
+        title: String(meta.instituteName || "Testora paper"),
+        creator: "Testora",
+      },
     });
 
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-    });
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-
-    const img = new Image();
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = reject;
-      img.src = dataUrl;
-    });
-
-    const imgWidth = pageWidth;
-    const imgHeight = (img.height * imgWidth) / img.width;
-    let heightLeft = imgHeight;
-    let position = 0;
-
-    pdf.addImage(dataUrl, "PNG", 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(dataUrl, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+    pdf.download(buildDownloadFilename(meta));
+    if (pdf.diagnostics?.length && typeof console !== "undefined") {
+      console.warn("PDF diagnostics", pdf.diagnostics);
     }
-
-    const safeName = String(meta.instituteName || "testora-paper")
-      .trim()
-      .replace(/[^\w\-]+/g, "-")
-      .slice(0, 40);
-    pdf.save(`${safeName || "testora-paper"}.pdf`);
-
-    host.remove();
     return { ok: true };
-  } catch {
+  } catch (error) {
+    if (typeof console !== "undefined") {
+      console.error("PDF download failed", error);
+    }
     return { ok: false, error: "Could not download the PDF file." };
+  } finally {
+    pdf?.dispose();
+    host?.remove();
   }
 }
