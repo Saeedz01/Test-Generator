@@ -24,7 +24,7 @@ export function makeElement(partial) {
 
 export function createBlankDocument({
   formatId = "ig-post",
-  paletteId = "olive",
+  paletteId = "paper",
   name = "Untitled banner",
 } = {}) {
   const format = getBannerFormat(formatId);
@@ -36,7 +36,8 @@ export function createBlankDocument({
     width: format.width,
     height: format.height,
     paletteId: palette.id,
-    background: { fillRole: "canvas" },
+    // Blank starts on a true white canvas; palette still drives text/accent roles
+    background: { fill: "#ffffff", fillRole: null },
     elements: [],
   };
 }

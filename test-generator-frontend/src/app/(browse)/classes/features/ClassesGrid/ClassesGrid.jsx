@@ -79,9 +79,9 @@ function ClassesGridContent() {
           description="Nothing is listed right now. Try another time, or ask your school to add classes."
         />
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid grid-cols-4 gap-2 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
           {classes.map((schoolClass) => (
-            <li key={schoolClass.id}>
+            <li key={schoolClass.id} className="min-w-0">
               <ClassCard schoolClass={schoolClass} />
             </li>
           ))}

@@ -206,11 +206,18 @@ export function BannerStudio() {
       onPalette={(paletteId) =>
         commit({
           ...applyPalette(doc, paletteId),
-          background: { fillRole: "canvas" },
+          // Keep canvas tied to the palette’s canvas role (not a stale solid fill)
+          background: { fill: null, fillRole: "canvas" },
         })
       }
-      onBackground={(fill) =>
-        commit({ ...doc, background: { fill, fillRole: null } })
+      onBackground={(patch) =>
+        commit({
+          ...doc,
+          background: {
+            fill: patch?.fill ?? null,
+            fillRole: patch?.fillRole ?? null,
+          },
+        })
       }
       onReplaceImage={async (file) => {
         if (!selected) return;

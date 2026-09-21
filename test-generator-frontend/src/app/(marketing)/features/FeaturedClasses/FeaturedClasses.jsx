@@ -62,7 +62,7 @@ export function FeaturedClasses() {
               description="Classes will appear here as your school fills in the library."
             />
           ) : (
-            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <ul className="grid grid-cols-4 gap-2 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-3">
               {classes.map((item) => (
                 <li key={item.id} className="min-w-0">
                   <Link
@@ -71,24 +71,31 @@ export function FeaturedClasses() {
                   >
                     <Card
                       hoverable
-                      className="h-full cursor-pointer border-neutral-200 transition-[border-color,transform,box-shadow] duration-200 group-hover:-translate-y-px group-hover:border-primary-300"
+                      padded={false}
+                      className="h-full cursor-pointer border-neutral-200 p-2 transition-[border-color,transform,box-shadow] duration-200 group-hover:-translate-y-px group-hover:border-primary-300 sm:p-6"
                     >
-                      <div className="mb-4 flex items-center gap-3">
-                        <div className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-lg)] bg-primary-50 text-primary-700 transition-colors duration-200 group-hover:bg-primary-100">
-                          <GraduationCap className="size-5" aria-hidden="true" />
+                      <div className="flex flex-col items-center gap-1.5 text-center sm:mb-4 sm:flex-row sm:items-center sm:gap-3 sm:text-left">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-lg)] bg-primary-50 text-primary-700 transition-colors duration-200 group-hover:bg-primary-100 sm:size-11">
+                          <GraduationCap className="size-4 sm:size-5" aria-hidden="true" />
                         </div>
                         <Typography
                           variant="h4"
                           as="h3"
-                          className="min-w-0 flex-1 break-words"
+                          className="min-w-0 w-full break-words text-caption font-semibold leading-tight sm:flex-1 sm:text-h4 sm:leading-normal"
                         >
                           {item.name}
                         </Typography>
                       </div>
-                      <Typography variant="bodySmall" className="mt-1 text-neutral-500">
+                      <Typography
+                        variant="bodySmall"
+                        className="mt-1 hidden text-neutral-500 sm:block"
+                      >
                         {item.description || item.code}
                       </Typography>
-                      <Typography variant="caption" className="mt-4 font-medium text-primary-700">
+                      <Typography
+                        variant="caption"
+                        className="mt-4 hidden font-medium text-primary-700 sm:block"
+                      >
                         {item.booksCount}{" "}
                         {item.booksCount === 1 ? "book" : "books"}
                       </Typography>

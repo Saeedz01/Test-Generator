@@ -1,8 +1,10 @@
 import { resolveRoleColor } from "./bannerPalettes";
 
 export function backgroundFill(doc) {
-  if (doc.background?.fill) return doc.background.fill;
-  return resolveRoleColor(doc.paletteId, doc.background?.fillRole, "#111111");
+  if (doc.background?.fill && typeof doc.background.fill === "string") {
+    return doc.background.fill;
+  }
+  return resolveRoleColor(doc.paletteId, doc.background?.fillRole, "#ffffff");
 }
 
 export function elementFill(el, paletteId) {
