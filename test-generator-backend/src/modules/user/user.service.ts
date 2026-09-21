@@ -10,6 +10,7 @@ import { User, Role } from './entities/user.entity';
 import { UserRole } from './entities/user.role.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { PASSWORD_BCRYPT_ROUNDS } from 'src/common/constant/security';
 
 export interface AdminUserResponse {
   id: string;
@@ -58,7 +59,7 @@ export class UserService {
     }
 
     const userRole = await this.ensureRole(roleName);
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, PASSWORD_BCRYPT_ROUNDS);
 
     return (await this.prisma.user.create({
       data: {

@@ -66,6 +66,10 @@ function validateOrigin(origin: string): boolean {
   }
 }
 
+function isLocalHostname(hostname: string): boolean {
+  return ['localhost', '127.0.0.1', '[::1]'].includes(hostname);
+}
+
 function validateTrustProxy(value: string): boolean {
   if (/^(true|false)$/i.test(value) || /^\d+$/.test(value)) {
     return true;
@@ -82,8 +86,15 @@ export function validateEnv(config: Env): Env {
   const errors: string[] = [];
   const warnings: string[] = [];
 
+  // No silent default: a production server that forgot NODE_ENV would
+  // otherwise run with development settings (no Secure cookies, no HSTS,
+  // relaxed secret/mail checks).
   const rawNodeEnv = str(config, 'NODE_ENV');
-  if (rawNodeEnv && !(NODE_ENVS as readonly string[]).includes(rawNodeEnv)) {
+  if (!rawNodeEnv) {
+    errors.push(
+      `NODE_ENV is required (one of ${NODE_ENVS.join('|')}); use NODE_ENV=production on servers`,
+    );
+  } else if (!(NODE_ENVS as readonly string[]).includes(rawNodeEnv)) {
     errors.push(
       `NODE_ENV must be one of ${NODE_ENVS.join('|')} (got "${rawNodeEnv}")`,
     );
@@ -92,10 +103,18 @@ export function validateEnv(config: Env): Env {
   const isProduction = nodeEnv === 'production';
   const isTest = nodeEnv === 'test';
 
-  if (!str(config, 'DATABASE_URL')) {
+  const databaseUrl = str(config, 'DATABASE_URL');
+  if (!databaseUrl) {
     errors.push('DATABASE_URL is required');
-  } else if (!/^postgres(ql)?:\/\//.test(str(config, 'DATABASE_URL'))) {
+  } else if (!/^postgres(ql)?:\/\//.test(databaseUrl)) {
     errors.push('DATABASE_URL must be a postgresql:// connection string');
+  } else if (
+    isProduction &&
+    /USER:PASSWORD@|\/DB_NAME(\?|$)/.test(databaseUrl)
+  ) {
+    errors.push(
+      'DATABASE_URL still contains the .env.example placeholders (USER:PASSWORD / DB_NAME)',
+    );
   }
 
   // --- JWT -----------------------------------------------------------------
@@ -162,6 +181,22 @@ export function validateEnv(config: Env): Env {
       errors.push(
         `CORS_ORIGINS entries must be bare origins like https://app.example.com (invalid: ${invalid.join(', ')})`,
       );
+    } else if (isProduction) {
+      // Production auth cookies are Secure, so an http:// frontend could
+      // never sign in; localhost stays allowed for local production builds.
+      const insecure = cors
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean)
+        .filter((origin) => {
+          const url = new URL(origin);
+          return url.protocol !== 'https:' && !isLocalHostname(url.hostname);
+        });
+      if (insecure.length) {
+        errors.push(
+          `CORS_ORIGINS must use https:// in production (invalid: ${insecure.join(', ')})`,
+        );
+      }
     }
   }
 
@@ -177,10 +212,21 @@ export function validateEnv(config: Env): Env {
     );
   }
 
+  // TRUST_PROXY decides which client IP rate limits see. Production must
+  // state it explicitly for the real topology, and "true" (trust every
+  // X-Forwarded-For hop, i.e. client-controlled IPs) is never accepted there.
   const trustProxy = str(config, 'TRUST_PROXY');
   if (trustProxy && !validateTrustProxy(trustProxy)) {
     errors.push(
       'TRUST_PROXY must be false, true, a hop count (e.g. 1) or a comma-separated list of IPs/subnets',
+    );
+  } else if (isProduction && !trustProxy) {
+    errors.push(
+      'TRUST_PROXY is required in production: the number of reverse proxies in front of the API (e.g. 1), their IPs/subnets, or false if clients connect directly',
+    );
+  } else if (isProduction && /^true$/i.test(trustProxy)) {
+    errors.push(
+      'TRUST_PROXY=true lets clients spoof their IP via X-Forwarded-For; use a hop count or proxy IPs/subnets in production',
     );
   }
 
@@ -224,6 +270,13 @@ export function validateEnv(config: Env): Env {
     }
     if (isProduction && !str(config, 'MAIL_FROM')) {
       errors.push('MAIL_FROM is required in production');
+    } else if (
+      isProduction &&
+      /@example\.(com|org|net)\b/i.test(str(config, 'MAIL_FROM'))
+    ) {
+      errors.push(
+        'MAIL_FROM still uses the example.com placeholder; set your real sender address',
+      );
     }
   }
 

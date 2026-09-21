@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   UnauthorizedException,
   ForbiddenException,
@@ -25,6 +26,10 @@ import {
   TokenPayload,
 } from './interfaces/auth.interface';
 import { PrismaService } from 'src/prisma/prisma.service';
+import {
+  CODE_BCRYPT_ROUNDS,
+  PASSWORD_BCRYPT_ROUNDS,
+} from 'src/common/constant/security';
 
 /** Wrong login-OTP attempts before the account's OTP login is locked. */
 export const OTP_MAX_ATTEMPTS = 5;
@@ -33,15 +38,27 @@ export const OTP_LOCK_MS = 15 * 60 * 1000;
 export const RESET_CODE_MAX_ATTEMPTS = 5;
 export const RESET_CODE_TTL_MINUTES = 30;
 /**
+ * Per-account password-reset limits. They live in the user row, so using
+ * many client IPs does not buy an attacker more emails or more guesses.
+ */
+export const RESET_WINDOW_MS = 24 * 60 * 60 * 1000;
+/** Reset emails per account per window (stops mail flooding). */
+export const RESET_MAX_REQUESTS_PER_WINDOW = 5;
+/** Minimum gap between two reset emails to the same account. */
+export const RESET_RESEND_COOLDOWN_MS = 60 * 1000;
+/** Wrong codes per account per window, across all codes issued in it. */
+export const RESET_MAX_FAILED_PER_WINDOW = 10;
+/**
  * A refresh token that was rotated less than this long ago is still accepted
  * (issuing only a new access token) so concurrent tabs/requests that raced on
  * the same refresh token do not sign the user out.
  */
 export const REFRESH_GRACE_MS = 30_000;
 
-// Used to spend comparable bcrypt time when the account does not exist.
+// Used to spend comparable bcrypt time when the account does not exist
+// (same cost as real password hashes; the plaintext is random and unknown).
 const DUMMY_BCRYPT_HASH =
-  '$2b$10$abcdefghijklmnopqrstuvC6.uYj6YZq5eYfQwQe1uK1b0e1e1e1e';
+  '$2b$12$TzFUdPJQgATWEHMXHsg2ouIlZiIDfpW858hXyLfX5s9H6jZ7yIqW6';
 
 @Injectable()
 export class AuthService {
@@ -94,6 +111,7 @@ export class AuthService {
     }
 
     await this.verifyOtp(user, loginDto.otp);
+    await this.upgradePasswordHash(user.id, user.password, loginDto.password);
 
     const role = user.role?.role_name as string;
     const payload: TokenPayload = {
@@ -150,6 +168,8 @@ export class AuthService {
    * latency/failures cannot be used to enumerate accounts.
    */
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+    // Identical for unknown accounts and for throttled requests, so neither
+    // the response nor the limits reveal whether an account exists.
     const generic = {
       message:
         'If an account exists for that email, a reset code has been sent',
@@ -161,28 +181,65 @@ export class AuthService {
         id: true,
         email: true,
         name: true,
+        resetWindowStartedAt: true,
+        resetRequestCount: true,
+        resetFailedCount: true,
+        resetLastSentAt: true,
       },
     });
 
     const resetCode = this.generateResetCode();
-    const hashedCode = await bcrypt.hash(resetCode, 10);
+    const hashedCode = await bcrypt.hash(resetCode, CODE_BCRYPT_ROUNDS);
 
     if (!user) {
       return generic;
     }
 
-    const resetOtpExpiresAt = new Date(
-      Date.now() + RESET_CODE_TTL_MINUTES * 60 * 1000,
-    );
+    const now = Date.now();
+    const windowActive =
+      !!user.resetWindowStartedAt &&
+      now - user.resetWindowStartedAt.getTime() < RESET_WINDOW_MS;
+    const requestCount = windowActive ? user.resetRequestCount : 0;
+    const failedCount = windowActive ? user.resetFailedCount : 0;
+    const coolingDown =
+      !!user.resetLastSentAt &&
+      now - user.resetLastSentAt.getTime() < RESET_RESEND_COOLDOWN_MS;
 
-    await this.prisma.user.update({
-      where: { id: user.id },
+    const throttleReason = coolingDown
+      ? 'cooldown'
+      : requestCount >= RESET_MAX_REQUESTS_PER_WINDOW
+        ? 'daily_email_limit'
+        : failedCount >= RESET_MAX_FAILED_PER_WINDOW
+          ? 'too_many_wrong_codes'
+          : null;
+    if (throttleReason) {
+      this.logger.warn({
+        event: 'password_reset.throttled',
+        userId: user.id,
+        reason: throttleReason,
+      });
+      return generic;
+    }
+
+    // Optimistic lock on resetLastSentAt: of two concurrent requests only one
+    // can issue a code, so the cooldown and daily cap cannot be raced.
+    const issued = await this.prisma.user.updateMany({
+      where: { id: user.id, resetLastSentAt: user.resetLastSentAt },
       data: {
         resetOtp: hashedCode,
-        resetOtpExpiresAt,
+        resetOtpExpiresAt: new Date(now + RESET_CODE_TTL_MINUTES * 60 * 1000),
         resetOtpAttempts: 0,
+        resetLastSentAt: new Date(now),
+        resetRequestCount: requestCount + 1,
+        resetFailedCount: failedCount,
+        resetWindowStartedAt: windowActive
+          ? user.resetWindowStartedAt
+          : new Date(now),
       },
     });
+    if (issued.count === 0) {
+      return generic;
+    }
 
     this.mailerService
       .sendMail({
@@ -197,7 +254,7 @@ export class AuthService {
         },
       })
       .then(() =>
-        this.logger.log(`Password reset code emailed to user ${user.id}`),
+        this.logger.log({ event: 'password_reset.sent', userId: user.id }),
       )
       .catch((error: unknown) => {
         const message = error instanceof Error ? error.message : String(error);
@@ -207,7 +264,14 @@ export class AuthService {
     return generic;
   }
 
+  /**
+   * Wrong, expired or exhausted codes all fail the same way (400, one
+   * message). Guesses are capped per code and per account per window.
+   */
   async confirmResetPassword(dto: ConfirmResetPasswordDto) {
+    const invalid = () =>
+      new BadRequestException(ERROR_MESSAGES.RESET_CODE_INVALID);
+
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
       select: {
@@ -215,31 +279,42 @@ export class AuthService {
         resetOtp: true,
         resetOtpExpiresAt: true,
         resetOtpAttempts: true,
+        resetFailedCount: true,
+        resetWindowStartedAt: true,
       },
     });
 
     if (!user?.resetOtp || !user.resetOtpExpiresAt) {
       await bcrypt.compare(dto.token, DUMMY_BCRYPT_HASH);
-      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_TOKEN);
+      throw invalid();
     }
 
     if (user.resetOtpExpiresAt.getTime() < Date.now()) {
       await this.clearResetOtp(user.id);
-      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_TOKEN);
+      throw invalid();
     }
 
-    if ((user.resetOtpAttempts ?? 0) >= RESET_CODE_MAX_ATTEMPTS) {
+    const windowActive =
+      !!user.resetWindowStartedAt &&
+      Date.now() - user.resetWindowStartedAt.getTime() < RESET_WINDOW_MS;
+    if (
+      (user.resetOtpAttempts ?? 0) >= RESET_CODE_MAX_ATTEMPTS ||
+      (windowActive && user.resetFailedCount >= RESET_MAX_FAILED_PER_WINDOW)
+    ) {
       await this.clearResetOtp(user.id);
-      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_TOKEN);
+      throw invalid();
     }
 
     const isValid = await bcrypt.compare(dto.token, user.resetOtp);
     if (!isValid) {
       await this.recordResetFailure(user.id, user.resetOtp);
-      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_TOKEN);
+      throw invalid();
     }
 
-    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+    const hashedPassword = await bcrypt.hash(
+      dto.newPassword,
+      PASSWORD_BCRYPT_ROUNDS,
+    );
     // Consume the code atomically: only succeeds if it has not been used or
     // replaced in the meantime, so a code can never be redeemed twice.
     const consumed = await this.prisma.user.updateMany({
@@ -249,10 +324,11 @@ export class AuthService {
         resetOtp: null,
         resetOtpExpiresAt: null,
         resetOtpAttempts: 0,
+        resetFailedCount: 0,
       },
     });
     if (consumed.count === 0) {
-      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_TOKEN);
+      throw invalid();
     }
 
     await this.userService.revokeAllSessions(user.id, 'password_reset');
@@ -276,7 +352,10 @@ export class AuthService {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
-    const hashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, 10);
+    const hashedPassword = await bcrypt.hash(
+      resetPasswordDto.newPassword,
+      PASSWORD_BCRYPT_ROUNDS,
+    );
 
     await this.prisma.user.update({
       where: { id: user.id },
@@ -512,7 +591,7 @@ export class AuthService {
   private async sendLoginOtp(user: User) {
     const expiresInMinutes = this.otpExpiresInMinutes();
     const otp = this.generateOtp();
-    const hashedOtp = await bcrypt.hash(otp, 10);
+    const hashedOtp = await bcrypt.hash(otp, CODE_BCRYPT_ROUNDS);
     const otpExpiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
 
     await this.prisma.user.update({
@@ -663,14 +742,31 @@ export class AuthService {
     }
   }
 
-  /** Invalidates the reset code after RESET_CODE_MAX_ATTEMPTS wrong guesses. */
+  /**
+   * Counts a wrong reset code against the code and the account's window.
+   * The code is invalidated after RESET_CODE_MAX_ATTEMPTS wrong guesses, or
+   * once the account reaches RESET_MAX_FAILED_PER_WINDOW.
+   */
   private async recordResetFailure(userId: string, codeHash: string) {
     const updated = await this.prisma.user.update({
       where: { id: userId },
-      data: { resetOtpAttempts: { increment: 1 } },
-      select: { resetOtpAttempts: true },
+      data: {
+        resetOtpAttempts: { increment: 1 },
+        resetFailedCount: { increment: 1 },
+      },
+      select: { resetOtpAttempts: true, resetFailedCount: true },
     });
-    if (updated.resetOtpAttempts >= RESET_CODE_MAX_ATTEMPTS) {
+    if (
+      updated.resetOtpAttempts >= RESET_CODE_MAX_ATTEMPTS ||
+      updated.resetFailedCount >= RESET_MAX_FAILED_PER_WINDOW
+    ) {
+      if (updated.resetFailedCount >= RESET_MAX_FAILED_PER_WINDOW) {
+        this.logger.warn({
+          event: 'password_reset.locked',
+          userId,
+          reason: 'too_many_wrong_codes',
+        });
+      }
       await this.prisma.user.updateMany({
         where: { id: userId, resetOtp: codeHash },
         data: {
@@ -678,6 +774,35 @@ export class AuthService {
           resetOtpExpiresAt: null,
           resetOtpAttempts: 0,
         },
+      });
+    }
+  }
+
+  /**
+   * Re-hashes a verified password that was stored with a lower bcrypt cost.
+   * Best effort: a failure here must never block a successful sign-in.
+   */
+  private async upgradePasswordHash(
+    userId: string,
+    storedHash: string,
+    plainPassword: string,
+  ): Promise<void> {
+    try {
+      if (bcrypt.getRounds(storedHash) >= PASSWORD_BCRYPT_ROUNDS) {
+        return;
+      }
+      const upgraded = await bcrypt.hash(plainPassword, PASSWORD_BCRYPT_ROUNDS);
+      // Conditional on the old hash so a concurrent password change wins.
+      await this.prisma.user.updateMany({
+        where: { id: userId, password: storedHash },
+        data: { password: upgraded },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn({
+        event: 'password_hash.upgrade_failed',
+        userId,
+        error: message,
       });
     }
   }

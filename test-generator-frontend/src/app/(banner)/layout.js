@@ -3,6 +3,7 @@
  */
 import { Great_Vibes, Playfair_Display } from "next/font/google";
 import { Header } from "@/components/shared";
+import { pageMetadata } from "@/constants/seo";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -16,9 +17,12 @@ const script = Great_Vibes({
   weight: "400",
 });
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: "Banner Designer",
-};
+  description:
+    "Design and download academy banners — admission flyers, result cards and topper boards — from editable templates.",
+  path: "/banner",
+});
 
 export default function BannerLayout({ children }) {
   return (

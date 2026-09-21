@@ -8,7 +8,14 @@ import { AdminCrudPage } from "../../../features/AdminCrudPage";
 import { AdminModal } from "../../../features/AdminModal";
 import { Field, TextInput, TextSelect, TextTextarea } from "../../../features/AdminFormFields";
 import { useGetClassesQuery } from "@/services/api/classes.api";
-import { useGetBooksQuery, useAddBookMutation, useUpdateBookMutation, useDeleteBookMutation } from "@/services/api/books.api";
+import {
+  useGetBooksQuery,
+  useGetDeletedBooksQuery,
+  useAddBookMutation,
+  useUpdateBookMutation,
+  useDeleteBookMutation,
+  useRestoreBookMutation,
+} from "@/services/api/books.api";
 
 const EMPTY = {
   name: "",
@@ -27,6 +34,8 @@ export function BooksAdmin() {
   const [addBookMutation, { isLoading: isAdding }] = useAddBookMutation();
   const [updateBookMutation, { isLoading: isUpdating }] = useUpdateBookMutation();
   const [deleteBookMutation] = useDeleteBookMutation();
+  const [restoreBookMutation] = useRestoreBookMutation();
+  const [showDeleted, setShowDeleted] = useState(false);
 
   const {
     data: books = [],
@@ -35,6 +44,11 @@ export function BooksAdmin() {
     error: booksQueryError,
     refetch: refetchBooks,
   } = useGetBooksQuery();
+
+  // Deleting a book is a soft delete, so its chapters and questions survive
+  // and it can be brought back from here.
+  const { data: deletedBooks = [], isFetching: deletedLoading } =
+    useGetDeletedBooksQuery(undefined, { skip: !showDeleted });
 
   // Some backends return a 404 with message "There are no book" when the list is empty.
   // Treat that specific case as an empty list so the UI can show the Add flow.
@@ -76,10 +90,29 @@ export function BooksAdmin() {
           deleteWithToast({
             entityLabel: "Book",
             entityName: item.name,
+            confirmMessage: `Delete "${item.name}"? It is hidden from teachers along with its chapters and questions, and nothing is erased — you can bring it back from "Show deleted books".`,
+            successMessage: "Book deleted — restore it any time from Show deleted books",
             onDelete: () => deleteBookMutation(item.id).unwrap(),
           }),
       })),
     [books, deleteBookMutation],
+  );
+
+  const deletedRows = useMemo(
+    () =>
+      deletedBooks.map((item) => ({
+        ...item,
+        onRestore: () =>
+          restoreBookMutation(item.id)
+            .unwrap()
+            .then(() => toast.success(`"${item.name}" restored`))
+            .catch((error) =>
+              toast.error(
+                error?.data?.message || error?.error || "Failed to restore book",
+              ),
+            ),
+      })),
+    [deletedBooks, restoreBookMutation],
   );
 
   const close = () => {
@@ -161,7 +194,7 @@ export function BooksAdmin() {
     <>
       <AdminCrudPage
         title="Manage Books"
-        description="Attach books to classes and keep metadata up to date."
+        description="Attach books to classes and keep metadata up to date. A book name can be used once per class."
         addLabel="Add book"
         emptyTitle="No books yet"
         emptyDescription="Add a book and attach it to a class."
@@ -173,6 +206,16 @@ export function BooksAdmin() {
           });
           setOpen(true);
         }}
+        toolbar={
+          <label className="inline-flex items-center gap-2 text-small text-neutral-600">
+            <input
+              type="checkbox"
+              checked={showDeleted}
+              onChange={(e) => setShowDeleted(e.target.checked)}
+            />
+            Show deleted books
+          </label>
+        }
         columns={[
           { key: "name", label: "Book" },
           {
@@ -183,6 +226,56 @@ export function BooksAdmin() {
           { key: "edition", label: "Edition" },
         ]}
         rows={rows}
+        footer={
+          showDeleted ? (
+            <section className="space-y-3">
+              <div>
+                <h2 className="text-h6 font-semibold text-neutral-900">
+                  Deleted books
+                </h2>
+                <p className="mt-1 text-small text-neutral-600">
+                  Hidden from teachers. Their chapters and questions are kept
+                  and come back with the book.
+                </p>
+              </div>
+              {deletedLoading ? (
+                <p className="text-small text-neutral-500">Loading…</p>
+              ) : deletedRows.length === 0 ? (
+                <p className="text-small text-neutral-500">
+                  No deleted books.
+                </p>
+              ) : (
+                <ul className="divide-y divide-neutral-100 rounded-[var(--radius-card)] border border-neutral-200 bg-neutral-0">
+                  {deletedRows.map((row) => (
+                    <li
+                      key={row.id}
+                      className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-small font-medium text-neutral-900">
+                          {row.name}
+                        </span>
+                        <span className="block text-caption text-neutral-500">
+                          {row.className || classNameById[row.classId] || "—"} ·{" "}
+                          {row.chaptersCount} chapter
+                          {row.chaptersCount === 1 ? "" : "s"}
+                        </span>
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={row.onRestore}
+                      >
+                        Restore
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          ) : null
+        }
       />
 
       <AdminModal

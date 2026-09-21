@@ -10,6 +10,7 @@ function buildBooksUrl(classId) {
 function normalizeBooks(response) {
   if (!Array.isArray(response)) return [];
   return response.map((item) => ({
+    deletedAt: item.deletedAt ?? null,
     id: item.id,
     name: item.book_name ?? item.name ?? "",
     classId: item.classId ?? item.class?.id ?? item.class?.classId ?? "",
@@ -38,6 +39,32 @@ export const booksApi = SplitApiSettings.injectEndpoints({
               { type: "Book", id: "LIST" },
             ]
           : [{ type: "Book", id: "LIST" }],
+    }),
+
+    /** Soft-deleted books (admin only), for restoring. */
+    getDeletedBooks: builder.query({
+      query: () => ({
+        url: API_ENDPOINTS.getDeletedBooks,
+        method: "GET",
+      }),
+      transformResponse: (response) => normalizeBooks(response),
+      providesTags: [{ type: "Book", id: "DELETED" }],
+    }),
+
+    restoreBook: builder.mutation({
+      query: (id) => ({
+        url: API_ENDPOINTS.restoreBook(id),
+        method: "POST",
+      }),
+      invalidatesTags: (_result, _error, id) => [
+        { type: "Book", id },
+        { type: "Book", id: "LIST" },
+        { type: "Book", id: "DELETED" },
+        { type: "SchoolClass", id: "LIST" },
+        { type: "Chapter", id: "LIST" },
+        { type: "Question", id: "LIST" },
+        { type: "DashboardStats", id: "SUMMARY" },
+      ],
     }),
 
     addBook: builder.mutation({
@@ -69,6 +96,7 @@ export const booksApi = SplitApiSettings.injectEndpoints({
       ],
     }),
 
+    /** Soft delete: hides the book and its content; restorable. */
     deleteBook: builder.mutation({
       query: (id) => ({
         url: API_ENDPOINTS.deleteBook(id),
@@ -77,6 +105,7 @@ export const booksApi = SplitApiSettings.injectEndpoints({
       invalidatesTags: (_result, _error, id) => [
         { type: "Book", id },
         { type: "Book", id: "LIST" },
+        { type: "Book", id: "DELETED" },
         { type: "SchoolClass", id: "LIST" },
         { type: "Chapter", id: "LIST" },
         { type: "Question", id: "LIST" },
@@ -88,7 +117,9 @@ export const booksApi = SplitApiSettings.injectEndpoints({
 
 export const {
   useGetBooksQuery,
+  useGetDeletedBooksQuery,
   useAddBookMutation,
   useUpdateBookMutation,
   useDeleteBookMutation,
+  useRestoreBookMutation,
 } = booksApi;

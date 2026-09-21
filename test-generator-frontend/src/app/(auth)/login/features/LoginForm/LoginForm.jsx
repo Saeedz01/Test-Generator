@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
@@ -18,10 +19,14 @@ function toastApiError(error, fallback = "Invalid email or password") {
     typeof message === "string" &&
     (/prisma|column|invocation|does not exist|database/i.test(message) ||
       message.length > 120);
+  const text = looksTechnical
+    ? "Sign-in is temporarily unavailable. Please try again."
+    : message || fallback;
+  // Server errors carry a request id; showing it lets an admin find the
+  // matching entry in the server log.
+  const reference = error?.data?.requestId;
   toast.error(
-    looksTechnical
-      ? "Sign-in is temporarily unavailable. Please try again."
-      : message || fallback,
+    reference ? `${text} (reference ${String(reference).slice(0, 8)})` : text,
   );
 }
 
@@ -44,7 +49,7 @@ export function LoginForm() {
 
   const onSubmit = async (event) => {
     event.preventDefault();
-    if (!email.trim() || !password.trim()) {
+    if (!email.trim() || !password) {
       toast.error("Email and password are required");
       return;
     }
@@ -56,7 +61,8 @@ export function LoginForm() {
     try {
       const result = await login({
         email: email.trim(),
-        password: password.trim(),
+        // Sent exactly as typed: passwords are never trimmed.
+        password,
         ...(needsOtp ? { otp: otp.trim() } : {}),
       }).unwrap();
 
@@ -83,7 +89,7 @@ export function LoginForm() {
 
   const onResendOtp = async () => {
     if (resendIn > 0 || isResending) return;
-    if (!email.trim() || !password.trim()) {
+    if (!email.trim() || !password) {
       toast.error("Email and password are required");
       return;
     }
@@ -91,7 +97,8 @@ export function LoginForm() {
     try {
       await sendOtp({
         email: email.trim(),
-        password: password.trim(),
+        // Sent exactly as typed: passwords are never trimmed.
+        password,
       }).unwrap();
       setOtp("");
       setResendIn(RESEND_COOLDOWN_SECONDS);
@@ -137,6 +144,17 @@ export function LoginForm() {
             readOnly={needsOtp}
           />
         </label>
+
+        {needsOtp ? null : (
+          <div className="-mt-2 flex justify-end">
+            <Link
+              href={ROUTES.FORGOT_PASSWORD}
+              className="text-caption font-medium text-primary-600 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
+        )}
 
         {needsOtp ? (
           <div className="space-y-2">

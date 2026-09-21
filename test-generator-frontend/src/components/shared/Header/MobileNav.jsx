@@ -12,6 +12,7 @@ import { cn } from "@/utils";
 
 const NAV_LINKS = [
   { href: ROUTES.CLASSES, label: "Classes" },
+  { href: ROUTES.SEARCH, label: "Search" },
   { href: ROUTES.BANNER, label: "Banner Designer" },
   { href: ROUTES.ABOUT, label: "About" },
 ];

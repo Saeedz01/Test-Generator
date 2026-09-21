@@ -1,4 +1,8 @@
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { createHash } from 'crypto';
 import * as bcrypt from 'bcrypt';
@@ -6,6 +10,10 @@ import {
   AuthService,
   REFRESH_GRACE_MS,
   RESET_CODE_MAX_ATTEMPTS,
+  RESET_MAX_FAILED_PER_WINDOW,
+  RESET_MAX_REQUESTS_PER_WINDOW,
+  RESET_RESEND_COOLDOWN_MS,
+  RESET_WINDOW_MS,
 } from './auth.service';
 
 const sha256 = (value: string) =>
@@ -99,44 +107,135 @@ describe('AuthService', () => {
   }
 
   describe('forgotPassword', () => {
-    it('stores reset OTP separately and does not touch login otp', async () => {
-      prisma.user.findUnique.mockResolvedValue({
+    function resetUser(overrides: Record<string, unknown> = {}) {
+      return {
         id: 'u1',
         email: 'a@test.com',
         name: 'A',
-      });
-      prisma.user.update.mockResolvedValue({});
+        resetWindowStartedAt: null,
+        resetRequestCount: 0,
+        resetFailedCount: 0,
+        resetLastSentAt: null,
+        ...overrides,
+      };
+    }
+
+    it('stores reset OTP separately and does not touch login otp', async () => {
+      prisma.user.findUnique.mockResolvedValue(resetUser());
+      prisma.user.updateMany.mockResolvedValue({ count: 1 });
       mailerService.sendMail.mockResolvedValue(undefined);
 
       await service.forgotPassword({ email: 'a@test.com' });
 
-      expect(prisma.user.update).toHaveBeenCalledWith(
+      expect(prisma.user.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
+          where: { id: 'u1', resetLastSentAt: null },
           data: expect.objectContaining({
             resetOtp: expect.any(String),
             resetOtpExpiresAt: expect.any(Date),
             resetOtpAttempts: 0,
+            resetRequestCount: 1,
+            resetWindowStartedAt: expect.any(Date),
           }),
         }),
       );
-      expect(prisma.user.update.mock.calls[0][0].data.otp).toBeUndefined();
+      expect(prisma.user.updateMany.mock.calls[0][0].data.otp).toBeUndefined();
+      expect(mailerService.sendMail).toHaveBeenCalledTimes(1);
+    });
+
+    it('enforces a per-account cooldown between reset emails', async () => {
+      prisma.user.findUnique.mockResolvedValue(
+        resetUser({
+          resetWindowStartedAt: new Date(),
+          resetRequestCount: 1,
+          resetLastSentAt: new Date(Date.now() - RESET_RESEND_COOLDOWN_MS / 2),
+        }),
+      );
+
+      const result = await service.forgotPassword({ email: 'a@test.com' });
+
+      expect(result.message).toMatch(/If an account exists/);
+      expect(prisma.user.updateMany).not.toHaveBeenCalled();
+      expect(mailerService.sendMail).not.toHaveBeenCalled();
+    });
+
+    it('caps reset emails per account per window, whatever the client IP', async () => {
+      prisma.user.findUnique.mockResolvedValue(
+        resetUser({
+          resetWindowStartedAt: new Date(Date.now() - 60 * 60 * 1000),
+          resetRequestCount: RESET_MAX_REQUESTS_PER_WINDOW,
+          resetLastSentAt: new Date(Date.now() - 10 * 60 * 1000),
+        }),
+      );
+
+      await service.forgotPassword({ email: 'a@test.com' });
+
+      expect(prisma.user.updateMany).not.toHaveBeenCalled();
+      expect(mailerService.sendMail).not.toHaveBeenCalled();
+    });
+
+    it('stops issuing codes after too many wrong codes in the window', async () => {
+      prisma.user.findUnique.mockResolvedValue(
+        resetUser({
+          resetWindowStartedAt: new Date(Date.now() - 60 * 60 * 1000),
+          resetRequestCount: 1,
+          resetFailedCount: RESET_MAX_FAILED_PER_WINDOW,
+          resetLastSentAt: new Date(Date.now() - 10 * 60 * 1000),
+        }),
+      );
+
+      await service.forgotPassword({ email: 'a@test.com' });
+
+      expect(mailerService.sendMail).not.toHaveBeenCalled();
+    });
+
+    it('starts a fresh window once the previous one has expired', async () => {
+      const lastSent = new Date(Date.now() - RESET_WINDOW_MS - 1000);
+      prisma.user.findUnique.mockResolvedValue(
+        resetUser({
+          resetWindowStartedAt: new Date(Date.now() - RESET_WINDOW_MS - 5000),
+          resetRequestCount: RESET_MAX_REQUESTS_PER_WINDOW,
+          resetFailedCount: RESET_MAX_FAILED_PER_WINDOW,
+          resetLastSentAt: lastSent,
+        }),
+      );
+      prisma.user.updateMany.mockResolvedValue({ count: 1 });
+      mailerService.sendMail.mockResolvedValue(undefined);
+
+      await service.forgotPassword({ email: 'a@test.com' });
+
+      expect(prisma.user.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'u1', resetLastSentAt: lastSent },
+          data: expect.objectContaining({
+            resetRequestCount: 1,
+            resetFailedCount: 0,
+          }),
+        }),
+      );
+      expect(mailerService.sendMail).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not mail when a concurrent request already issued a code', async () => {
+      prisma.user.findUnique.mockResolvedValue(resetUser());
+      prisma.user.updateMany.mockResolvedValue({ count: 0 });
+
+      await service.forgotPassword({ email: 'a@test.com' });
+
+      expect(mailerService.sendMail).not.toHaveBeenCalled();
     });
 
     it('returns the generic response for unknown accounts without mailing', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
       const result = await service.forgotPassword({ email: 'x@test.com' });
       expect(result.message).toMatch(/If an account exists/);
-      expect(prisma.user.update).not.toHaveBeenCalled();
+      expect(prisma.user.updateMany).not.toHaveBeenCalled();
       expect(mailerService.sendMail).not.toHaveBeenCalled();
     });
 
     it('does not leak mail failures', async () => {
-      prisma.user.findUnique.mockResolvedValue({
-        id: 'u1',
-        email: 'a@test.com',
-        name: 'A',
-      });
-      prisma.user.update.mockResolvedValue({});
+      prisma.user.findUnique.mockResolvedValue(resetUser());
+      prisma.user.updateMany.mockResolvedValue({ count: 1 });
       mailerService.sendMail.mockRejectedValue(new Error('smtp down'));
 
       await expect(
@@ -171,6 +270,7 @@ describe('AuthService', () => {
             resetOtp: null,
             resetOtpExpiresAt: null,
             resetOtpAttempts: 0,
+            resetFailedCount: 0,
           }),
         }),
       );
@@ -196,7 +296,7 @@ describe('AuthService', () => {
           token: '12345678',
           newPassword: 'new-password-123',
         }),
-      ).rejects.toBeInstanceOf(UnauthorizedException);
+      ).rejects.toBeInstanceOf(BadRequestException);
       expect(userService.revokeAllSessions).not.toHaveBeenCalled();
     });
 
@@ -214,7 +314,7 @@ describe('AuthService', () => {
           token: 'bad',
           newPassword: 'new-password-123',
         }),
-      ).rejects.toBeInstanceOf(UnauthorizedException);
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('invalidates the code after the maximum number of wrong guesses', async () => {
@@ -227,6 +327,7 @@ describe('AuthService', () => {
       });
       prisma.user.update.mockResolvedValue({
         resetOtpAttempts: RESET_CODE_MAX_ATTEMPTS,
+        resetFailedCount: 1,
       });
       prisma.user.updateMany.mockResolvedValue({ count: 1 });
 
@@ -236,11 +337,14 @@ describe('AuthService', () => {
           token: '87654321',
           newPassword: 'new-password-123',
         }),
-      ).rejects.toBeInstanceOf(UnauthorizedException);
+      ).rejects.toBeInstanceOf(BadRequestException);
 
       expect(prisma.user.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: { resetOtpAttempts: { increment: 1 } },
+          data: {
+            resetOtpAttempts: { increment: 1 },
+            resetFailedCount: { increment: 1 },
+          },
         }),
       );
       expect(prisma.user.updateMany).toHaveBeenCalledWith({
@@ -265,8 +369,53 @@ describe('AuthService', () => {
           token: '12345678',
           newPassword: 'new-password-123',
         }),
-      ).rejects.toBeInstanceOf(UnauthorizedException);
+      ).rejects.toBeInstanceOf(BadRequestException);
       expect(prisma.user.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('refuses the right code once the account used up its wrong guesses', async () => {
+      const tokenHash = await bcrypt.hash('12345678', 4);
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        resetOtp: tokenHash,
+        resetOtpExpiresAt: new Date(Date.now() + 60_000),
+        resetOtpAttempts: 0,
+        resetFailedCount: RESET_MAX_FAILED_PER_WINDOW,
+        resetWindowStartedAt: new Date(Date.now() - 60_000),
+      });
+      prisma.user.update.mockResolvedValue({});
+
+      await expect(
+        service.confirmResetPassword({
+          email: 'a@test.com',
+          token: '12345678',
+          newPassword: 'new-password-123',
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.user.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('stores the new password with the production bcrypt cost', async () => {
+      const tokenHash = await bcrypt.hash('12345678', 4);
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        resetOtp: tokenHash,
+        resetOtpExpiresAt: new Date(Date.now() + 60_000),
+        resetOtpAttempts: 0,
+        resetFailedCount: 0,
+        resetWindowStartedAt: new Date(),
+      });
+      prisma.user.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.confirmResetPassword({
+        email: 'a@test.com',
+        token: '12345678',
+        newPassword: 'new-password-123',
+      });
+
+      const stored = prisma.user.updateMany.mock.calls[0][0].data
+        .password as string;
+      expect(bcrypt.getRounds(stored)).toBe(12);
     });
   });
 
@@ -314,6 +463,66 @@ describe('AuthService', () => {
         );
         expect(payload.sid).toBe(created.id);
       }
+    });
+
+    it('upgrades a legacy low-cost password hash after a successful login', async () => {
+      const user = await userWithOtp();
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.updateMany.mockResolvedValue({ count: 1 });
+      prisma.authSession.create.mockResolvedValue({});
+      prisma.authSession.deleteMany.mockResolvedValue({ count: 0 });
+
+      await service.login({
+        email: 'a@test.com',
+        password: 'correct-password',
+        otp: '123456',
+      });
+
+      const upgrade = prisma.user.updateMany.mock.calls.find(
+        ([args]) => 'password' in args.data,
+      )?.[0];
+      const upgradedHash = upgrade?.data.password as string;
+      expect(upgrade?.where).toEqual({ id: USER_ID, password: user.password });
+      expect(bcrypt.getRounds(upgradedHash)).toBe(12);
+      await expect(
+        bcrypt.compare('correct-password', upgradedHash),
+      ).resolves.toBe(true);
+    });
+
+    it('does not rehash a password that already uses the current cost', async () => {
+      const user = await userWithOtp({
+        password: await bcrypt.hash('correct-password', 12),
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.updateMany.mockResolvedValue({ count: 1 });
+      prisma.authSession.create.mockResolvedValue({});
+      prisma.authSession.deleteMany.mockResolvedValue({ count: 0 });
+
+      await service.login({
+        email: 'a@test.com',
+        password: 'correct-password',
+        otp: '123456',
+      });
+
+      expect(
+        prisma.user.updateMany.mock.calls.some(
+          ([args]) => 'password' in args.data,
+        ),
+      ).toBe(false);
+    });
+
+    it('does not rehash when only the password step (no OTP) succeeds', async () => {
+      prisma.user.findUnique.mockResolvedValue(await userWithOtp());
+      prisma.user.update.mockResolvedValue({});
+      mailerService.sendMail.mockResolvedValue(undefined);
+
+      const result = await service.login({
+        email: 'a@test.com',
+        password: 'correct-password',
+      });
+
+      expect(result).toMatchObject({ requiresOtp: true });
+      expect(prisma.user.updateMany).not.toHaveBeenCalled();
     });
 
     it('rejects an OTP that a concurrent request already used', async () => {

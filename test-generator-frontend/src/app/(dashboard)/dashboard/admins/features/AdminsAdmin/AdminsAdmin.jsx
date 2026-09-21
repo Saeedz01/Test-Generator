@@ -13,6 +13,7 @@ import {
   useSuspendAdminMutation,
 } from "@/services/api/auth.api";
 import { selectAuthUser } from "@/store/authSlice";
+import { PASSWORD_MAX_LENGTH, validateAdminPassword } from "@/utils";
 import { deleteWithToast } from "../../../features/deleteWithToast";
 import { AdminModal } from "../../../features/AdminModal";
 import { Field, TextInput } from "../../../features/AdminFormFields";
@@ -31,6 +32,7 @@ export function AdminsAdmin() {
   const [deleteAdmin] = useDeleteAdminMutation();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(EMPTY);
+  const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => {
     if (currentUser && currentUser.role !== "super_admin") {
@@ -69,23 +71,26 @@ export function AdminsAdmin() {
   const close = () => {
     setOpen(false);
     setForm(EMPTY);
+    setPasswordError("");
   };
 
   const submit = async (event) => {
     event.preventDefault();
-    if (!form.email.trim() || !form.password.trim()) {
-      toast.error("Email and password are required");
+    if (!form.email.trim()) {
+      toast.error("Email is required");
       return;
     }
-    if (form.password.trim().length < 8) {
-      toast.error("Password must be at least 8 characters");
+    // The password is sent exactly as typed (never trimmed).
+    const nextPasswordError = validateAdminPassword(form.password);
+    setPasswordError(nextPasswordError);
+    if (nextPasswordError) {
       return;
     }
 
     try {
       await createAdmin({
         email: form.email.trim(),
-        password: form.password.trim(),
+        password: form.password,
         name: form.name.trim() || undefined,
       }).unwrap();
       toast.success("Admin created");
@@ -212,13 +217,39 @@ export function AdminsAdmin() {
           <Field label="Password">
             <TextInput
               type="password"
+              autoComplete="new-password"
               value={form.password}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, password: e.target.value }))
-              }
+              onChange={(e) => {
+                const password = e.target.value;
+                setForm((prev) => ({ ...prev, password }));
+                // Re-validate live once an error is showing, so it clears
+                // as soon as the password is fixed.
+                if (passwordError) {
+                  setPasswordError(validateAdminPassword(password));
+                }
+              }}
+              onBlur={() => {
+                if (form.password) {
+                  setPasswordError(validateAdminPassword(form.password));
+                }
+              }}
               required
-              minLength={8}
+              maxLength={PASSWORD_MAX_LENGTH}
+              aria-invalid={passwordError ? true : undefined}
+              aria-describedby="admin-password-hint"
             />
+            <span
+              id="admin-password-hint"
+              className={
+                passwordError
+                  ? "mt-1 block text-caption text-error-600"
+                  : "mt-1 block text-caption text-neutral-500"
+              }
+              role={passwordError ? "alert" : undefined}
+            >
+              {passwordError ||
+                "At least 8 characters. Spaces are allowed inside, not at the start or end."}
+            </span>
           </Field>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={close}>

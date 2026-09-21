@@ -7,6 +7,7 @@ import { UpdateClassDto } from '../admin/dto/update-class.dto';
 import { schoolClass } from './entities/class.entity';
 import { CreateSchoolClassDto } from '../admin/dto/create-class.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { visibleClassWhere } from 'src/common/visibility';
 
 @Injectable()
 export class ClassService {
@@ -41,13 +42,14 @@ export class ClassService {
     })) as unknown as schoolClass;
   }
 
+  /** `includeArchived` is only ever true for staff (see StaffViewGuard). */
   async findAll(includeArchived = false) {
     const classes = await this.prisma.schoolClass.findMany({
-      where: includeArchived ? undefined : { isArchived: false },
+      where: includeArchived ? undefined : visibleClassWhere,
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
       include: {
         _count: {
-          select: { books: true },
+          select: { books: { where: { deletedAt: null } } },
         },
       },
     });
@@ -61,9 +63,9 @@ export class ClassService {
     });
   }
 
-  async findOne(id: string): Promise<schoolClass> {
-    const classData = await this.prisma.schoolClass.findUnique({
-      where: { id },
+  async findOne(id: string, includeArchived = false): Promise<schoolClass> {
+    const classData = await this.prisma.schoolClass.findFirst({
+      where: includeArchived ? { id } : { id, ...visibleClassWhere },
     });
 
     if (!classData) {

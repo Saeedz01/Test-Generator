@@ -23,7 +23,11 @@ import { ThemeProvider } from "@/components/shared/ThemeProvider";
 import { THEME_BOOT_SCRIPT } from "@/components/shared/ThemeProvider/themeBootScript";
 import { StoreProvider } from "@/store/providers";
 import { BRAND_NAME } from "@/constants";
+import { SITE_URL } from "@/constants/site";
 import "./globals.css";
+
+const SITE_DESCRIPTION =
+  "Testora helps teachers build exam papers from a chapter-wise question bank: pick MCQs, short and long questions, set marks and time, and print or download a ready test paper in English or Urdu.";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
@@ -37,13 +41,28 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
+  // Absolute URLs for canonicals, Open Graph and the sitemap. Falls back to
+  // localhost only in development (see constants/site.js).
+  ...(SITE_URL ? { metadataBase: new URL(SITE_URL) } : {}),
   title: {
-    default: BRAND_NAME,
+    default: `${BRAND_NAME} — Chapter-wise question bank and test paper generator`,
     template: `%s · ${BRAND_NAME}`,
   },
-  description:
-    "Testora helps teachers assemble balanced exam papers from chapter-wise MCQs, short, and long questions.",
+  description: SITE_DESCRIPTION,
   applicationName: BRAND_NAME,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: BRAND_NAME,
+    title: `${BRAND_NAME} — Chapter-wise question bank and test paper generator`,
+    description: SITE_DESCRIPTION,
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${BRAND_NAME} — Chapter-wise question bank and test paper generator`,
+    description: SITE_DESCRIPTION,
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

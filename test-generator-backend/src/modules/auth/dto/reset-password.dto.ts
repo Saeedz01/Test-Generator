@@ -1,12 +1,18 @@
 import { IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsAdminPassword,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from 'src/common/validators/text.validators';
 
 export class ResetPasswordDto {
   @IsString()
-  @MaxLength(72)
+  @MaxLength(PASSWORD_MAX_LENGTH)
   oldPassword: string;
 
   @IsString()
-  @MinLength(8)
-  @MaxLength(72)
+  @IsAdminPassword()
+  @MinLength(PASSWORD_MIN_LENGTH)
+  @MaxLength(PASSWORD_MAX_LENGTH)
   newPassword: string;
 }

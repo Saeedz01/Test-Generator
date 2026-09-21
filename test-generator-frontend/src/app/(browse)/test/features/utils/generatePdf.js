@@ -115,7 +115,10 @@ async function getPdfRenderer() {
       return createRenderer({
         fonts,
         execution: "main",
-        wasmUrl: "/libhtml2realpdf.wasm",
+        // Versioned so the service worker's cached copy follows upgrades.
+        wasmUrl: `/libhtml2realpdf.wasm?v=${encodeURIComponent(
+          process.env.NEXT_PUBLIC_PDF_ENGINE_VERSION || "0",
+        )}`,
       });
     })().catch((error) => {
       rendererPromise = null;

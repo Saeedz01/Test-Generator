@@ -17,6 +17,7 @@ import mailConfig from './config/mail.config';
 import { validateEnv } from './config/env.validation';
 import { MailModule } from './modules/mail/mail.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { SearchModule } from './modules/search/search.module';
 import { TrustedOriginMiddleware } from './common/middleware/trusted-origin.middleware';
 
 @Module({
@@ -51,6 +52,7 @@ import { TrustedOriginMiddleware } from './common/middleware/trusted-origin.midd
     AdminModule,
     AuthModule,
     QuestionsModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [

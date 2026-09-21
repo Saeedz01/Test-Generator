@@ -35,11 +35,18 @@ model Book {
   edition     String?      @db.VarChar(100)
   createdAt   DateTime     @default(now()) @db.Timestamp(6)
   updatedAt   DateTime     @default(now()) @updatedAt @db.Timestamp(6)
+  /// Soft delete: set instead of removing the row, so chapters and questions
+  /// survive and the book can be restored. Hidden from every public listing.
+  deletedAt   DateTime?    @db.Timestamp(6)
   classId     String?      @db.Uuid
   class       SchoolClass? @relation(fields: [classId], references: [id], onDelete: Cascade)
   chapters    Chapter[]
 
+  /// A book name appears at most once per class (deleted books included, so
+  /// re-creating a deleted book means restoring it).
+  @@unique([classId, book_name])
   @@index([classId])
+  @@index([book_name(ops: raw("gin_trgm_ops"))], type: Gin, map: "books_book_name_trgm_idx")
   @@map("books")
 }
 
@@ -57,6 +64,7 @@ model Chapter {
   mcqQuestions   McqQuestion[]
 
   @@index([bookId])
+  @@index([chapter_name(ops: raw("gin_trgm_ops"))], type: Gin, map: "chapters_chapter_name_trgm_idx")
   @@map("chapters")
 }
 
@@ -72,6 +80,8 @@ model LongQuestion {
   chapter        Chapter            @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   @@unique([chapterId, question_text])
+  @@index([question_text(ops: raw("gin_trgm_ops"))], type: Gin, map: "long_questions_question_text_trgm_idx")
+  @@index([questionTextUr(ops: raw("gin_trgm_ops"))], type: Gin, map: "long_questions_question_text_ur_trgm_idx")
   @@map("long_questions")
 }
 
@@ -87,6 +97,8 @@ model ShortQuestion {
   chapter        Chapter            @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   @@unique([chapterId, question_text])
+  @@index([question_text(ops: raw("gin_trgm_ops"))], type: Gin, map: "short_questions_question_text_trgm_idx")
+  @@index([questionTextUr(ops: raw("gin_trgm_ops"))], type: Gin, map: "short_questions_question_text_ur_trgm_idx")
   @@map("short_questions")
 }
 
@@ -103,27 +115,35 @@ model McqQuestion {
   chapter        Chapter            @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   @@unique([chapterId, question_text])
+  @@index([question_text(ops: raw("gin_trgm_ops"))], type: Gin, map: "mcq_questions_question_text_trgm_idx")
+  @@index([questionTextUr(ops: raw("gin_trgm_ops"))], type: Gin, map: "mcq_questions_question_text_ur_trgm_idx")
   @@map("mcq_questions")
 }
 
 model User {
-  id                String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name              String        @db.VarChar(255)
-  email             String        @unique @db.VarChar(255)
-  password          String        @db.VarChar(255)
-  otp               String?       @db.VarChar(255)
-  otpExpiresAt      DateTime?     @db.Timestamptz(6)
+  id                   String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name                 String        @db.VarChar(255)
+  email                String        @unique @db.VarChar(255)
+  password             String        @db.VarChar(255)
+  otp                  String?       @db.VarChar(255)
+  otpExpiresAt         DateTime?     @db.Timestamptz(6)
   /// Failed login-OTP attempts since the last OTP was issued / lockout ended.
-  otpFailedAttempts Int           @default(0)
-  otpLockedUntil    DateTime?     @db.Timestamptz(6)
-  resetOtp          String?       @db.VarChar(255)
-  resetOtpExpiresAt DateTime?     @db.Timestamptz(6)
+  otpFailedAttempts    Int           @default(0)
+  otpLockedUntil       DateTime?     @db.Timestamptz(6)
+  resetOtp             String?       @db.VarChar(255)
+  resetOtpExpiresAt    DateTime?     @db.Timestamptz(6)
   /// Failed password-reset code attempts for the current reset code.
-  resetOtpAttempts  Int           @default(0)
-  roleId            String?       @db.Uuid
-  isSuspended       Boolean       @default(false)
-  role              UserRole?     @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  sessions          AuthSession[]
+  resetOtpAttempts     Int           @default(0)
+  /// Per-account password-reset limits (independent of client IP): start of
+  /// the current window, reset emails sent and wrong codes entered in it.
+  resetWindowStartedAt DateTime?     @db.Timestamptz(6)
+  resetRequestCount    Int           @default(0)
+  resetFailedCount     Int           @default(0)
+  resetLastSentAt      DateTime?     @db.Timestamptz(6)
+  roleId               String?       @db.Uuid
+  isSuspended          Boolean       @default(false)
+  role                 UserRole?     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  sessions             AuthSession[]
 
   @@map("user")
 }

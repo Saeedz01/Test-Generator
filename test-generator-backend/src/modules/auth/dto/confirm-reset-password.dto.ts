@@ -1,10 +1,15 @@
 import {
   IsEmail,
   IsString,
-  Length,
+  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
+import {
+  IsAdminPassword,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from 'src/common/validators/text.validators';
 
 export class ConfirmResetPasswordDto {
   @IsEmail()
@@ -12,11 +17,12 @@ export class ConfirmResetPasswordDto {
   email: string;
 
   @IsString()
-  @Length(8, 8)
+  @Matches(/^\d{8}$/, { message: 'The reset code must be 8 digits' })
   token: string;
 
   @IsString()
-  @MinLength(8)
-  @MaxLength(72)
+  @IsAdminPassword()
+  @MinLength(PASSWORD_MIN_LENGTH)
+  @MaxLength(PASSWORD_MAX_LENGTH)
   newPassword: string;
 }

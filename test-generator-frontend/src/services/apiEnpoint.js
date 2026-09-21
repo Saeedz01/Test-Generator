@@ -1,9 +1,12 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || "http://localhost:5000";
+import { API_URL as BASE_URL } from "@/constants/site";
+
 
 export const API_ENDPOINTS = {
   // ---------------Auth-----------------
   login: `${BASE_URL}/api/auth/login`,
   sendOtp: `${BASE_URL}/api/auth/send-otp`,
+  forgotPassword: `${BASE_URL}/api/auth/forgot-password`,
+  confirmResetPassword: `${BASE_URL}/api/auth/confirm-reset-password`,
   logout: `${BASE_URL}/api/auth/logout`,
   getMe: `${BASE_URL}/api/auth/me`,
   getAdmins: `${BASE_URL}/api/auth/admins`,
@@ -26,6 +29,8 @@ export const API_ENDPOINTS = {
   getBooks: `${BASE_URL}/api/book`,
   updateBook: (id) => `${BASE_URL}/api/admin/updateBook/${id}`,
   deleteBook: (id) => `${BASE_URL}/api/admin/deleteBook/${id}`,
+  getDeletedBooks: `${BASE_URL}/api/admin/deletedBooks`,
+  restoreBook: (id) => `${BASE_URL}/api/admin/restoreBook/${id}`,
 
 
 // ------------Chapters-----------------
@@ -47,5 +52,8 @@ export const API_ENDPOINTS = {
   deleteLongQuestion: (id) => `${BASE_URL}/api/admin/deleteLongQuestion/${id}`,
   deleteShortQuestion: (id) => `${BASE_URL}/api/admin/deleteShortQuestion/${id}`,
   deleteMcqQuestion: (id) => `${BASE_URL}/api/admin/deleteMcqQuestion/${id}`,
+
+  // ------------Search-----------------
+  search: `${BASE_URL}/api/search`,
 
 };

@@ -36,16 +36,17 @@ function cookieSameSite(): 'lax' | 'strict' | 'none' {
 }
 
 /**
- * Express "trust proxy" setting. Defaults to 1 hop (one reverse proxy /
- * load balancer in front of the API). Use 0/false when the API is exposed
- * directly, otherwise clients can spoof X-Forwarded-For and dodge rate limits.
+ * Express "trust proxy" setting (drives req.ip for rate limiting and logs).
+ * Required in production (see env.validation.ts); when unset elsewhere it is
+ * false, i.e. X-Forwarded-For is ignored and the socket address is used, so
+ * clients can never spoof their IP by default.
  */
 export function trustProxySetting(
   raw = process.env.TRUST_PROXY,
 ): boolean | number | string {
   const value = raw?.trim();
   if (!value) {
-    return 1;
+    return false;
   }
   if (/^false$/i.test(value)) {
     return false;

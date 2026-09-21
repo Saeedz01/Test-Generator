@@ -1,19 +1,22 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { ConsoleLogger, Logger, ValidationPipe } from '@nestjs/common';
 import { json } from 'express';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { requestLogger } from './common/middleware/request-logger.middleware';
 
 async function bootstrap() {
   const isProduction = process.env.NODE_ENV === 'production';
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
+    // Production: one JSON object per line (timestamp, level, context,
+    // message) for log aggregation. Development: readable colored text.
     logger: isProduction
-      ? ['error', 'warn', 'log']
+      ? new ConsoleLogger({ json: true, logLevels: ['error', 'warn', 'log'] })
       : ['error', 'warn', 'log', 'debug'],
   });
   const configService = app.get(ConfigService);
@@ -23,9 +26,11 @@ async function bootstrap() {
   // Hops of trusted reverse proxies (TRUST_PROXY); drives req.ip for rate limiting.
   app.set(
     'trust proxy',
-    configService.get<boolean | number | string>('app.trustProxy') ?? 1,
+    configService.get<boolean | number | string>('app.trustProxy') ?? false,
   );
 
+  // First, so every request (including rejected ones) gets an id and a log line.
+  app.use(requestLogger());
   app.use(
     helmet({
       hsts: isProduction
@@ -50,6 +55,7 @@ async function bootstrap() {
     origin: corsOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
+    exposedHeaders: ['X-Request-Id'],
   });
 
   app.setGlobalPrefix('api', { exclude: ['/', '/health'] });

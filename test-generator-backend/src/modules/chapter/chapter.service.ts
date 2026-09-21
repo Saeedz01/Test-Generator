@@ -7,6 +7,7 @@ import { Chapter } from './entities/chapter.entity';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { visibleChapterWhere } from 'src/common/visibility';
 
 type ChapterWithBookClass = Chapter & {
   book?: {
@@ -23,8 +24,8 @@ export class ChapterService {
   async create(createChapterDto: CreateChapterDto) {
     const { bookId, chapter_name, order, description } = createChapterDto;
 
-    const book = await this.prisma.book.findUnique({
-      where: { id: bookId },
+    const book = await this.prisma.book.findFirst({
+      where: { id: bookId, deletedAt: null },
       include: { class: true },
     });
     if (!book) {
@@ -54,10 +55,15 @@ export class ChapterService {
   }
 
   async findAll(bookId?: string, classId?: string) {
+    // AND, not spread: a `book` filter here would otherwise overwrite the
+    // `book` key of visibleChapterWhere and leak hidden content.
     const chapters = await this.prisma.chapter.findMany({
       where: {
-        ...(bookId ? { bookId } : {}),
-        ...(classId ? { book: { classId } } : {}),
+        AND: [
+          visibleChapterWhere,
+          ...(bookId ? [{ bookId }] : []),
+          ...(classId ? [{ book: { classId } }] : []),
+        ],
       },
       include: {
         book: { include: { class: true } },
@@ -75,8 +81,8 @@ export class ChapterService {
   }
 
   async findOne(id: string) {
-    const chapter = await this.prisma.chapter.findUnique({
-      where: { id },
+    const chapter = await this.prisma.chapter.findFirst({
+      where: { id, ...visibleChapterWhere },
       include: {
         book: { include: { class: true } },
       },
@@ -103,8 +109,9 @@ export class ChapterService {
   }
 
   async update(id: string, updateChapterDto: UpdateChapterDto) {
-    const chapter = await this.prisma.chapter.findUnique({
-      where: { id },
+    // Chapters of a deleted book stay untouched until the book is restored.
+    const chapter = await this.prisma.chapter.findFirst({
+      where: { id, book: { is: { deletedAt: null } } },
       include: { book: { include: { class: true } } },
     });
 
@@ -135,8 +142,8 @@ export class ChapterService {
     } = {};
 
     if (updateChapterDto.bookId) {
-      const book = await this.prisma.book.findUnique({
-        where: { id: nextBookId },
+      const book = await this.prisma.book.findFirst({
+        where: { id: nextBookId, deletedAt: null },
       });
       if (!book) {
         throw new NotFoundException('Book not found');
@@ -167,8 +174,9 @@ export class ChapterService {
   }
 
   async remove(id: string) {
+    // Never hard-delete content that belongs to a soft-deleted book.
     const chapter = await this.prisma.chapter.deleteMany({
-      where: { id },
+      where: { id, book: { is: { deletedAt: null } } },
     });
     if (chapter.count === 0) {
       throw new NotFoundException('Chapter not found');

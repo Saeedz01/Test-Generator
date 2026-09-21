@@ -18,6 +18,7 @@ import { ShortQuestion } from './entities/question.shortQuestion';
 import { McqQuestion } from './entities/question.mcqs';
 import { Chapter } from '../chapter/entities/chapter.entity';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { visibleQuestionWhere } from 'src/common/visibility';
 
 type QuestionEntity = LongQuestion | ShortQuestion | McqQuestion;
 type QuestionKind = 'long' | 'short' | 'mcq';
@@ -37,6 +38,11 @@ type QuestionWithNested = QuestionEntity & {
     } | null;
   } | null;
 };
+
+/** Admin edits only touch content whose book has not been soft-deleted. */
+const inActiveBook = {
+  chapter: { is: { book: { is: { deletedAt: null } } } },
+} as const;
 
 const questionInclude = {
   chapter: {
@@ -86,8 +92,8 @@ export class QuestionsService {
   }
 
   private async resolveChapter(chapterId: string): Promise<Chapter> {
-    const chapter = await this.prisma.chapter.findUnique({
-      where: { id: chapterId },
+    const chapter = await this.prisma.chapter.findFirst({
+      where: { id: chapterId, book: { is: { deletedAt: null } } },
       include: {
         book: { include: { class: true } },
       },
@@ -204,16 +210,15 @@ export class QuestionsService {
     bookId?: string;
     classId?: string;
   }): Prisma.LongQuestionWhereInput {
-    if (query.chapterId) {
-      return { chapterId: query.chapterId };
-    }
-    if (query.bookId) {
-      return { chapter: { bookId: query.bookId } };
-    }
-    if (query.classId) {
-      return { chapter: { book: { classId: query.classId } } };
-    }
-    return {};
+    // Hidden content (archived class / deleted book) is never listed.
+    const scope: Prisma.LongQuestionWhereInput = query.chapterId
+      ? { chapterId: query.chapterId }
+      : query.bookId
+        ? { chapter: { bookId: query.bookId } }
+        : query.classId
+          ? { chapter: { book: { classId: query.classId } } }
+          : {};
+    return { AND: [visibleQuestionWhere, scope] };
   }
 
   private async findAllFromRepository(
@@ -265,7 +270,7 @@ export class QuestionsService {
     id: string,
   ): Promise<{ message: string }> {
     const result = await this.questionDelegate(kind).deleteMany({
-      where: { id },
+      where: { id, ...inActiveBook },
     });
 
     if (result.count === 0) {
@@ -330,10 +335,10 @@ export class QuestionsService {
     dto: Partial<CreateQuestionBaseDto> & { options?: McqOptionDto[] },
     type: 'long' | 'short' | 'mcq',
   ) {
-    const question = await this.questionDelegate(kind).findUnique({
-      where: { id },
+    const question = (await this.questionDelegate(kind).findFirst({
+      where: { id, ...inActiveBook },
       include: questionInclude,
-    });
+    })) as QuestionEntity | null;
 
     if (!question) {
       throw new NotFoundException('Question not found');

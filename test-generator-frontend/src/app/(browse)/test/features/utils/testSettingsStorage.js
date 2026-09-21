@@ -33,6 +33,37 @@ function canUseStorage() {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 }
 
+/** True for the various "storage is full" errors browsers throw. */
+function isQuotaError(error) {
+  return (
+    error?.name === "QuotaExceededError" ||
+    error?.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+    error?.code === 22 ||
+    error?.code === 1014
+  );
+}
+
+/**
+ * Writes JSON to localStorage without throwing. Storage can be full (saved
+ * banners and papers share the same quota) or blocked entirely (private
+ * windows, blocked site data).
+ */
+function writeStorage(key, value) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, reason: isQuotaError(error) ? "full" : "unavailable" };
+  }
+}
+
+/** User-facing explanation for a failed save. */
+export function storageErrorMessage(reason) {
+  return reason === "full"
+    ? "Your browser storage is full, so these settings were not saved for next time. Your paper is unaffected. To fix it, delete some saved papers or banners from this device."
+    : "Your browser is not allowing this site to save data, so these settings were not saved for next time. Your paper is unaffected. Private browsing and blocked site data are the usual causes.";
+}
+
 export function loadTestSettings() {
   if (!canUseStorage()) return { ...DEFAULT_TEST_SETTINGS };
   try {
@@ -72,8 +103,13 @@ export function loadTestSettings() {
   }
 }
 
+/**
+ * Persists the settings for next time.
+ * @returns {{ ok: boolean, reason?: "unavailable"|"full" }} Never throws:
+ * the caller warns the user and carries on generating the paper.
+ */
 export function saveTestSettings(settings) {
-  if (!canUseStorage()) return;
+  if (!canUseStorage()) return { ok: false, reason: "unavailable" };
   const payload = {
     timeAllowed: String(settings.timeAllowed ?? "").trim(),
     mcqMarks: Number(settings.mcqMarks) || DEFAULT_TEST_SETTINGS.mcqMarks,
@@ -99,7 +135,7 @@ export function saveTestSettings(settings) {
         ? settings.showPaperHeader
         : DEFAULT_TEST_SETTINGS.showPaperHeader,
   };
-  window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
+  return writeStorage(SETTINGS_KEY, payload);
 }
 
 export function loadInstitutes() {
@@ -130,7 +166,8 @@ export function rememberInstitute(instituteName) {
 
   const next = [name, ...current.filter((item) => item !== name)];
   if (canUseStorage()) {
-    window.localStorage.setItem(INSTITUTES_KEY, JSON.stringify(next));
+    // Best effort: a failed save is reported by saveTestSettings().
+    writeStorage(INSTITUTES_KEY, next);
   }
   return next;
 }

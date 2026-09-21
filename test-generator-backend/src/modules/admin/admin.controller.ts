@@ -8,7 +8,9 @@ import {
   Delete,
   UseGuards,
   ParseUUIDPipe,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { AdminService } from './admin.service';
 import { CreateSchoolClassDto } from './dto/create-class.dto';
 import { BookService } from '../book/book.service';
@@ -57,9 +59,26 @@ export class AdminController {
     return this.bookService.update(id, dto);
   }
 
+  // Soft delete: the book, its chapters and questions are kept and hidden.
   @Delete('deleteBook/:id')
-  deleteBook(@Param('id', ParseUUIDPipe) id: string) {
-    return this.bookService.remove(id);
+  deleteBook(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.bookService.remove(id, req.user.id);
+  }
+
+  @Get('deletedBooks')
+  deletedBooks() {
+    return this.bookService.findDeleted();
+  }
+
+  @Post('restoreBook/:id')
+  restoreBook(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.bookService.restore(id, req.user.id);
   }
 
   @Post('createChapter')

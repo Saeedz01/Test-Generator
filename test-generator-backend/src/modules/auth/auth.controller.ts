@@ -90,14 +90,24 @@ export class AuthController {
     return this.authService.confirmResetPassword(dto);
   }
 
+  /**
+   * Change password (signed-in admin). Limited per client IP; roomy enough
+   * for typos, tight enough to stop guessing the old password from a stolen
+   * session. Success revokes every session, including this one, so the auth
+   * cookies are cleared as well.
+   */
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('reset-password')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  resetPassword(
+  async resetPassword(
     @Req() req: Request & { user: { id: string } },
     @Body() dto: ResetPasswordDto,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.resetPassword(req.user.id, dto);
+    const result = await this.authService.resetPassword(req.user.id, dto);
+    clearAuthCookies(res);
+    return result;
   }
 
   /**

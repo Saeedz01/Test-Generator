@@ -1,12 +1,10 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { ROUTES } from "@/constants/routes";
+import { API_URL } from "@/constants/site";
 import { clearUser } from "@/store/authSlice";
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:5000";
-
 const rawBaseQuery = fetchBaseQuery({
-  baseUrl: `${BACKEND_URL}/api`,
+  baseUrl: `${API_URL}/api`,
   credentials: "include",
 });
 
@@ -51,11 +49,14 @@ async function baseQueryWithReauth(args, api, extraOptions) {
     return result;
   }
 
+  // Public auth flows: a 401 there is an answer, not an expired session.
   const url = String(requestUrl(args));
   if (
     url.includes("auth/login") ||
     url.includes("auth/refresh") ||
-    url.includes("auth/logout")
+    url.includes("auth/logout") ||
+    url.includes("auth/forgot-password") ||
+    url.includes("auth/confirm-reset-password")
   ) {
     return result;
   }

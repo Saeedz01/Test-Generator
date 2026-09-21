@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   ParseUUIDPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { ClassService } from './class.service';
 import { CreateSchoolClassDto } from '../admin/dto/create-class.dto';
@@ -16,6 +17,7 @@ import {
   AdminOnly,
   SuperAdminOnly,
 } from 'src/common/decorator/admin-only.decorator';
+import { StaffViewGuard } from 'src/common/guards/staff-view.guard';
 
 @Controller('schoolclasses')
 export class ClassController {
@@ -27,14 +29,20 @@ export class ClassController {
     return this.classService.create(createClassDto);
   }
 
+  // Archived classes are listed only for authenticated staff.
+  @UseGuards(StaffViewGuard)
   @Get()
   findAll(@Query('includeArchived') includeArchived?: string) {
     return this.classService.findAll(includeArchived === 'true');
   }
 
+  @UseGuards(StaffViewGuard)
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.classService.findOne(id);
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('includeArchived') includeArchived?: string,
+  ) {
+    return this.classService.findOne(id, includeArchived === 'true');
   }
 
   @AdminOnly()

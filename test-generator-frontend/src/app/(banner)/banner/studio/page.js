@@ -1,6 +1,12 @@
 import { Suspense } from "react";
 import { BannerStudio } from "../features";
 
+export const metadata = {
+  title: "Banner studio",
+  // An editing surface whose content lives on the visitor's device.
+  robots: { index: false, follow: true },
+};
+
 export default function BannerStudioPage() {
   return (
     <Suspense

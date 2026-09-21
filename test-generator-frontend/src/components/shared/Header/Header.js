@@ -12,16 +12,14 @@ import { MobileNav } from "@/components/shared/Header/MobileNav";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { buttonVariants, Container, Typography } from "@/components/ui";
 import { ROLES, ROUTES } from "@/constants";
-import {
-  authApi,
-  useGetMeQuery,
-  useLogoutMutation,
-} from "@/services/api/auth.api";
+import { useGetMeQuery, useLogoutMutation } from "@/services/api/auth.api";
+import { SplitApiSettings } from "@/services/SplitApiSetting";
 import { clearUser, setUser } from "@/store/authSlice";
 import { cn } from "@/utils";
 
 const NAV_LINKS = [
   { href: ROUTES.CLASSES, label: "Classes" },
+  { href: ROUTES.SEARCH, label: "Search" },
   { href: ROUTES.BANNER, label: "Banner Designer" },
   { href: ROUTES.ABOUT, label: "About" },
 ];
@@ -52,12 +50,13 @@ export default function Header() {
   const onLogout = async () => {
     try {
       await logout().unwrap();
-      dispatch(clearUser());
-      toast.success("Signed out");
     } catch {
-      // Always sign out locally; drop the cached session so the header updates.
+      // Sign out locally even if the request failed.
+    } finally {
+      // Drops every cached response, including any admin data this session
+      // loaded, so the header updates and nothing stays readable.
       dispatch(clearUser());
-      dispatch(authApi.util.invalidateTags([{ type: "Auth", id: "ME" }]));
+      dispatch(SplitApiSettings.util.resetApiState());
       toast.success("Signed out");
     }
   };

@@ -41,7 +41,12 @@ problem if something is missing or unsafe. Highlights:
   are email based); `MAIL_HOST`, `MAIL_USER`, `MAIL_PASSWORD`, `MAIL_FROM` are
   then required. With mail disabled in development the login OTP is printed to
   the server log (never in production).
-- `NODE_ENV` must be `development`, `production` or `test`.
+- `NODE_ENV` is **required** and must be `development`, `production` or
+  `test`. There is no default, so a server that forgets it refuses to start
+  instead of silently running with development settings.
+- Production additionally requires `TRUST_PROXY` (see *Reverse proxy*),
+  `https://` entries in `CORS_ORIGINS` (localhost excepted) and a real
+  `MAIL_FROM` / `DATABASE_URL` (the `.env.example` placeholders are rejected).
 
 ### Build and run
 
@@ -80,6 +85,25 @@ reports no drift.
 column with the `auth_sessions` table, so every user is signed out once when
 it is deployed.
 
+`20260919120000_book_soft_delete_search_reset_limits`:
+
+- enables the `pg_trgm` extension (trusted since PostgreSQL 13; the database
+  owner can create it) and adds trigram indexes used by `GET /api/search`;
+- adds `books.deletedAt` (soft delete) and a unique `(classId, book_name)`
+  index. Existing same-class duplicates are **renamed, not deleted**
+  (`Name (duplicate 2)`, ...) so no chapters or questions are lost — review
+  and merge them in the dashboard after deploying;
+- adds the per-account password-reset counters on `user`.
+
+### Curriculum visibility
+
+Public reads never return archived classes or soft-deleted books, nor
+anything under them (books, chapters, questions, search results, statistics).
+`?includeArchived=true` on `/api/schoolclasses` is honoured only for a signed-in
+admin (401/403 otherwise). Deleting a book from the dashboard is a soft delete:
+`GET /api/admin/deletedBooks` lists deleted books and
+`POST /api/admin/restoreBook/:id` restores one with its chapters and questions.
+
 ### Seeding
 
 - `npm run prisma:seed` — seeds sample curriculum only if there is none yet.
@@ -116,15 +140,32 @@ is revoked.
   - `COOKIE_SAMESITE=none` (fully cross-site) is supported but not
     recommended; third-party-cookie blocking will break it in many browsers.
 - The refresh cookie is scoped to `/api/auth` (only sent to refresh/logout).
-- **Reverse proxy.** Set `TRUST_PROXY` to the number of proxies in front of
-  the API (default 1), or `false` if it is exposed directly.
+- **Reverse proxy.** `TRUST_PROXY` is required in production and must match
+  the real topology: the number of proxies in front of the API (e.g. `1` for
+  nginx or one load balancer), a list of proxy IPs/subnets, or `false` if
+  clients connect directly. `true` is rejected in production because it lets
+  clients spoof their IP (and dodge rate limits) via `X-Forwarded-For`.
+  Outside production it defaults to `false`.
+- **Password reset limits** are stored per account in the database, so they
+  hold across IPs and instances: at most 5 reset emails per 24 h, 60 s between
+  emails, 5 wrong guesses per code and 10 per 24 h. Throttled requests get the
+  same generic response as unknown emails.
+- **Password hashing** uses bcrypt cost 12. Older cost-10 hashes keep working
+  and are upgraded automatically at the admin's next successful sign-in.
 - **Rate limiting** uses an in-memory store (per process). With several
   instances the effective limit is multiplied by the instance count; use a
   shared store (e.g. `@nest-lab/throttler-storage-redis`) or rate-limit at the
   proxy if that matters. The global default is `THROTTLE_LIMIT`/min per IP
   (300); auth endpoints have stricter fixed limits.
-- **Compression / access logs** are expected to be handled by the reverse
-  proxy (nginx, load balancer, platform router).
+- **Logging.** With `NODE_ENV=production` logs are JSON, one object per line.
+  Every request gets an `X-Request-Id` (an upstream id is reused if valid) and
+  one `http.request` entry (method, path, route, status, duration, user id,
+  IP). Server errors are logged as `http.server_error` with the same context,
+  and 5xx responses include the `requestId` so a user report can be matched to
+  the log. Query strings, headers, cookies and bodies are never logged, and
+  Prisma errors are logged by code only (their messages can contain query
+  arguments).
+- **Compression** is expected to be handled by the reverse proxy.
 - The API accepts JSON bodies only (no urlencoded form posts).
 
 ## Project setup

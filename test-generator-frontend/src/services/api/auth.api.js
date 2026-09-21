@@ -46,6 +46,23 @@ export const authApi = SplitApiSettings.injectEndpoints({
       }),
     }),
 
+    /** Admin password recovery: request a code, then set a new password. */
+    forgotPassword: builder.mutation({
+      query: (payload) => ({
+        url: API_ENDPOINTS.forgotPassword,
+        method: "POST",
+        body: payload,
+      }),
+    }),
+
+    confirmResetPassword: builder.mutation({
+      query: (payload) => ({
+        url: API_ENDPOINTS.confirmResetPassword,
+        method: "POST",
+        body: payload,
+      }),
+    }),
+
     getMe: builder.query({
       query: () => ({
         url: API_ENDPOINTS.getMe,
@@ -114,6 +131,8 @@ export const authApi = SplitApiSettings.injectEndpoints({
 export const {
   useLoginMutation,
   useSendOtpMutation,
+  useForgotPasswordMutation,
+  useConfirmResetPasswordMutation,
   useGetMeQuery,
   useLogoutMutation,
   useGetAdminsQuery,

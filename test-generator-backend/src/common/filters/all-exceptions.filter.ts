@@ -9,6 +9,10 @@ import {
 import { Prisma } from '@prisma/client';
 import type { Response } from 'express';
 import { ERROR_MESSAGES } from '../constant/error-messages';
+import {
+  requestContext,
+  type RequestWithContext,
+} from '../middleware/request-logger.middleware';
 
 interface MappedError {
   status: number;
@@ -35,6 +39,14 @@ function mapPrismaError(exception: unknown): MappedError | null {
         };
       case 'P2025':
         return { status: HttpStatus.NOT_FOUND, message: 'Record not found' };
+      // The database schema is behind the code (pending migrations): a
+      // deployment problem, not something the caller did wrong.
+      case 'P2021':
+      case 'P2022':
+        return {
+          status: HttpStatus.SERVICE_UNAVAILABLE,
+          message: ERROR_MESSAGES.SERVICE_NOT_READY,
+        };
       case 'P2003':
         return {
           status: HttpStatus.BAD_REQUEST,
@@ -82,12 +94,49 @@ function mapPrismaError(exception: unknown): MappedError | null {
   return null;
 }
 
+/**
+ * What gets logged about an error. Prisma error messages embed the query
+ * arguments (emails, password/OTP hashes), so only their code and target are
+ * logged; other errors are logged with their stack.
+ */
+function describeError(exception: unknown): Record<string, unknown> {
+  if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+    return {
+      errorType: 'PrismaClientKnownRequestError',
+      prismaCode: exception.code,
+      ...(exception.meta?.target ? { target: exception.meta.target } : {}),
+      ...(exception.meta?.modelName ? { model: exception.meta.modelName } : {}),
+    };
+  }
+  if (
+    exception instanceof Prisma.PrismaClientValidationError ||
+    exception instanceof Prisma.PrismaClientUnknownRequestError ||
+    exception instanceof Prisma.PrismaClientRustPanicError
+  ) {
+    return { errorType: exception.name };
+  }
+  if (exception instanceof Prisma.PrismaClientInitializationError) {
+    return { errorType: exception.name, prismaCode: exception.errorCode };
+  }
+  if (exception instanceof Error) {
+    return {
+      errorType: exception.name,
+      error: exception.message,
+      stack: exception.stack,
+    };
+  }
+  return { errorType: typeof exception, error: String(exception) };
+}
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost) {
-    const res = host.switchToHttp().getResponse<Response>();
+    const http = host.switchToHttp();
+    const res = http.getResponse<Response>();
+    const req = http.getRequest<RequestWithContext>();
+    const requestId = req?.requestId;
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
@@ -96,6 +145,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
         typeof payload === 'string'
           ? { statusCode: status, message: payload }
           : payload;
+      if (status >= 500) {
+        this.logServerError(req, status, exception);
+        res.status(status).json({ ...body, requestId });
+        return;
+      }
       res.status(status).json(body);
       return;
     }
@@ -103,9 +157,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const mapped = mapPrismaError(exception);
     if (mapped) {
       if (mapped.status >= 500) {
-        this.logger.error(
-          exception instanceof Error ? exception.stack : String(exception),
-        );
+        this.logServerError(req, mapped.status, exception);
+        res.status(mapped.status).json({
+          statusCode: mapped.status,
+          message: mapped.message,
+          requestId,
+        });
+        return;
       }
       res
         .status(mapped.status)
@@ -113,18 +171,29 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return;
     }
 
-    this.logger.error(
-      exception instanceof Error ? exception.stack : String(exception),
-    );
-
     const message = this.toUserMessage(exception);
     const status =
       message === ERROR_MESSAGES.SERVICE_UNAVAILABLE
         ? HttpStatus.SERVICE_UNAVAILABLE
         : HttpStatus.INTERNAL_SERVER_ERROR;
+    this.logServerError(req, status, exception);
     res.status(status).json({
       statusCode: status,
       message,
+      requestId,
+    });
+  }
+
+  private logServerError(
+    req: RequestWithContext | undefined,
+    status: number,
+    exception: unknown,
+  ) {
+    this.logger.error({
+      event: 'http.server_error',
+      ...(req ? requestContext(req) : {}),
+      status,
+      ...describeError(exception),
     });
   }
 

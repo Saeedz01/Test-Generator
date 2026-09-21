@@ -1,4 +1,9 @@
 import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsAdminPassword,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from 'src/common/validators/text.validators';
 
 export class CreateUserDto {
   @IsString()
@@ -10,8 +15,8 @@ export class CreateUserDto {
   email!: string;
 
   @IsString()
-  @MinLength(8)
-  // bcrypt only uses the first 72 bytes of a password
-  @MaxLength(72)
+  @IsAdminPassword()
+  @MinLength(PASSWORD_MIN_LENGTH)
+  @MaxLength(PASSWORD_MAX_LENGTH)
   password!: string;
 }

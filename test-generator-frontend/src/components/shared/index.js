@@ -22,3 +22,4 @@ export {
   PageHeaderSkeleton,
 } from "./BrowseSkeletons/BrowseSkeletons";
 
+export { BreadcrumbJsonLd } from "./BreadcrumbJsonLd";

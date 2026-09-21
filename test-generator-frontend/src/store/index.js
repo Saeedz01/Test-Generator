@@ -17,6 +17,7 @@ import "../services/api/chapters.api";
 import "../services/api/questions.api";
 import "../services/api/admin.api";
 import "../services/api/auth.api";
+import "../services/api/search.api";
 
 export function makeStore() {
   return configureStore({

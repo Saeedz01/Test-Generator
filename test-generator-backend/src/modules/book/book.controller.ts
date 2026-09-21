@@ -8,7 +8,9 @@ import {
   Delete,
   Query,
   ParseUUIDPipe,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { BookService } from './book.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
@@ -45,9 +47,22 @@ export class BookController {
     return this.bookService.update(id, updateBookDto);
   }
 
+  // Soft delete: hides the book and its content; restorable by admins.
   @AdminOnly()
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.bookService.remove(id);
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.bookService.remove(id, req.user.id);
+  }
+
+  @AdminOnly()
+  @Post(':id/restore')
+  restore(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.bookService.restore(id, req.user.id);
   }
 }

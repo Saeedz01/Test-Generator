@@ -5,6 +5,8 @@
 export const ROUTES = {
   HOME: "/",
   LOGIN: "/login",
+  FORGOT_PASSWORD: "/forgot-password",
+  SEARCH: "/search",
 
   // Public / teacher browse + test builder
   ABOUT: "/about",

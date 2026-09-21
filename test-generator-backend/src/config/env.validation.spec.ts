@@ -23,7 +23,8 @@ const production = (overrides: Record<string, string | undefined> = {}) =>
     MAIL_HOST: 'smtp.example.com',
     MAIL_USER: 'mailer',
     MAIL_PASSWORD: 'pw',
-    MAIL_FROM: 'Testora <noreply@example.com>',
+    MAIL_FROM: 'Testora <noreply@testora.app>',
+    TRUST_PROXY: '1',
     ...overrides,
   });
 
@@ -34,6 +35,12 @@ describe('validateEnv', () => {
 
   it('accepts a complete production config', () => {
     expect(() => validateEnv(production())).not.toThrow();
+  });
+
+  it('requires NODE_ENV to be set explicitly', () => {
+    expect(() => validateEnv(base({ NODE_ENV: undefined }))).toThrow(
+      /NODE_ENV is required/,
+    );
   });
 
   it('rejects unknown NODE_ENV values', () => {
@@ -115,5 +122,43 @@ describe('validateEnv', () => {
     expect(() =>
       validateEnv(base({ COOKIE_DOMAIN: 'https://example.com' })),
     ).toThrow(/COOKIE_DOMAIN/);
+  });
+
+  it('requires an explicit, non-spoofable TRUST_PROXY in production', () => {
+    expect(() => validateEnv(production({ TRUST_PROXY: undefined }))).toThrow(
+      /TRUST_PROXY is required in production/,
+    );
+    expect(() => validateEnv(production({ TRUST_PROXY: 'true' }))).toThrow(
+      /spoof/,
+    );
+    expect(() =>
+      validateEnv(production({ TRUST_PROXY: 'false' })),
+    ).not.toThrow();
+    expect(() =>
+      validateEnv(production({ TRUST_PROXY: '10.0.0.0/8' })),
+    ).not.toThrow();
+  });
+
+  it('requires https frontend origins in production (localhost allowed)', () => {
+    expect(() =>
+      validateEnv(production({ CORS_ORIGINS: 'http://app.example.com' })),
+    ).toThrow(/https/);
+    expect(() =>
+      validateEnv(production({ CORS_ORIGINS: 'http://localhost:3000' })),
+    ).not.toThrow();
+  });
+
+  it('rejects .env.example placeholders in production', () => {
+    expect(() =>
+      validateEnv(
+        production({
+          DATABASE_URL:
+            'postgresql://USER:PASSWORD@localhost:5432/DB_NAME?schema=public',
+        }),
+      ),
+    ).toThrow(/placeholders/);
+    expect(() =>
+      validateEnv(production({ MAIL_FROM: 'Testora <noreply@example.com>' })),
+    ).toThrow(/MAIL_FROM/);
   });
 });

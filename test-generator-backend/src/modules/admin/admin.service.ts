@@ -2,6 +2,12 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { schoolClass } from '../class/entities/class.entity';
 import { CreateSchoolClassDto } from './dto/create-class.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import {
+  visibleBookWhere,
+  visibleChapterWhere,
+  visibleClassWhere,
+  visibleQuestionWhere,
+} from 'src/common/visibility';
 
 @Injectable()
 export class AdminService {
@@ -16,12 +22,14 @@ export class AdminService {
       shortQuestions,
       mcqQuestions,
     ] = await Promise.all([
-      this.prisma.schoolClass.count(),
-      this.prisma.book.count(),
-      this.prisma.chapter.count(),
-      this.prisma.longQuestion.count(),
-      this.prisma.shortQuestion.count(),
-      this.prisma.mcqQuestion.count(),
+      // Archived classes and deleted books (with everything under them) are
+      // not part of the live library, so they are not counted.
+      this.prisma.schoolClass.count({ where: visibleClassWhere }),
+      this.prisma.book.count({ where: visibleBookWhere }),
+      this.prisma.chapter.count({ where: visibleChapterWhere }),
+      this.prisma.longQuestion.count({ where: visibleQuestionWhere }),
+      this.prisma.shortQuestion.count({ where: visibleQuestionWhere }),
+      this.prisma.mcqQuestion.count({ where: visibleQuestionWhere }),
     ]);
 
     return {

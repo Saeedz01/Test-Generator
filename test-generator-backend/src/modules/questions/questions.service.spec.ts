@@ -1,4 +1,5 @@
 import { QuestionsService } from './questions.service';
+import { visibleQuestionWhere } from 'src/common/visibility';
 
 describe('QuestionsService list filters', () => {
   const longQuestion = {
@@ -15,7 +16,7 @@ describe('QuestionsService list filters', () => {
     longQuestion,
     shortQuestion: longQuestion,
     mcqQuestion: longQuestion,
-    chapter: { findUnique: jest.fn() },
+    chapter: { findFirst: jest.fn() },
   };
 
   let service: QuestionsService;
@@ -56,7 +57,7 @@ describe('QuestionsService list filters', () => {
 
     expect(longQuestion.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { chapterId: 'ch1' },
+        where: { AND: [visibleQuestionWhere, { chapterId: 'ch1' }] },
         skip: 0,
         take: 10,
         orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
@@ -72,19 +73,20 @@ describe('QuestionsService list filters', () => {
   });
 
   it('rejects moving a question into a chapter that already has the same text', async () => {
-    longQuestion.findUnique.mockResolvedValue({
-      id: 'q1',
-      question_text: 'What is force?',
-      chapter: { id: 'ch1', chapter_name: 'Motion', book: null },
-    });
-    longQuestion.findFirst.mockResolvedValue({ id: 'q2' });
+    longQuestion.findFirst
+      .mockResolvedValueOnce({
+        id: 'q1',
+        question_text: 'What is force?',
+        chapter: { id: 'ch1', chapter_name: 'Motion', book: null },
+      })
+      .mockResolvedValueOnce({ id: 'q2' });
 
     await expect(
       service.updateLongQuestion('q1', {
         chapterId: '00000000-0000-4000-8000-000000000002',
       }),
     ).rejects.toMatchObject({ status: 409 });
-    expect(longQuestion.findFirst).toHaveBeenCalledWith({
+    expect(longQuestion.findFirst).toHaveBeenLastCalledWith({
       where: {
         question_text: 'What is force?',
         chapterId: '00000000-0000-4000-8000-000000000002',
@@ -94,13 +96,14 @@ describe('QuestionsService list filters', () => {
   });
 
   it('trims the statement on update', async () => {
-    longQuestion.findUnique.mockResolvedValue({
-      id: 'q1',
-      question_text: 'Old',
-      chapter: { id: 'ch1', chapter_name: 'Motion', book: null },
-    });
-    longQuestion.findFirst.mockResolvedValue(null);
-    prisma.chapter.findUnique.mockResolvedValue({ id: 'ch1' });
+    longQuestion.findFirst
+      .mockResolvedValueOnce({
+        id: 'q1',
+        question_text: 'Old',
+        chapter: { id: 'ch1', chapter_name: 'Motion', book: null },
+      })
+      .mockResolvedValueOnce(null);
+    prisma.chapter.findFirst.mockResolvedValue({ id: 'ch1' });
     longQuestion.update.mockResolvedValue({
       id: 'q1',
       question_text: 'New',
@@ -111,6 +114,22 @@ describe('QuestionsService list filters', () => {
     expect(longQuestion.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ question_text: 'New' }),
+      }),
+    );
+  });
+
+  it('does not edit questions whose book was soft-deleted', async () => {
+    longQuestion.findFirst.mockResolvedValueOnce(null);
+
+    await expect(
+      service.updateLongQuestion('q1', { statement: 'New' }),
+    ).rejects.toMatchObject({ status: 404 });
+    expect(longQuestion.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          id: 'q1',
+          chapter: { is: { book: { is: { deletedAt: null } } } },
+        },
       }),
     );
   });

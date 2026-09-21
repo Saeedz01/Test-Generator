@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import {
   applyMarksConfig,
   DEFAULT_TEST_SETTINGS,
@@ -8,6 +9,7 @@ import {
   loadTestSettings,
   rememberInstitute,
   saveTestSettings,
+  storageErrorMessage,
 } from "../utils/testSettingsStorage";
 import { GenerateTestModalForm } from "./GenerateTestModalForm";
 
@@ -99,7 +101,12 @@ function GenerateTestModalDialog({
         : "en",
       showPaperHeader,
     };
-    saveTestSettings(settings);
+    // Saving settings is a convenience; if the browser refuses, say so
+    // clearly and still generate the paper.
+    const saved = saveTestSettings(settings);
+    if (!saved.ok) {
+      toast.error(storageErrorMessage(saved.reason), { duration: 8000 });
+    }
 
     onConfirm?.({
       ...settings,
